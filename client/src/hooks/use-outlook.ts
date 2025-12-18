@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface OutlookEmail {
   id: string;
@@ -79,5 +79,60 @@ export function useOutlookUserInfo() {
       return res.json() as Promise<OutlookUserInfo>;
     },
     enabled: status?.connected ?? false,
+  });
+}
+
+export function useOAuthConfig() {
+  return useQuery({
+    queryKey: ['oauth', 'config'],
+    queryFn: async () => {
+      const res = await fetch('/api/auth/oauth-config');
+      if (!res.ok) throw new Error('Failed to check OAuth config');
+      return res.json() as Promise<{ configured: boolean }>;
+    },
+  });
+}
+
+export function useUserOutlookStatus(sessionId: string | null) {
+  return useQuery({
+    queryKey: ['oauth', 'outlook', 'status', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return { connected: false };
+      const res = await fetch(`/api/auth/outlook/status/${sessionId}`);
+      if (!res.ok) throw new Error('Failed to check user Outlook status');
+      return res.json() as Promise<{ connected: boolean; email?: string; displayName?: string }>;
+    },
+    enabled: !!sessionId,
+    refetchInterval: 30000,
+  });
+}
+
+export function useConnectOutlook() {
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      const res = await fetch(`/api/auth/outlook/login?sessionId=${sessionId}`);
+      if (!res.ok) throw new Error('Failed to start OAuth');
+      const data = await res.json();
+      window.location.href = data.authUrl;
+    },
+  });
+}
+
+export function useDisconnectOutlook() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (sessionId: string) => {
+      const res = await fetch('/api/auth/outlook/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      if (!res.ok) throw new Error('Failed to disconnect');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['oauth'] });
+    },
   });
 }

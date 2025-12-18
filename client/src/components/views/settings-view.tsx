@@ -3,13 +3,55 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Check, Mail, Calendar, Loader2, AlertCircle, ExternalLink, User } from "lucide-react";
-import { useOutlookStatus, useOutlookUserInfo } from "@/hooks/use-outlook";
+import { Check, Mail, Calendar, Loader2, AlertCircle, User, LogOut } from "lucide-react";
+import { useOutlookStatus, useOutlookUserInfo, useOAuthConfig, useUserOutlookStatus, useConnectOutlook, useDisconnectOutlook } from "@/hooks/use-outlook";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+
+function getSessionId(): string {
+  let sessionId = localStorage.getItem('sessionId');
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem('sessionId', sessionId);
+  }
+  return sessionId;
+}
 
 export function SettingsView() {
-  const { data: status, isLoading } = useOutlookStatus();
+  const [sessionId] = useState(() => getSessionId());
+  const [, setLocation] = useLocation();
+  
+  const { data: oauthConfig } = useOAuthConfig();
+  const { data: legacyStatus, isLoading: legacyLoading } = useOutlookStatus();
   const { data: userInfo, isLoading: userLoading } = useOutlookUserInfo();
-  const isConnected = status?.connected ?? false;
+  const { data: userOAuthStatus, isLoading: oauthLoading } = useUserOutlookStatus(sessionId);
+  
+  const connectOutlook = useConnectOutlook();
+  const disconnectOutlook = useDisconnectOutlook();
+  
+  const oauthConfigured = oauthConfig?.configured ?? false;
+  const userConnected = userOAuthStatus?.connected ?? false;
+  const legacyConnected = legacyStatus?.connected ?? false;
+  const isConnected = userConnected || legacyConnected;
+  const isLoading = legacyLoading || oauthLoading;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'connected' || params.get('error')) {
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, []);
+
+  const handleConnect = () => {
+    connectOutlook.mutate(sessionId);
+  };
+
+  const handleDisconnect = () => {
+    disconnectOutlook.mutate(sessionId);
+  };
+
+  const displayName = userConnected ? userOAuthStatus?.displayName : userInfo?.displayName;
+  const email = userConnected ? userOAuthStatus?.email : userInfo?.email;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -37,21 +79,21 @@ export function SettingsView() {
                     {isLoading ? (
                       <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                     ) : isConnected ? (
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 gap-1">
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 gap-1" data-testid="badge-outlook-connected">
                         <Check className="h-3 w-3" />
                         Verbunden
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200" data-testid="badge-outlook-disconnected">
                         Nicht verbunden
                       </Badge>
                     )}
                   </div>
-                  {isConnected && userInfo ? (
+                  {isConnected && (displayName || email) ? (
                     <div className="flex items-center gap-2 mt-1">
                       <User className="h-3 w-3 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        {userInfo.displayName} ({userInfo.email})
+                      <p className="text-sm text-muted-foreground" data-testid="text-outlook-user">
+                        {displayName} {email && `(${email})`}
                       </p>
                     </div>
                   ) : (
@@ -61,9 +103,36 @@ export function SettingsView() {
               </div>
               
               <div>
-                {!isConnected && (
+                {oauthConfigured && !userConnected && (
+                  <Button 
+                    onClick={handleConnect} 
+                    disabled={connectOutlook.isPending}
+                    data-testid="button-connect-outlook"
+                  >
+                    {connectOutlook.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : null}
+                    Mit Microsoft anmelden
+                  </Button>
+                )}
+                {userConnected && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleDisconnect}
+                    disabled={disconnectOutlook.isPending}
+                    data-testid="button-disconnect-outlook"
+                  >
+                    {disconnectOutlook.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <LogOut className="h-4 w-4 mr-2" />
+                    )}
+                    Trennen
+                  </Button>
+                )}
+                {!oauthConfigured && !isConnected && (
                   <Badge variant="secondary" className="bg-gray-100 text-gray-600">
-                    Verbindung in Replit erforderlich
+                    Konfiguration ausstehend
                   </Badge>
                 )}
               </div>
@@ -86,7 +155,7 @@ export function SettingsView() {
         </Card>
 
         {/* Connected Account Info */}
-        {isConnected && userInfo && (
+        {isConnected && (displayName || email || (userInfo && userInfo.calendars)) && (
           <Card className="animate-in fade-in slide-in-from-top-2">
             <CardHeader>
               <CardTitle>Verbundenes Konto</CardTitle>
@@ -96,32 +165,37 @@ export function SettingsView() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase">Name</p>
-                  <p className="font-medium">{userInfo.displayName}</p>
+                  <p className="font-medium" data-testid="text-account-name">{displayName || 'Unbekannt'}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase">E-Mail</p>
-                  <p className="font-medium">{userInfo.email}</p>
+                  <p className="font-medium" data-testid="text-account-email">{email || 'Unbekannt'}</p>
                 </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground uppercase">Verfügbare Kalender</p>
-                <div className="flex flex-wrap gap-2">
-                  {userInfo.calendars.map((cal, i) => (
-                    <Badge key={i} variant="secondary">{cal}</Badge>
-                  ))}
+              {userInfo?.calendars && userInfo.calendars.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">Verfügbare Kalender</p>
+                  <div className="flex flex-wrap gap-2">
+                    {userInfo.calendars.map((cal, i) => (
+                      <Badge key={i} variant="secondary">{cal}</Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               
-              <div className="bg-amber-50 text-amber-800 p-3 rounded-md text-xs flex gap-2 items-start mt-4">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium mb-1">Konto wechseln</p>
-                  <p>
-                    Um ein anderes Microsoft-Konto zu verbinden, musst du im Replit-Editor auf "Connections" 
-                    im linken Panel klicken und dort die Outlook-Verbindung neu konfigurieren.
-                  </p>
+              {!userConnected && legacyConnected && (
+                <div className="bg-amber-50 text-amber-800 p-3 rounded-md text-xs flex gap-2 items-start mt-4">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium mb-1">Konto wechseln</p>
+                    <p>
+                      {oauthConfigured 
+                        ? 'Klicke auf "Mit Microsoft anmelden" um dein eigenes Konto zu verbinden.'
+                        : 'Um ein anderes Microsoft-Konto zu verbinden, musst du im Replit-Editor auf "Connections" im linken Panel klicken und dort die Outlook-Verbindung neu konfigurieren.'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -139,14 +213,14 @@ export function SettingsView() {
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <Label htmlFor="sync-emails">E-Mails synchronisieren</Label>
                 </div>
-                <Switch id="sync-emails" defaultChecked />
+                <Switch id="sync-emails" defaultChecked data-testid="switch-sync-emails" />
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <Label htmlFor="sync-calendar">Kalender synchronisieren</Label>
                 </div>
-                <Switch id="sync-calendar" defaultChecked />
+                <Switch id="sync-calendar" defaultChecked data-testid="switch-sync-calendar" />
               </div>
               
               <div className="bg-blue-50 text-blue-800 p-3 rounded-md text-xs flex gap-2 items-start mt-4">
@@ -167,8 +241,27 @@ export function SettingsView() {
                 <div>
                   <p className="font-medium text-foreground mb-1">Verbinde Outlook um zu beginnen</p>
                   <p>
-                    Nach der Verbindung sind deine Kalender- und E-Mail-Daten für den KI-Assistenten verfügbar. 
-                    Du kannst dann Fragen zu deinem Zeitplan stellen, E-Mail-Zusammenfassungen erhalten und intelligente Vorschläge bekommen.
+                    {oauthConfigured 
+                      ? 'Klicke auf "Mit Microsoft anmelden" um deine Kalender- und E-Mail-Daten für den KI-Assistenten verfügbar zu machen.'
+                      : 'Nach der Verbindung sind deine Kalender- und E-Mail-Daten für den KI-Assistenten verfügbar. Du kannst dann Fragen zu deinem Zeitplan stellen, E-Mail-Zusammenfassungen erhalten und intelligente Vorschläge bekommen.'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* OAuth Configuration Notice */}
+        {!oauthConfigured && (
+          <Card className="border-dashed">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                <AlertCircle className="h-5 w-5 mt-0.5 text-blue-500" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Benutzer-spezifische Anmeldung</p>
+                  <p>
+                    Um jedem Benutzer zu erlauben, sein eigenes Microsoft-Konto zu verbinden, wird eine Azure App-Registrierung benötigt. 
+                    Sobald MICROSOFT_CLIENT_ID und MICROSOFT_CLIENT_SECRET konfiguriert sind, erscheint hier ein "Mit Microsoft anmelden" Button.
                   </p>
                 </div>
               </div>

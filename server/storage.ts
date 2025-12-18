@@ -1,12 +1,22 @@
 import { db } from "../db";
-import { users, todos, notes, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { users, todos, notes, oauthTokens, oauthStates, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState } from "@shared/schema";
+import { eq, and, lt } from "drizzle-orm";
 
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // OAuth Tokens
+  getOAuthToken(sessionId: string, provider: string): Promise<OAuthToken | undefined>;
+  upsertOAuthToken(token: InsertOAuthToken): Promise<OAuthToken>;
+  deleteOAuthToken(sessionId: string, provider: string): Promise<void>;
+  
+  // OAuth States (for CSRF protection)
+  createOAuthState(state: InsertOAuthState): Promise<OAuthState>;
+  getAndDeleteOAuthState(state: string): Promise<OAuthState | undefined>;
+  cleanupExpiredOAuthStates(): Promise<void>;
   
   // Todos
   getTodos(): Promise<Todo[]>;
@@ -37,6 +47,54 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  // OAuth Tokens
+  async getOAuthToken(sessionId: string, provider: string): Promise<OAuthToken | undefined> {
+    const [token] = await db.select().from(oauthTokens).where(
+      and(eq(oauthTokens.sessionId, sessionId), eq(oauthTokens.provider, provider))
+    );
+    return token;
+  }
+
+  async upsertOAuthToken(token: InsertOAuthToken): Promise<OAuthToken> {
+    const existing = await this.getOAuthToken(token.sessionId, token.provider);
+    if (existing) {
+      const [updated] = await db
+        .update(oauthTokens)
+        .set(token)
+        .where(eq(oauthTokens.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [newToken] = await db.insert(oauthTokens).values(token).returning();
+      return newToken;
+    }
+  }
+
+  async deleteOAuthToken(sessionId: string, provider: string): Promise<void> {
+    await db.delete(oauthTokens).where(
+      and(eq(oauthTokens.sessionId, sessionId), eq(oauthTokens.provider, provider))
+    );
+  }
+
+  // OAuth States (for CSRF protection)
+  async createOAuthState(state: InsertOAuthState): Promise<OAuthState> {
+    const [newState] = await db.insert(oauthStates).values(state).returning();
+    return newState;
+  }
+
+  async getAndDeleteOAuthState(state: string): Promise<OAuthState | undefined> {
+    const [found] = await db.select().from(oauthStates).where(eq(oauthStates.state, state));
+    if (found) {
+      await db.delete(oauthStates).where(eq(oauthStates.id, found.id));
+    }
+    return found;
+  }
+
+  async cleanupExpiredOAuthStates(): Promise<void> {
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    await db.delete(oauthStates).where(lt(oauthStates.createdAt, tenMinutesAgo));
   }
 
   // Todos

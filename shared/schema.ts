@@ -9,6 +9,24 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+export const oauthTokens = pgTable("oauth_tokens", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id").notNull(),
+  provider: text("provider").notNull(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at"),
+  email: text("email"),
+  displayName: text("display_name"),
+});
+
+export const oauthStates = pgTable("oauth_states", {
+  id: serial("id").primaryKey(),
+  state: varchar("state").notNull().unique(),
+  sessionId: varchar("session_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const todos = pgTable("todos", {
   id: serial("id").primaryKey(),
   text: text("text").notNull(),
@@ -48,3 +66,18 @@ export type Todo = typeof todos.$inferSelect;
 
 export type InsertNote = z.infer<typeof insertNoteSchema>;
 export type Note = typeof notes.$inferSelect;
+
+export const insertOAuthTokenSchema = createInsertSchema(oauthTokens).omit({
+  id: true,
+});
+
+export const insertOAuthStateSchema = createInsertSchema(oauthStates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertOAuthToken = z.infer<typeof insertOAuthTokenSchema>;
+export type OAuthToken = typeof oauthTokens.$inferSelect;
+
+export type InsertOAuthState = z.infer<typeof insertOAuthStateSchema>;
+export type OAuthState = typeof oauthStates.$inferSelect;
