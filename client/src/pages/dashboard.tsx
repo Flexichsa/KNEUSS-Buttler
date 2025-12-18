@@ -5,6 +5,7 @@ import { MailWidget } from "@/components/widgets/mail-widget";
 import { TodoWidget } from "@/components/widgets/todo-widget";
 import { AssistantWidget } from "@/components/widgets/assistant-widget";
 import { NotesView } from "@/components/views/notes-view";
+import { SettingsView } from "@/components/views/settings-view";
 import { Button } from "@/components/ui/button";
 import { Search, Bell, Settings, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -80,6 +81,18 @@ export default function Dashboard() {
             transition={{ duration: 0.3 }}
           >
             <NotesView />
+          </motion.div>
+        );
+      case "settings":
+        return (
+          <motion.div
+            key="settings"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <SettingsView />
           </motion.div>
         );
       case "calendar":
