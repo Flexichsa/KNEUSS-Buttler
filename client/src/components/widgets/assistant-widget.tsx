@@ -16,7 +16,7 @@ interface Message {
 
 export function AssistantWidget() {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, role: 'assistant', text: "Good morning! I'm connected to your Outlook calendar and emails. I can help you manage your day, draft emails, or answer questions. What would you like to know?" },
+    { id: 1, role: 'assistant', text: "Guten Morgen! Ich bin mit deinem Outlook-Kalender und deinen E-Mails verbunden. Ich kann dir bei der Tagesplanung helfen, E-Mails verfassen oder Fragen beantworten. Was möchtest du wissen?" },
   ]);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -36,7 +36,6 @@ export function AssistantWidget() {
     setMessages(prev => [...prev, userMsg]);
     setInput("");
 
-    // Prepare messages for API
     const apiMessages = [...messages, userMsg].map(m => ({
       role: m.role,
       content: m.text
@@ -57,20 +56,20 @@ export function AssistantWidget() {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         role: 'assistant',
-        text: "I apologize, but I encountered an error. Please try again."
+        text: "Entschuldigung, es ist ein Fehler aufgetreten. Bitte versuche es erneut."
       }]);
     }
   };
 
   return (
-    <Card className="h-[calc(100vh-8rem)] flex flex-col bg-white border shadow-md ring-1 ring-black/5 overflow-hidden">
+    <Card className="h-[calc(100vh-12rem)] flex flex-col bg-white border shadow-md ring-1 ring-black/5 overflow-hidden">
       <CardHeader className="px-5 py-4 border-b bg-gradient-to-r from-primary/5 to-transparent flex flex-row items-center justify-between space-y-0">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-lg bg-primary text-white flex items-center justify-center shadow-sm">
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <CardTitle className="text-base font-bold text-foreground">AI Assistant</CardTitle>
+            <CardTitle className="text-base font-bold text-foreground">KI-Assistent</CardTitle>
             <p className="text-[10px] uppercase tracking-wider font-bold text-primary/80 flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
               Online
@@ -141,7 +140,7 @@ export function AssistantWidget() {
           <Input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your schedule, emails, or tasks..." 
+            placeholder="Frage zu Terminen, E-Mails oder Aufgaben..." 
             className="bg-secondary/30 border-transparent shadow-none focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:bg-white transition-all h-11"
             disabled={chat.isPending}
           />
