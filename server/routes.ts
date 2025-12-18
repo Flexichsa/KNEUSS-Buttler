@@ -2,15 +2,109 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTodoSchema, insertNoteSchema } from "@shared/schema";
-import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo } from "./outlook";
+import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser } from "./outlook";
 import { chatCompletion, summarizeEmails } from "./openai";
+import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // OAuth Configuration Status
+  app.get("/api/auth/oauth-config", async (req, res) => {
+    res.json({ configured: isOAuthConfigured() });
+  });
+
+  // Start OAuth flow
+  app.get("/api/auth/outlook/login", async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string;
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+      
+      if (!isOAuthConfigured()) {
+        return res.status(503).json({ error: "OAuth not configured" });
+      }
+      
+      const state = await createOAuthState(sessionId);
+      const authUrl = getAuthUrl(state);
+      res.json({ authUrl });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to start OAuth" });
+    }
+  });
+
+  // OAuth callback
+  app.get("/api/auth/outlook/callback", async (req, res) => {
+    try {
+      const code = req.query.code as string;
+      const state = req.query.state as string;
+      
+      if (!code || !state) {
+        return res.redirect("/settings?error=missing_params");
+      }
+      
+      const sessionId = await validateAndConsumeState(state);
+      if (!sessionId) {
+        return res.redirect("/settings?error=invalid_state");
+      }
+      
+      const tokens = await exchangeCodeForTokens(code);
+      const userInfo = await getMicrosoftUserInfo(tokens.accessToken);
+      
+      await storage.upsertOAuthToken({
+        sessionId,
+        provider: "microsoft",
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: tokens.expiresAt,
+        email: userInfo.email,
+        displayName: userInfo.displayName
+      });
+      
+      res.redirect("/settings?success=connected");
+    } catch (error: any) {
+      console.error("[OAuth] Callback error:", error);
+      res.redirect("/settings?error=auth_failed");
+    }
+  });
+
+  // Disconnect user's Outlook
+  app.post("/api/auth/outlook/disconnect", async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+      
+      await storage.deleteOAuthToken(sessionId, "microsoft");
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to disconnect" });
+    }
+  });
+
+  // Get user's OAuth status
+  app.get("/api/auth/outlook/status/:sessionId", async (req, res) => {
+    try {
+      const token = await storage.getOAuthToken(req.params.sessionId, "microsoft");
+      if (token) {
+        res.json({
+          connected: true,
+          email: token.email,
+          displayName: token.displayName
+        });
+      } else {
+        res.json({ connected: false });
+      }
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
   
-  // Outlook Integration Status
+  // Outlook Integration Status (legacy - uses Replit connector)
   app.get("/api/outlook/status", async (req, res) => {
     try {
       const connected = await isOutlookConnected();

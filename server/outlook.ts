@@ -1,5 +1,6 @@
 // Outlook integration using Microsoft Graph API via Replit connection
 import { Client } from '@microsoft/microsoft-graph-client';
+import { getValidAccessToken } from './oauth';
 
 let connectionSettings: any;
 
@@ -199,6 +200,116 @@ export async function getOutlookUserInfo(): Promise<{ email: string; displayName
 
     console.log(`[Outlook] Connected as: ${user.mail} (${user.displayName})`);
     console.log(`[Outlook] Available calendars:`, calendars.value?.map((c: any) => c.name));
+
+    return {
+      email: user.mail || 'unknown',
+      displayName: user.displayName || 'Unknown User',
+      calendars: calendars.value?.map((c: any) => c.name) || []
+    };
+  } catch (error: any) {
+    console.error('[Outlook] Error fetching user info:', error.message);
+    throw error;
+  }
+}
+
+// Per-user functions using custom OAuth tokens
+function getClientForUser(accessToken: string): Client {
+  return Client.initWithMiddleware({
+    authProvider: {
+      getAccessToken: async () => accessToken
+    }
+  });
+}
+
+export async function getEmailsForUser(sessionId: string, limit: number = 20): Promise<OutlookEmail[]> {
+  const accessToken = await getValidAccessToken(sessionId);
+  if (!accessToken) {
+    throw new Error('User not connected to Outlook');
+  }
+  
+  const client = getClientForUser(accessToken);
+  
+  try {
+    const messages = await client
+      .api('/me/messages')
+      .header('Prefer', 'outlook.body-content-type="text"')
+      .top(limit)
+      .select('id,subject,from,bodyPreview,receivedDateTime,isRead,hasAttachments,parentFolderId')
+      .orderby('receivedDateTime DESC')
+      .get();
+
+    console.log(`[Outlook] Fetched ${messages.value?.length || 0} emails for session ${sessionId}`);
+
+    return messages.value.map((msg: any) => ({
+      id: msg.id,
+      subject: msg.subject || '(Kein Betreff)',
+      sender: msg.from?.emailAddress?.name || msg.from?.emailAddress?.address || 'Unbekannt',
+      preview: msg.bodyPreview || '',
+      receivedDateTime: msg.receivedDateTime,
+      isRead: msg.isRead,
+      hasAttachments: msg.hasAttachments,
+      folder: msg.parentFolderId
+    }));
+  } catch (error: any) {
+    console.error('[Outlook] Error fetching emails for user:', error.message);
+    throw error;
+  }
+}
+
+export async function getTodayEventsForUser(sessionId: string): Promise<OutlookEvent[]> {
+  const accessToken = await getValidAccessToken(sessionId);
+  if (!accessToken) {
+    throw new Error('User not connected to Outlook');
+  }
+  
+  const client = getClientForUser(accessToken);
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+  try {
+    const events = await client
+      .api('/me/calendarView')
+      .header('Prefer', 'outlook.timezone="Europe/Zurich"')
+      .query({
+        startDateTime: startOfDay.toISOString(),
+        endDateTime: endOfDay.toISOString()
+      })
+      .select('id,subject,start,end,location,isOnlineMeeting,onlineMeetingUrl')
+      .orderby('start/dateTime')
+      .top(20)
+      .get();
+
+    console.log(`[Outlook] Fetched ${events.value?.length || 0} events for session ${sessionId}`);
+
+    return events.value.map((event: any) => ({
+      id: event.id,
+      subject: event.subject,
+      start: event.start.dateTime,
+      end: event.end.dateTime,
+      location: event.location?.displayName,
+      isOnlineMeeting: event.isOnlineMeeting,
+      onlineMeetingUrl: event.onlineMeetingUrl
+    }));
+  } catch (error: any) {
+    console.error('[Outlook] Error fetching events for user:', error.message);
+    return [];
+  }
+}
+
+export async function getOutlookUserInfoForUser(sessionId: string): Promise<{ email: string; displayName: string; calendars: string[] }> {
+  const accessToken = await getValidAccessToken(sessionId);
+  if (!accessToken) {
+    throw new Error('User not connected to Outlook');
+  }
+  
+  const client = getClientForUser(accessToken);
+  
+  try {
+    const [user, calendars] = await Promise.all([
+      client.api('/me').select('mail,displayName').get(),
+      client.api('/me/calendars').select('id,name').get()
+    ]);
 
     return {
       email: user.mail || 'unknown',
