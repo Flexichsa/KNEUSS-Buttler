@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import Header from "@/components/layout/header";
 import { CalendarWidget } from "@/components/widgets/calendar-widget";
@@ -10,9 +11,45 @@ import { SettingsView } from "@/components/views/settings-view";
 import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+const pathToTab: Record<string, string> = {
+  "/": "dashboard",
+  "/calendar": "calendar",
+  "/mail": "mail",
+  "/todos": "todos",
+  "/notes": "notes",
+  "/assistant": "assistant",
+  "/settings": "settings",
+};
+
+const tabToPath: Record<string, string> = {
+  "dashboard": "/",
+  "calendar": "/calendar",
+  "mail": "/mail",
+  "todos": "/todos",
+  "notes": "/notes",
+  "assistant": "/assistant",
+  "settings": "/settings",
+};
+
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [location, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const newTab = pathToTab[location];
+    if (newTab && newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [location]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const path = tabToPath[tab];
+    if (path && path !== location) {
+      setLocation(path);
+    }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -162,7 +199,7 @@ export default function Dashboard() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <AppSidebar activeTab={activeTab} setActiveTab={handleTabChange} />
 
         {/* Main Content */}
         <main className="flex-1 lg:ml-64 overflow-y-auto bg-secondary/30">
