@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import Header from "@/components/layout/header";
 import { CalendarWidget } from "@/components/widgets/calendar-widget";
 import { MailWidget } from "@/components/widgets/mail-widget";
 import { TodoWidget } from "@/components/widgets/todo-widget";
 import { AssistantWidget } from "@/components/widgets/assistant-widget";
 import { NotesView } from "@/components/views/notes-view";
 import { SettingsView } from "@/components/views/settings-view";
-import { Button } from "@/components/ui/button";
-import { Search, Bell, Settings, Menu } from "lucide-react";
+import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -36,6 +37,32 @@ export default function Dashboard() {
     }
   };
 
+  const getPageTitle = () => {
+    switch (activeTab) {
+      case 'dashboard': return 'Guten Morgen, Alex';
+      case 'calendar': return 'Kalender';
+      case 'mail': return 'E-Mails';
+      case 'todos': return 'Aufgaben';
+      case 'notes': return 'Notizen';
+      case 'assistant': return 'Assistent';
+      case 'settings': return 'Einstellungen';
+      default: return 'Dashboard';
+    }
+  };
+
+  const getPageSubtitle = () => {
+    switch (activeTab) {
+      case 'dashboard': return 'Hier ist deine Tagesübersicht';
+      case 'calendar': return 'Deine Termine und Veranstaltungen';
+      case 'mail': return 'Deine E-Mails von Outlook';
+      case 'todos': return 'Deine Aufgaben verwalten';
+      case 'notes': return 'Deine Notizen und Dokumente';
+      case 'assistant': return 'KI-gestützte Unterstützung';
+      case 'settings': return 'Integrationen und Einstellungen';
+      default: return '';
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -48,12 +75,12 @@ export default function Dashboard() {
             animate="visible"
           >
             {/* Main Column (Left) */}
-            <div className="col-span-8 space-y-6">
-              <motion.div variants={itemVariants} className="grid grid-cols-2 gap-6">
-                <div className="col-span-1 h-[320px]">
+            <div className="col-span-12 lg:col-span-8 space-y-6">
+              <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="h-[320px]">
                   <CalendarWidget />
                 </div>
-                <div className="col-span-1 h-[320px]">
+                <div className="h-[320px]">
                   <TodoWidget />
                 </div>
               </motion.div>
@@ -64,8 +91,8 @@ export default function Dashboard() {
             </div>
 
             {/* Assistant Column (Right) */}
-            <motion.div variants={itemVariants} className="col-span-4 h-full">
-              <div className="sticky top-24">
+            <motion.div variants={itemVariants} className="col-span-12 lg:col-span-4 h-full">
+              <div className="lg:sticky lg:top-24">
                 <AssistantWidget />
               </div>
             </motion.div>
@@ -98,19 +125,25 @@ export default function Dashboard() {
       case "calendar":
         return (
           <div className="flex items-center justify-center h-[50vh] text-muted-foreground border-2 border-dashed rounded-lg">
-            <p>Full Calendar View - Coming Soon</p>
+            <p>Vollständige Kalenderansicht - Kommt bald</p>
           </div>
         );
       case "mail":
         return (
           <div className="flex items-center justify-center h-[50vh] text-muted-foreground border-2 border-dashed rounded-lg">
-            <p>Full Mail Client - Coming Soon</p>
+            <p>Vollständiger E-Mail Client - Kommt bald</p>
           </div>
         );
       case "todos":
         return (
           <div className="flex items-center justify-center h-[50vh] text-muted-foreground border-2 border-dashed rounded-lg">
-            <p>Full Task Manager - Coming Soon</p>
+            <p>Vollständige Aufgabenverwaltung - Kommt bald</p>
+          </div>
+        );
+      case "assistant":
+        return (
+          <div className="max-w-3xl mx-auto">
+            <AssistantWidget />
           </div>
         );
       default:
@@ -119,45 +152,53 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex font-sans">
-      {/* Sidebar */}
-      <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+      {/* Top Header */}
+      <Header 
+        title="KNEUSS" 
+        subtitle="Digital Assistant"
+        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+      />
 
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8 overflow-y-auto h-screen bg-secondary/30">
-        {/* Header */}
-        <header className="flex justify-between items-center mb-10 sticky top-0 bg-secondary/30 backdrop-blur-sm z-10 py-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {activeTab === 'dashboard' ? 'Good Morning, Alex' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-            </h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {activeTab === 'dashboard' ? 'Here is your daily briefing' : `Manage your ${activeTab}`}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-             <div className="relative group">
-               <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-               <input 
-                 type="text" 
-                 placeholder="Search..." 
-                 className="pl-9 pr-4 py-2 rounded-full bg-white border border-transparent shadow-sm w-64 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all placeholder:text-muted-foreground/50"
-               />
-             </div>
-             <Button variant="ghost" size="icon" className="rounded-full bg-white shadow-sm text-muted-foreground hover:text-primary hover:bg-white border border-transparent hover:border-border">
-               <Bell className="h-5 w-5" />
-             </Button>
-             <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center font-bold text-sm shadow-md ring-2 ring-white">
-               AL
-             </div>
-          </div>
-        </header>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        <AnimatePresence mode="wait">
-          {renderContent()}
-        </AnimatePresence>
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-64 overflow-y-auto bg-secondary/30">
+          {/* Page Title Section */}
+          <div className="px-6 py-6 border-b bg-white/50 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  {getPageTitle()}
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  {getPageSubtitle()}
+                </p>
+              </div>
+              
+              <div className="hidden md:flex items-center gap-4">
+                <div className="relative group">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder="Suchen..." 
+                    className="pl-9 pr-4 py-2 rounded-full bg-white border border-border shadow-sm w-64 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all placeholder:text-muted-foreground/50"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="p-6">
+            <AnimatePresence mode="wait">
+              {renderContent()}
+            </AnimatePresence>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
