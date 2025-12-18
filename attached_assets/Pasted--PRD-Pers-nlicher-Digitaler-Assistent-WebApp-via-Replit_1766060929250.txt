@@ -1,0 +1,88 @@
+🧭 PRD – Persönlicher Digitaler Assistent (WebApp via Replit)
+1. 🎯 Goals
+1.1 Business Context
+
+Ziel ist es, eine browserbasierte, persönliche Web-App zu entwickeln, die alle deine täglichen digitalen Aufgaben bündelt – Kalender, E-Mails, To-dos, Notizen und Dokumentenmanagement – und diese durch KI-Unterstützung effizienter macht. Du nutzt Microsoft-Dienste (Outlook, OneDrive) und möchtest eine zentrale Plattform mit intelligenter Assistenz.
+
+1.2 Ziel der Anwendung
+
+Eine minimalistische, KI-gestützte Webanwendung mit Microsoft-Integration, die dir erlaubt:
+
+Outlook-Kalender zu verwalten
+
+Outlook-Mails zu lesen, zu schreiben und zu beantworten
+
+To-dos und Aufgaben zu managen
+
+Notizen und Dokumente zu schreiben und in OneDrive zu speichern
+
+Mit einer GPT-basierten KI zu kommunizieren
+
+Tagesplanung & Zusammenfassungen automatisiert zu erhalten
+
+1.3 Nutzen & Vorteile
+
+Alles an einem Ort – kein App-Wechsel notwendig
+
+Zeitersparnis durch intelligente Vorschläge und Automatisierung
+
+KI-Unterstützung für Texte, Planung, Zusammenfassungen
+
+Sicherer Zugriff über Microsoft OAuth2
+
+Einfach zu bedienen, nur auf dich zugeschnitten
+
+2. ⚙️ Assumptions
+2.1 Problem
+
+Die tägliche Nutzung verschiedener Tools (Kalender, Mail, Notizen, Aufgaben) führt zu Zeitverlust und Kontextwechsel. KI-Funktionalitäten fehlen in klassischen Anwendungen oder sind schlecht integriert.
+
+2.2 Value Proposition
+
+Die WebApp integriert alle Kernfunktionen deines digitalen Alltags auf einer einzigen Oberfläche, plus KI, die deine Inhalte intelligent analysiert, organisiert und vorschlägt – ideal für fokussiertes, produktives Arbeiten.
+
+2.3 Feature Research
+Tool	API / Integration
+Outlook Kalender	Microsoft Graph API: /calendar, /events
+Outlook E-Mail	Microsoft Graph API: /mailFolders, /messages
+OneDrive	Microsoft Graph API: /me/drive
+KI-Unterstützung	OpenAI GPT-4 API für Textgenerierung & Vorschläge
+Authentifizierung	Microsoft OAuth2 (mit persistierendem Token)
+3. 👤 User Stories & Requirements
+3.1 User Flow (End-to-End)
+
+Login via Microsoft-Konto
+
+Dashboard zeigt: Heute, Kalender, neue E-Mails, To-dos
+
+Navigation über Sidebar
+
+Inhalt: E-Mail schreiben, Termin erstellen, To-do abhaken, Notiz anlegen
+
+Assistent: GPT-Chat mit Kontext zu E-Mail, Kalender, To-dos
+
+3.2 User Stories & Anforderungen
+ID	User Story	Anforderungen	Priorität	Task (ClickUp)	Notizen
+US-001	Login mit Microsoft-Konto	OAuth2 mit Token-Speicherung	Hoch	Auth-Flow Setup	Nur 1 Nutzer nötig
+US-002	Kalender verwalten	Graph API: Events lesen/schreiben	Hoch	Kalender-UI + API	Tages- & Wochenansicht
+US-003	E-Mails verwalten	Mail-Listing, Details, Schreiben, Antworten	Hoch	Mail-Module + GPT	GPT für Mail-Vorschläge
+US-004	To-dos managen	Erstellen, abhaken, löschen (lokal oder MS To Do)	Mittel	To-do-Komponente	Optional: Speicherung
+US-005	Notizen speichern	Editor + Speichern via OneDrive API	Mittel	Notiz-Modul	Markdown optional
+US-006	KI-Kommunikation	GPT mit Kontextverarbeitung (Mails, Kalender, etc.)	Hoch	Assistent-Bot bauen	Textvorschläge, Planung
+US-007	Tägliche Zusammenfassung	KI analysiert Kalender & To-dos	Mittel	Tagesbericht-Funktion	Auf Knopfdruck
+US-008	OneDrive-Dateien browsen	Dateibaum + API-Zugriff	Niedrig	Datei-Browser	Für spätere Ausbaustufe
+3.3 Geplante KI-Funktionen
+Funktion	Beschreibung	Kontextquelle
+Mail-Vorschläge	GPT erstellt Antwortvorschläge	Outlook Mail
+Tagesplan generieren	KI plant Tag basierend auf Kalender & To-dos	Kalender, To-dos
+Aufgaben aus Notizen	GPT extrahiert Tasks aus Texten	Notizen
+Zusammenfassungen	GPT fasst Mails oder Wochenabläufe zusammen	E-Mail, Kalender
+4. 🖥️ UI Layout (Vorschlag)
+
+Sidebar (links): Kalender, Mail, To-dos, Notizen, Assistent
+
+Hauptansicht (rechts): Inhalte je nach gewähltem Modul
+
+Oben rechts: Datum, „Tagesüberblick“-Button, Logout
+
+Assistent (Chatbot): Überlagertes Panel, Zugriff auf Kontext
