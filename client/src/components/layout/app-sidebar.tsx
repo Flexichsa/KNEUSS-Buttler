@@ -10,10 +10,9 @@ import {
   LayoutDashboard, 
   Settings,
   LogOut,
-  Plus
+  Sparkles
 } from "lucide-react";
-import { useState } from "react";
-import logoImage from "@assets/logo_1766060914666.png";
+import { useTodos } from "@/hooks/use-todos";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   activeTab: string;
@@ -21,36 +20,33 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function AppSidebar({ className, activeTab, setActiveTab }: SidebarProps) {
+  const { data: todos = [] } = useTodos();
+  const pendingTasks = todos.filter(t => !t.completed).length;
+
   const menuItems = [
-    { id: "dashboard", icon: LayoutDashboard, label: "Overview" },
-    { id: "calendar", icon: Calendar, label: "Calendar" },
-    { id: "mail", icon: Mail, label: "Mail" },
-    { id: "todos", icon: CheckSquare, label: "Tasks" },
-    { id: "notes", icon: FileText, label: "Notes" },
-    { id: "assistant", icon: MessageSquare, label: "Assistant" },
-    { id: "settings", icon: Settings, label: "Settings" },
+    { id: "dashboard", icon: LayoutDashboard, label: "Übersicht" },
+    { id: "calendar", icon: Calendar, label: "Kalender" },
+    { id: "mail", icon: Mail, label: "E-Mails" },
+    { id: "todos", icon: CheckSquare, label: "Aufgaben" },
+    { id: "notes", icon: FileText, label: "Notizen" },
+    { id: "assistant", icon: MessageSquare, label: "Assistent" },
+    { id: "settings", icon: Settings, label: "Einstellungen" },
   ];
 
   return (
-    <div className={cn("pb-12 w-64 border-r bg-sidebar flex flex-col h-screen fixed left-0 top-0", className)}>
-      <div className="space-y-4 py-6">
-        <div className="px-6 py-2 flex items-center gap-3">
-          <img 
-            src={logoImage} 
-            alt="Kneuss Logo" 
-            className="h-10 w-auto object-contain" 
-            data-testid="img-logo"
-          />
-        </div>
-        
-        <div className="px-3 py-2">
+    <div className={cn(
+      "hidden lg:flex pb-12 w-64 border-r bg-sidebar flex-col fixed left-0 top-16 h-[calc(100vh-4rem)] z-40", 
+      className
+    )}>
+      <ScrollArea className="flex-1">
+        <div className="px-3 py-4">
           <div className="space-y-1">
             {menuItems.map((item) => (
               <Button
                 key={item.id}
                 variant={activeTab === item.id ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3 font-medium",
+                  "w-full justify-start gap-3 font-medium h-10",
                   activeTab === item.id 
                     ? "bg-white shadow-sm text-primary hover:bg-white" 
                     : "text-muted-foreground hover:text-foreground hover:bg-white/50"
@@ -64,21 +60,37 @@ export function AppSidebar({ className, activeTab, setActiveTab }: SidebarProps)
             ))}
           </div>
         </div>
-      </div>
+      </ScrollArea>
 
-      <div className="mt-auto px-3 py-6">
-        <div className="mx-3 p-4 bg-white rounded-lg border shadow-sm mb-4">
-          <p className="text-xs font-medium text-muted-foreground mb-2">Daily Summary</p>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
-            <span className="text-sm font-semibold">On Track</span>
+      <div className="px-3 py-4 border-t">
+        <div className="mx-1 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/10 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <p className="text-xs font-semibold text-primary">Tagesbericht</p>
           </div>
-          <p className="text-xs text-muted-foreground">3 tasks remaining today</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className={cn(
+              "w-2 h-2 rounded-full",
+              pendingTasks === 0 ? "bg-green-500" : pendingTasks < 3 ? "bg-yellow-500" : "bg-orange-500"
+            )}></span>
+            <span className="text-sm font-semibold">
+              {pendingTasks === 0 ? "Alles erledigt!" : pendingTasks < 3 ? "Fast fertig" : "In Arbeit"}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {pendingTasks === 0 
+              ? "Keine offenen Aufgaben" 
+              : `${pendingTasks} Aufgabe${pendingTasks !== 1 ? 'n' : ''} offen`
+            }
+          </p>
         </div>
 
-        <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive h-10"
+        >
           <LogOut className="h-4 w-4" />
-          Logout
+          Abmelden
         </Button>
       </div>
     </div>
