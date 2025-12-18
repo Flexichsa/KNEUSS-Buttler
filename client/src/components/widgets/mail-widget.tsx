@@ -1,39 +1,26 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Mail, Paperclip, ArrowUpRight, Clock } from "lucide-react";
+import { Mail, Paperclip, ArrowUpRight, Clock, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useOutlookEmails } from "@/hooks/use-outlook";
+import { format, formatDistanceToNow } from "date-fns";
 
 export function MailWidget() {
-  const mails = [
-    {
-      id: 1,
-      sender: "Microsoft Outlook Team",
-      subject: "Welcome to your new minimalist assistant",
-      preview: "Discover how to make the most of your new dashboard...",
-      time: "10:42",
-      unread: true,
-      tag: "Important"
-    },
-    {
-      id: 2,
-      sender: "Project Manager",
-      subject: "Q4 Roadmap Review Documents",
-      preview: "Please review the attached PDF before our meeting...",
-      time: "09:15",
-      unread: true,
-      hasAttachment: true,
-      tag: "Work"
-    },
-    {
-      id: 3,
-      sender: "HR Department",
-      subject: "Holiday Schedule Update",
-      preview: "The office will be closed on the following dates...",
-      time: "Yesterday",
-      unread: false,
-      tag: "General"
+  const { data: emails = [], isLoading, error } = useOutlookEmails(10);
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return format(date, 'HH:mm');
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return format(date, 'MMM dd');
     }
-  ];
+  };
 
   return (
     <Card className="h-full border-none shadow-sm bg-white overflow-hidden">
@@ -43,50 +30,69 @@ export function MailWidget() {
            <CardTitle className="text-lg font-bold tracking-tight text-foreground">Inbox</CardTitle>
         </div>
         <div className="flex items-center gap-2">
-           <Badge variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/10">3 Unread</Badge>
+           {emails.length > 0 && (
+             <Badge variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/10">
+               {emails.filter(e => !e.isRead).length} Unread
+             </Badge>
+           )}
            <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-white hover:text-primary">
             <ArrowUpRight className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
       <CardContent className="px-0 py-0">
-        {mails.map((mail, index) => (
-          <div 
-            key={mail.id} 
-            className={`
-              relative p-5 transition-all cursor-pointer group hover:bg-secondary/30
-              ${index !== mails.length - 1 ? 'border-b border-border/50' : ''}
-              ${mail.unread ? 'bg-primary/[0.02]' : 'bg-white'}
-            `}
-            data-testid={`card-mail-${mail.id}`}
-          >
-            <div className="flex justify-between items-start mb-1.5">
-              <div className="flex items-center gap-2">
-                {mail.unread && <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>}
-                <h4 className={`text-sm ${mail.unread ? 'font-bold text-foreground' : 'font-medium text-foreground/80'}`}>{mail.sender}</h4>
-              </div>
-              <span className="text-[10px] text-muted-foreground font-mono">{mail.time}</span>
-            </div>
-            
-            <h5 className="text-sm font-medium text-foreground/90 mb-1 flex items-center gap-2">
-              {mail.subject}
-              {mail.hasAttachment && <Paperclip className="h-3 w-3 text-muted-foreground" />}
-            </h5>
-            
-            <p className="text-xs text-muted-foreground line-clamp-1 mb-2 max-w-[90%]">{mail.preview}</p>
-            
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] h-5 border-border text-muted-foreground font-normal">
-                {mail.tag}
-              </Badge>
-            </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ))}
-        <div className="p-3 text-center">
-          <Button variant="ghost" size="sm" className="text-xs text-muted-foreground w-full hover:text-primary">
-            View all messages
-          </Button>
-        </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+            <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">
+              Connect Outlook in Settings to view emails
+            </p>
+          </div>
+        ) : emails.length === 0 ? (
+          <div className="text-center py-12 text-sm text-muted-foreground">
+            No emails found
+          </div>
+        ) : (
+          <>
+            {emails.slice(0, 5).map((mail, index) => (
+              <div 
+                key={mail.id} 
+                className={`
+                  relative p-5 transition-all cursor-pointer group hover:bg-secondary/30
+                  ${index !== Math.min(4, emails.length - 1) ? 'border-b border-border/50' : ''}
+                  ${!mail.isRead ? 'bg-primary/[0.02]' : 'bg-white'}
+                `}
+                data-testid={`card-mail-${mail.id}`}
+              >
+                <div className="flex justify-between items-start mb-1.5">
+                  <div className="flex items-center gap-2">
+                    {!mail.isRead && <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>}
+                    <h4 className={`text-sm ${!mail.isRead ? 'font-bold text-foreground' : 'font-medium text-foreground/80'}`}>
+                      {mail.sender}
+                    </h4>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-mono">{formatTime(mail.receivedDateTime)}</span>
+                </div>
+                
+                <h5 className="text-sm font-medium text-foreground/90 mb-1 flex items-center gap-2">
+                  {mail.subject}
+                  {mail.hasAttachments && <Paperclip className="h-3 w-3 text-muted-foreground" />}
+                </h5>
+                
+                <p className="text-xs text-muted-foreground line-clamp-1 mb-2 max-w-[90%]">{mail.preview}</p>
+              </div>
+            ))}
+            <div className="p-3 text-center">
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground w-full hover:text-primary">
+                View all messages ({emails.length})
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
