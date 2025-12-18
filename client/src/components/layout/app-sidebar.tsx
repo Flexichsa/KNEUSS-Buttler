@@ -28,6 +28,7 @@ export function AppSidebar({ className, activeTab, setActiveTab }: SidebarProps)
     { id: "todos", icon: CheckSquare, label: "Tasks" },
     { id: "notes", icon: FileText, label: "Notes" },
     { id: "assistant", icon: MessageSquare, label: "Assistant" },
+    { id: "settings", icon: Settings, label: "Settings" },
   ];
 
   return (
