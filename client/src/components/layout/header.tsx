@@ -20,7 +20,7 @@ interface HeaderProps {
 
 export default function Header({ 
   title = "KNEUSS",
-  subtitle = "Digital Assistant",
+  subtitle = "Digitaler Assistent",
   onMenuClick
 }: HeaderProps) {
   const [location] = useLocation();
@@ -60,7 +60,7 @@ export default function Header({
           </Link>
         </div>
         
-        {/* Rechte Seite: Notifications & User-Dropdown */}
+        {/* Rechte Seite: Benachrichtigungen & Benutzer-Dropdown */}
         <div className="flex items-center gap-2 sm:gap-4">
           <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full">
             <Bell className="h-5 w-5" />

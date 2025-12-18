@@ -26,16 +26,16 @@ export function TodoWidget() {
     <Card className="h-full border-none shadow-sm bg-white overflow-hidden flex flex-col">
       <CardHeader className="px-6 py-5 border-b bg-secondary/10 flex flex-row items-center justify-between space-y-0">
         <div className="flex flex-col gap-1">
-           <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Tasks</span>
+           <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Aufgaben</span>
            <CardTitle className="text-lg font-bold tracking-tight text-foreground">
-             {todos.filter(t => !t.completed).length} pending
+             {todos.filter(t => !t.completed).length} offen
            </CardTitle>
         </div>
       </CardHeader>
       <CardContent className="px-6 py-4 space-y-4 flex-1 overflow-y-auto">
         <form onSubmit={handleAddTodo} className="relative">
           <Input 
-            placeholder="Add a new task..." 
+            placeholder="Neue Aufgabe hinzufügen..." 
             className="pr-8 bg-secondary/30 border-transparent shadow-none focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:bg-white transition-all"
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
@@ -61,7 +61,7 @@ export function TodoWidget() {
           </div>
         ) : todos.length === 0 ? (
           <div className="text-center py-8 text-sm text-muted-foreground">
-            No tasks yet. Add one above!
+            Noch keine Aufgaben. Füge oben eine hinzu!
           </div>
         ) : (
           <div className="space-y-2">

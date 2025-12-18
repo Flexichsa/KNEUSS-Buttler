@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Mail, Paperclip, ArrowUpRight, Clock, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useOutlookEmails } from "@/hooks/use-outlook";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 export function MailWidget() {
   const { data: emails = [], isLoading, error } = useOutlookEmails(10);
@@ -16,9 +17,9 @@ export function MailWidget() {
     if (diffInHours < 24) {
       return format(date, 'HH:mm');
     } else if (diffInHours < 48) {
-      return 'Yesterday';
+      return 'Gestern';
     } else {
-      return format(date, 'MMM dd');
+      return format(date, 'dd. MMM', { locale: de });
     }
   };
 
@@ -27,12 +28,12 @@ export function MailWidget() {
       <CardHeader className="px-6 py-5 border-b bg-secondary/10 flex flex-row items-center justify-between space-y-0">
         <div className="flex flex-col gap-1">
            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Outlook</span>
-           <CardTitle className="text-lg font-bold tracking-tight text-foreground">Inbox</CardTitle>
+           <CardTitle className="text-lg font-bold tracking-tight text-foreground">Posteingang</CardTitle>
         </div>
         <div className="flex items-center gap-2">
            {emails.length > 0 && (
              <Badge variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/10">
-               {emails.filter(e => !e.isRead).length} Unread
+               {emails.filter(e => !e.isRead).length} Ungelesen
              </Badge>
            )}
            <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-white hover:text-primary">
@@ -49,12 +50,12 @@ export function MailWidget() {
           <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
             <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              Connect Outlook in Settings to view emails
+              Verbinde Outlook in den Einstellungen um E-Mails zu sehen
             </p>
           </div>
         ) : emails.length === 0 ? (
           <div className="text-center py-12 text-sm text-muted-foreground">
-            No emails found
+            Keine E-Mails gefunden
           </div>
         ) : (
           <>
@@ -88,7 +89,7 @@ export function MailWidget() {
             ))}
             <div className="p-3 text-center">
               <Button variant="ghost" size="sm" className="text-xs text-muted-foreground w-full hover:text-primary">
-                View all messages ({emails.length})
+                Alle Nachrichten anzeigen ({emails.length})
               </Button>
             </div>
           </>

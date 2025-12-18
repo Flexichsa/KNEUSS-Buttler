@@ -4,6 +4,7 @@ import { Plus, Clock, Video, MapPin, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useOutlookEvents } from "@/hooks/use-outlook";
 import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 export function CalendarWidget() {
   const { data: events = [], isLoading, error } = useOutlookEvents();
@@ -16,9 +17,9 @@ export function CalendarWidget() {
     <Card className="h-full border-none shadow-sm bg-white overflow-hidden flex flex-col">
       <CardHeader className="px-6 py-5 border-b bg-secondary/10 flex flex-row items-center justify-between space-y-0">
         <div className="flex flex-col gap-1">
-           <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Schedule</span>
+           <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Termine</span>
            <CardTitle className="text-lg font-bold tracking-tight text-foreground">
-             Today, {format(new Date(), 'MMM dd')}
+             Heute, {format(new Date(), 'dd. MMM', { locale: de })}
            </CardTitle>
         </div>
         <Button size="icon" variant="outline" className="h-8 w-8 rounded-full border-dashed border-muted-foreground/30 hover:border-primary hover:text-primary transition-colors">
@@ -34,12 +35,12 @@ export function CalendarWidget() {
           <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
             <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              Connect Outlook in Settings to view calendar
+              Verbinde Outlook in den Einstellungen um den Kalender zu sehen
             </p>
           </div>
         ) : events.length === 0 ? (
           <div className="text-center py-12 text-sm text-muted-foreground">
-            No events scheduled for today
+            Keine Termine für heute geplant
           </div>
         ) : (
           <>
@@ -64,7 +65,7 @@ export function CalendarWidget() {
                     {event.isOnlineMeeting && event.onlineMeetingUrl ? (
                        <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium">
                          <Video className="h-3 w-3" />
-                         <span>Teams Meeting</span>
+                         <span>Teams-Besprechung</span>
                        </div>
                     ) : event.location ? (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -79,7 +80,7 @@ export function CalendarWidget() {
             
             {events.length < 5 && (
                <div className="mx-4 mt-2 p-3 rounded border border-dashed text-center text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/50 cursor-pointer transition-all">
-                 Free slot available
+                 Freier Termin verfügbar
                </div>
             )}
           </>

@@ -13,15 +13,15 @@ export function SettingsView() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">Manage your integrations and preferences</p>
+        <h2 className="text-2xl font-bold tracking-tight">Einstellungen</h2>
+        <p className="text-muted-foreground">Integrationen und Einstellungen verwalten</p>
       </div>
 
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Integrations</CardTitle>
-            <CardDescription>Connect your external accounts to enable AI features.</CardDescription>
+            <CardTitle>Integrationen</CardTitle>
+            <CardDescription>Verbinde deine externen Konten um KI-Funktionen zu aktivieren.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Microsoft Outlook Integration */}
@@ -38,15 +38,15 @@ export function SettingsView() {
                     ) : isConnected ? (
                       <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 gap-1">
                         <Check className="h-3 w-3" />
-                        Connected
+                        Verbunden
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">
-                        Not Connected
+                        Nicht verbunden
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">Sync emails, calendar events, and contacts</p>
+                  <p className="text-sm text-muted-foreground">E-Mails, Kalendertermine und Kontakte synchronisieren</p>
                 </div>
               </div>
               
@@ -56,14 +56,14 @@ export function SettingsView() {
                     <Button variant="outline" size="sm" asChild>
                       <a href="/connections" target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Manage
+                        Verwalten
                       </a>
                     </Button>
                   </div>
                 ) : (
                   <Button size="sm" asChild>
                     <a href="/connections" target="_blank" rel="noopener noreferrer">
-                      Connect Outlook
+                      Outlook verbinden
                     </a>
                   </Button>
                 )}
@@ -78,10 +78,10 @@ export function SettingsView() {
                 </div>
                 <div>
                   <h3 className="font-semibold">Microsoft OneDrive</h3>
-                  <p className="text-sm text-muted-foreground">Access your files and documents</p>
+                  <p className="text-sm text-muted-foreground">Zugriff auf Dateien und Dokumente</p>
                 </div>
               </div>
-              <Button variant="outline" disabled>Coming Soon</Button>
+              <Button variant="outline" disabled>Kommt bald</Button>
             </div>
           </CardContent>
         </Card>
@@ -90,21 +90,21 @@ export function SettingsView() {
         {isConnected && (
           <Card className="animate-in fade-in slide-in-from-top-2">
             <CardHeader>
-              <CardTitle>Sync Preferences</CardTitle>
-              <CardDescription>Choose what data you want to share with the Assistant.</CardDescription>
+              <CardTitle>Synchronisierungs-Einstellungen</CardTitle>
+              <CardDescription>Wähle welche Daten du mit dem Assistenten teilen möchtest.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="sync-emails">Sync Emails</Label>
+                  <Label htmlFor="sync-emails">E-Mails synchronisieren</Label>
                 </div>
                 <Switch id="sync-emails" defaultChecked />
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="sync-calendar">Sync Calendar</Label>
+                  <Label htmlFor="sync-calendar">Kalender synchronisieren</Label>
                 </div>
                 <Switch id="sync-calendar" defaultChecked />
               </div>
@@ -112,7 +112,7 @@ export function SettingsView() {
               <div className="bg-blue-50 text-blue-800 p-3 rounded-md text-xs flex gap-2 items-start mt-4">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <p>
-                  Your data is processed securely. The AI Assistant only accesses emails and events when you explicitly ask about them or enable proactive summaries.
+                  Deine Daten werden sicher verarbeitet. Der KI-Assistent greift nur auf E-Mails und Termine zu, wenn du explizit danach fragst oder proaktive Zusammenfassungen aktivierst.
                 </p>
               </div>
             </CardContent>
@@ -125,10 +125,10 @@ export function SettingsView() {
               <div className="flex items-start gap-3 text-sm text-muted-foreground">
                 <AlertCircle className="h-5 w-5 mt-0.5" />
                 <div>
-                  <p className="font-medium text-foreground mb-1">Connect Outlook to get started</p>
+                  <p className="font-medium text-foreground mb-1">Verbinde Outlook um zu beginnen</p>
                   <p>
-                    Once connected, your calendar and email data will be accessible to the AI assistant. 
-                    You'll be able to ask questions about your schedule, get email summaries, and receive intelligent suggestions.
+                    Nach der Verbindung sind deine Kalender- und E-Mail-Daten für den KI-Assistenten verfügbar. 
+                    Du kannst dann Fragen zu deinem Zeitplan stellen, E-Mail-Zusammenfassungen erhalten und intelligente Vorschläge bekommen.
                   </p>
                 </div>
               </div>
