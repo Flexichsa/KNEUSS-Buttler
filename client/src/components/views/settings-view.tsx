@@ -3,35 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Check, Mail, Calendar, Loader2, AlertCircle } from "lucide-react";
-import { useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { Check, Mail, Calendar, Loader2, AlertCircle, ExternalLink } from "lucide-react";
+import { useOutlookStatus } from "@/hooks/use-outlook";
 
 export function SettingsView() {
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-
-  const handleConnect = () => {
-    setIsConnecting(true);
-    // Simulate API delay
-    setTimeout(() => {
-      setIsConnecting(false);
-      setIsConnected(true);
-      toast({
-        title: "Outlook Connected",
-        description: "Your emails and calendar are now syncing.",
-      });
-    }, 2000);
-  };
-
-  const handleDisconnect = () => {
-    setIsConnected(false);
-    toast({
-      title: "Outlook Disconnected",
-      description: "Synchronization has been paused.",
-      variant: "destructive",
-    });
-  };
+  const { data: status, isLoading } = useOutlookStatus();
+  const isConnected = status?.connected ?? false;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -56,10 +33,16 @@ export function SettingsView() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">Microsoft Outlook</h3>
-                    {isConnected && (
+                    {isLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    ) : isConnected ? (
                       <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 gap-1">
                         <Check className="h-3 w-3" />
                         Connected
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">
+                        Not Connected
                       </Badge>
                     )}
                   </div>
@@ -69,19 +52,19 @@ export function SettingsView() {
               
               <div>
                 {isConnected ? (
-                  <Button variant="outline" onClick={handleDisconnect} className="text-destructive hover:text-destructive hover:bg-destructive/5">
-                    Disconnect
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="/connections" target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Manage
+                      </a>
+                    </Button>
+                  </div>
                 ) : (
-                  <Button onClick={handleConnect} disabled={isConnecting}>
-                    {isConnecting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Connecting...
-                      </>
-                    ) : (
-                      "Connect Outlook"
-                    )}
+                  <Button size="sm" asChild>
+                    <a href="/connections" target="_blank" rel="noopener noreferrer">
+                      Connect Outlook
+                    </a>
                   </Button>
                 )}
               </div>
@@ -131,6 +114,23 @@ export function SettingsView() {
                 <p>
                   Your data is processed securely. The AI Assistant only accesses emails and events when you explicitly ask about them or enable proactive summaries.
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isConnected && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                <AlertCircle className="h-5 w-5 mt-0.5" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Connect Outlook to get started</p>
+                  <p>
+                    Once connected, your calendar and email data will be accessible to the AI assistant. 
+                    You'll be able to ask questions about your schedule, get email summaries, and receive intelligent suggestions.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>

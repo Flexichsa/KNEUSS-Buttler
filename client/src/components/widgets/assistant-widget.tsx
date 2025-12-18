@@ -2,43 +2,64 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, Sparkles, User, MoreHorizontal } from "lucide-react";
+import { Send, Bot, Sparkles, User, MoreHorizontal, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAssistantChat } from "@/hooks/use-assistant";
+
+interface Message {
+  id: number;
+  role: 'user' | 'assistant';
+  text: string;
+}
 
 export function AssistantWidget() {
-  const [messages, setMessages] = useState([
-    { id: 1, role: 'assistant', text: "Good morning! I've analyzed your Outlook calendar. You have 3 meetings today. Should I prioritize your unread emails from the Project Manager?" },
+  const [messages, setMessages] = useState<Message[]>([
+    { id: 1, role: 'assistant', text: "Good morning! I'm connected to your Outlook calendar and emails. I can help you manage your day, draft emails, or answer questions. What would you like to know?" },
   ]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const chat = useAssistantChat();
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isTyping]);
+  }, [messages, chat.isPending]);
 
-  const sendMessage = (e: React.FormEvent) => {
+  const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || chat.isPending) return;
     
-    const userMsg = { id: Date.now(), role: 'user', text: input };
-    setMessages([...messages, userMsg]);
+    const userMsg: Message = { id: Date.now(), role: 'user', text: input };
+    setMessages(prev => [...prev, userMsg]);
     setInput("");
-    setIsTyping(true);
 
-    // Simulate response
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages(prev => [...prev, { 
-        id: Date.now() + 1, 
-        role: 'assistant', 
-        text: "I've drafted a reply to the Project Manager confirming your review. It's in your Drafts folder. Anything else?" 
+    // Prepare messages for API
+    const apiMessages = [...messages, userMsg].map(m => ({
+      role: m.role,
+      content: m.text
+    }));
+
+    try {
+      const response = await chat.mutateAsync({
+        messages: apiMessages,
+        includeContext: true
+      });
+      
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'assistant',
+        text: response
       }]);
-    }, 1500);
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'assistant',
+        text: "I apologize, but I encountered an error. Please try again."
+      }]);
+    }
   };
 
   return (
@@ -95,7 +116,7 @@ export function AssistantWidget() {
               ))}
             </AnimatePresence>
             
-            {isTyping && (
+            {chat.isPending && (
               <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }}
@@ -122,17 +143,22 @@ export function AssistantWidget() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about your schedule, emails, or tasks..." 
             className="bg-secondary/30 border-transparent shadow-none focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:bg-white transition-all h-11"
+            disabled={chat.isPending}
           />
           <Button 
             type="submit" 
             size="icon" 
             className={cn(
               "shrink-0 h-11 w-11 rounded-lg transition-all shadow-sm",
-              input.trim() ? "bg-primary hover:bg-primary/90 text-white" : "bg-muted text-muted-foreground"
+              input.trim() && !chat.isPending ? "bg-primary hover:bg-primary/90 text-white" : "bg-muted text-muted-foreground"
             )}
-            disabled={!input.trim()}
+            disabled={!input.trim() || chat.isPending}
           >
-            <Send className="h-5 w-5" />
+            {chat.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
           </Button>
         </form>
       </CardFooter>
