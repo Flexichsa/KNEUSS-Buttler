@@ -61,21 +61,10 @@ export function SettingsView() {
               </div>
               
               <div>
-                {isConnected ? (
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <a href="/connections" target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Konto wechseln
-                      </a>
-                    </Button>
-                  </div>
-                ) : (
-                  <Button size="sm" asChild>
-                    <a href="/connections" target="_blank" rel="noopener noreferrer">
-                      Outlook verbinden
-                    </a>
-                  </Button>
+                {!isConnected && (
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                    Verbindung in Replit erforderlich
+                  </Badge>
                 )}
               </div>
             </div>
@@ -125,10 +114,13 @@ export function SettingsView() {
               
               <div className="bg-amber-50 text-amber-800 p-3 rounded-md text-xs flex gap-2 items-start mt-4">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <p>
-                  Wenn du ein anderes Konto verbinden möchtest (z.B. dein persönliches Arbeitskonto), 
-                  klicke auf "Konto wechseln" und melde dich mit dem gewünschten Microsoft-Konto an.
-                </p>
+                <div>
+                  <p className="font-medium mb-1">Konto wechseln</p>
+                  <p>
+                    Um ein anderes Microsoft-Konto zu verbinden, musst du im Replit-Editor auf "Connections" 
+                    im linken Panel klicken und dort die Outlook-Verbindung neu konfigurieren.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
