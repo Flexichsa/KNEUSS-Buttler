@@ -61,3 +61,23 @@ export function useOutlookEvents() {
     refetchInterval: 300000, // Refetch every 5 minutes
   });
 }
+
+interface OutlookUserInfo {
+  email: string;
+  displayName: string;
+  calendars: string[];
+}
+
+export function useOutlookUserInfo() {
+  const { data: status } = useOutlookStatus();
+  
+  return useQuery({
+    queryKey: ['outlook', 'user'],
+    queryFn: async () => {
+      const res = await fetch('/api/outlook/user');
+      if (!res.ok) throw new Error('Failed to fetch user info');
+      return res.json() as Promise<OutlookUserInfo>;
+    },
+    enabled: status?.connected ?? false,
+  });
+}
