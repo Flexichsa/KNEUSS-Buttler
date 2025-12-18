@@ -1,0 +1,79 @@
+# Personal Digital Assistant WebApp
+
+## Overview
+
+A browser-based personal productivity dashboard that integrates Microsoft Outlook (email, calendar), AI assistance, to-do management, and notes into a single unified interface. The application is designed as a personal assistant tool that consolidates daily digital tasks and provides AI-powered suggestions and summaries.
+
+The core purpose is to eliminate context-switching between different productivity tools by providing:
+- Outlook calendar and email integration via Microsoft Graph API
+- GPT-powered AI assistant for text generation and task suggestions
+- Local to-do and notes management with PostgreSQL storage
+- Clean, minimalist dashboard interface
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter for lightweight client-side routing
+- **State Management**: TanStack Query (React Query) for server state and caching
+- **Styling**: Tailwind CSS v4 with shadcn/ui component library (New York style)
+- **Animations**: Framer Motion for smooth UI transitions
+- **Build Tool**: Vite with custom plugins for Replit integration
+
+The frontend follows a widget-based dashboard pattern where each major feature (calendar, mail, todos, assistant) is encapsulated in its own widget component under `client/src/components/widgets/`.
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js
+- **Language**: TypeScript with ESM modules
+- **API Design**: RESTful endpoints under `/api/` prefix
+- **Development**: Hot module replacement via Vite middleware in development
+
+The server acts as a proxy for external services (Microsoft Graph, OpenAI) and manages local data persistence. Routes are registered in `server/routes.ts`.
+
+### Data Storage
+- **Database**: PostgreSQL via Drizzle ORM
+- **Schema Location**: `shared/schema.ts` (shared between client and server)
+- **Migrations**: Drizzle Kit with `db:push` command
+- **Tables**: Users, Todos, Notes with timestamps
+
+Schema validation uses Zod via drizzle-zod for type-safe insert operations.
+
+### Authentication & External Services
+- **Microsoft Integration**: OAuth2 via Replit Connectors for Outlook access
+- **Outlook Client**: Microsoft Graph API client (`@microsoft/microsoft-graph-client`)
+- **AI Integration**: OpenAI GPT-4o-mini via Replit AI Integrations
+- **Token Management**: Access tokens retrieved from Replit Connectors API with automatic refresh
+
+### Build & Deployment
+- **Development**: `npm run dev` starts Express with Vite middleware
+- **Production Build**: Custom esbuild script bundles server, Vite builds client
+- **Output**: Server bundle to `dist/index.cjs`, client assets to `dist/public/`
+
+## External Dependencies
+
+### Microsoft Graph API
+- Used for Outlook email reading (`/mailFolders`, `/messages`)
+- Calendar event management (`/calendar`, `/events`)
+- OneDrive file storage (`/me/drive`)
+- Authentication via Replit Connectors OAuth2 flow
+
+### OpenAI API
+- Model: GPT-4o-mini for chat completions
+- Used for AI assistant chat, email drafting, and content summarization
+- Accessed via Replit AI Integrations (custom base URL)
+
+### PostgreSQL Database
+- Connection via `DATABASE_URL` environment variable
+- Uses `pg` driver with Drizzle ORM
+- Session storage with `connect-pg-simple`
+
+### Required Environment Variables
+- `DATABASE_URL`: PostgreSQL connection string
+- `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API key from Replit integrations
+- `AI_INTEGRATIONS_OPENAI_BASE_URL`: OpenAI base URL from Replit integrations
+- `REPLIT_CONNECTORS_HOSTNAME`: For Microsoft OAuth token retrieval
+- `REPL_IDENTITY` or `WEB_REPL_RENEWAL`: For Replit authentication
