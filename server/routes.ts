@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTodoSchema, insertNoteSchema } from "@shared/schema";
-import { getEmails, getTodayEvents, isOutlookConnected } from "./outlook";
+import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo } from "./outlook";
 import { chatCompletion, summarizeEmails } from "./openai";
 
 export async function registerRoutes(
@@ -38,6 +38,16 @@ export async function registerRoutes(
       res.json(events);
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to fetch events" });
+    }
+  });
+
+  // Debug: Get connected user info
+  app.get("/api/outlook/user", async (req, res) => {
+    try {
+      const userInfo = await getOutlookUserInfo();
+      res.json(userInfo);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch user info" });
     }
   });
 

@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Check, Mail, Calendar, Loader2, AlertCircle, ExternalLink } from "lucide-react";
-import { useOutlookStatus } from "@/hooks/use-outlook";
+import { Check, Mail, Calendar, Loader2, AlertCircle, ExternalLink, User } from "lucide-react";
+import { useOutlookStatus, useOutlookUserInfo } from "@/hooks/use-outlook";
 
 export function SettingsView() {
   const { data: status, isLoading } = useOutlookStatus();
+  const { data: userInfo, isLoading: userLoading } = useOutlookUserInfo();
   const isConnected = status?.connected ?? false;
 
   return (
@@ -46,7 +47,16 @@ export function SettingsView() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">E-Mails, Kalendertermine und Kontakte synchronisieren</p>
+                  {isConnected && userInfo ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <User className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        {userInfo.displayName} ({userInfo.email})
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">E-Mails, Kalendertermine und Kontakte synchronisieren</p>
+                  )}
                 </div>
               </div>
               
@@ -56,7 +66,7 @@ export function SettingsView() {
                     <Button variant="outline" size="sm" asChild>
                       <a href="/connections" target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Verwalten
+                        Konto wechseln
                       </a>
                     </Button>
                   </div>
@@ -85,6 +95,44 @@ export function SettingsView() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Connected Account Info */}
+        {isConnected && userInfo && (
+          <Card className="animate-in fade-in slide-in-from-top-2">
+            <CardHeader>
+              <CardTitle>Verbundenes Konto</CardTitle>
+              <CardDescription>Details zum verbundenen Microsoft-Konto.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">Name</p>
+                  <p className="font-medium">{userInfo.displayName}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">E-Mail</p>
+                  <p className="font-medium">{userInfo.email}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase">Verfügbare Kalender</p>
+                <div className="flex flex-wrap gap-2">
+                  {userInfo.calendars.map((cal, i) => (
+                    <Badge key={i} variant="secondary">{cal}</Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-amber-50 text-amber-800 p-3 rounded-md text-xs flex gap-2 items-start mt-4">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <p>
+                  Wenn du ein anderes Konto verbinden möchtest (z.B. dein persönliches Arbeitskonto), 
+                  klicke auf "Konto wechseln" und melde dich mit dem gewünschten Microsoft-Konto an.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Sync Settings */}
         {isConnected && (
