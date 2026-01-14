@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Bitcoin, Cloud } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud } from "lucide-react";
 
 export interface WidgetDefinition {
   id: string;
@@ -24,7 +24,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
   { id: "todo", name: "Aufgaben", icon: <CheckSquare className="h-4 w-4" />, defaultSize: { w: 6, h: 4 }, minSize: { w: 3, h: 3 } },
   { id: "mail", name: "E-Mails", icon: <Mail className="h-4 w-4" />, defaultSize: { w: 8, h: 4 }, minSize: { w: 4, h: 3 } },
   { id: "assistant", name: "AI Assistent", icon: <MessageSquare className="h-4 w-4" />, defaultSize: { w: 4, h: 6 }, minSize: { w: 3, h: 4 } },
-  { id: "btc", name: "Bitcoin Kurs", icon: <Bitcoin className="h-4 w-4" />, defaultSize: { w: 4, h: 3 }, minSize: { w: 3, h: 2 } },
+  { id: "btc", name: "Krypto Kurse", icon: <Coins className="h-4 w-4" />, defaultSize: { w: 4, h: 4 }, minSize: { w: 3, h: 3 } },
   { id: "weather", name: "Wetter", icon: <Cloud className="h-4 w-4" />, defaultSize: { w: 4, h: 3 }, minSize: { w: 3, h: 2 } },
 ];
 

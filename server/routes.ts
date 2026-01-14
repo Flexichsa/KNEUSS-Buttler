@@ -6,7 +6,7 @@ import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getE
 import { chatCompletion, summarizeEmails } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
 
-const btcCache: { price: number | null; timestamp: number } = { price: null, timestamp: 0 };
+const cryptoCache: Map<string, { data: any; timestamp: number }> = new Map();
 const weatherCache: Map<string, { data: any; timestamp: number }> = new Map();
 
 export async function registerRoutes(
@@ -305,20 +305,68 @@ export async function registerRoutes(
     }
   });
 
-  // Bitcoin Price (CoinGecko API - no key required)
+  // Crypto Prices (CoinGecko API - no key required)
+  app.get("/api/crypto", async (req, res) => {
+    try {
+      const now = Date.now();
+      const cacheKey = "all_crypto";
+      const cached = cryptoCache.get(cacheKey);
+      
+      if (cached && now - cached.timestamp < 60000) {
+        return res.json({ ...cached.data, cached: true });
+      }
+      
+      const coins = "bitcoin,ethereum,solana,dogecoin,cardano,ripple";
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=${coins}&order=market_cap_desc&sparkline=true&price_change_percentage=24h,7d`
+      );
+      if (!response.ok) throw new Error("CoinGecko API error");
+      const data = await response.json();
+      
+      const result = {
+        coins: data.map((coin: any) => ({
+          id: coin.id,
+          symbol: coin.symbol.toUpperCase(),
+          name: coin.name,
+          image: coin.image,
+          price: coin.current_price,
+          priceUsd: null,
+          change24h: coin.price_change_percentage_24h,
+          change7d: coin.price_change_percentage_7d_in_currency,
+          marketCap: coin.market_cap,
+          volume: coin.total_volume,
+          sparkline: coin.sparkline_in_7d?.price || [],
+          high24h: coin.high_24h,
+          low24h: coin.low_24h,
+        })),
+        timestamp: now
+      };
+      
+      cryptoCache.set(cacheKey, { data: result, timestamp: now });
+      res.json({ ...result, cached: false });
+    } catch (error: any) {
+      const cached = cryptoCache.get("all_crypto");
+      if (cached) {
+        return res.json({ ...cached.data, cached: true, stale: true });
+      }
+      res.status(500).json({ error: error.message || "Failed to fetch crypto prices" });
+    }
+  });
+
+  // Bitcoin Price (legacy endpoint)
   app.get("/api/crypto/btc", async (req, res) => {
     try {
       const now = Date.now();
-      if (btcCache.price && now - btcCache.timestamp < 60000) {
-        return res.json({ price: btcCache.price, cached: true });
+      const cached = cryptoCache.get("btc");
+      if (cached && now - cached.timestamp < 60000) {
+        return res.json({ price: cached.data.price, cached: true });
       }
       
       const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur");
       if (!response.ok) throw new Error("CoinGecko API error");
       const data = await response.json();
       
-      btcCache.price = data.bitcoin.eur;
-      btcCache.timestamp = now;
+      cryptoCache.set("btc", { data: { price: data.bitcoin.eur, priceUsd: data.bitcoin.usd }, timestamp: now });
       
       res.json({ 
         price: data.bitcoin.eur, 
@@ -326,8 +374,9 @@ export async function registerRoutes(
         cached: false 
       });
     } catch (error: any) {
-      if (btcCache.price) {
-        return res.json({ price: btcCache.price, cached: true, stale: true });
+      const cached = cryptoCache.get("btc");
+      if (cached) {
+        return res.json({ price: cached.data.price, cached: true, stale: true });
       }
       res.status(500).json({ error: error.message || "Failed to fetch BTC price" });
     }
