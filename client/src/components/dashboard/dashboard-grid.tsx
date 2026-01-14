@@ -52,20 +52,30 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange }: Dash
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-  const handleLayoutChange = useCallback(
+  const convertLayout = useCallback((layout: any[]): WidgetLayout[] => {
+    return layout.map((item: any) => ({
+      i: item.i,
+      x: item.x,
+      y: item.y,
+      w: item.w,
+      h: item.h,
+      minW: item.minW,
+      minH: item.minH,
+    }));
+  }, []);
+
+  const handleDragStop = useCallback(
     (layout: any[]) => {
-      const newLayouts: WidgetLayout[] = layout.map((item: any) => ({
-        i: item.i,
-        x: item.x,
-        y: item.y,
-        w: item.w,
-        h: item.h,
-        minW: item.minW,
-        minH: item.minH,
-      }));
-      onLayoutChange(newLayouts);
+      onLayoutChange(convertLayout(layout));
     },
-    [onLayoutChange]
+    [onLayoutChange, convertLayout]
+  );
+
+  const handleResizeStop = useCallback(
+    (layout: any[]) => {
+      onLayoutChange(convertLayout(layout));
+    },
+    [onLayoutChange, convertLayout]
   );
 
   const handleWeatherCityChange = useCallback(
@@ -134,7 +144,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange }: Dash
         cols={COLS}
         rowHeight={ROW_HEIGHT}
         width={containerWidth}
-        onLayoutChange={handleLayoutChange as any}
+        onDragStop={handleDragStop as any}
+        onResizeStop={handleResizeStop as any}
         draggableHandle=".widget-drag-handle"
         useCSSTransforms={true}
         compactType="vertical"
