@@ -38,7 +38,7 @@ export default function Dashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { config, isLoading: layoutLoading, updateLayouts, toggleWidget, removeWidget, updateWidgetSettings } = useDashboardLayout();
+  const { config, isLoading: layoutLoading, updateLayouts, addWidget, removeWidget, updateWidgetSettings } = useDashboardLayout();
 
   useEffect(() => {
     const newTab = pathToTab[location];
@@ -213,7 +213,7 @@ export default function Dashboard() {
                 {activeTab === "dashboard" && (
                   <WidgetPicker
                     enabledWidgets={config.enabledWidgets}
-                    onToggleWidget={toggleWidget}
+                    onAddWidget={addWidget}
                   />
                 )}
                 <div className="relative group">
