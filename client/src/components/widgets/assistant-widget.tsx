@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -62,29 +61,32 @@ export function AssistantWidget() {
   };
 
   return (
-    <Card className="h-[calc(100vh-12rem)] flex flex-col bg-white border shadow-md ring-1 ring-black/5 overflow-hidden">
-      <CardHeader className="px-5 py-4 border-b bg-gradient-to-r from-primary/5 to-transparent flex flex-row items-center justify-between space-y-0">
+    <div className="h-full flex flex-col bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 rounded-2xl overflow-hidden relative">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMSIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+      <div className="px-5 py-4 flex items-center justify-between relative z-10 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-primary text-white flex items-center justify-center shadow-sm">
+          <motion.div 
+            className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-violet-500/30"
+            whileHover={{ scale: 1.1, rotate: 5 }}
+          >
             <Sparkles className="h-5 w-5" />
-          </div>
+          </motion.div>
           <div>
-            <CardTitle className="text-base font-bold text-foreground">KI-Assistent</CardTitle>
-            <p className="text-[10px] uppercase tracking-wider font-bold text-primary/80 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+            <h3 className="text-base font-bold text-white">KI-Assistent</h3>
+            <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Online
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-white/50 hover:text-white hover:bg-white/10">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
-      </CardHeader>
+      </div>
       
-      <CardContent className="flex-1 p-0 overflow-hidden relative bg-secondary/5">
-        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50"></div>
-        <ScrollArea className="h-full px-5 py-6" ref={scrollRef}>
-          <div className="space-y-6 pb-4">
+      <div className="flex-1 p-0 overflow-hidden relative z-10">
+        <ScrollArea className="h-full px-4 py-4" ref={scrollRef}>
+          <div className="space-y-4 pb-4">
             <AnimatePresence initial={false}>
               {messages.map((msg) => (
                 <motion.div 
@@ -93,21 +95,21 @@ export function AssistantWidget() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.3 }}
                   className={cn(
-                    "flex gap-3 max-w-[90%]",
+                    "flex gap-2 max-w-[90%]",
                     msg.role === 'user' ? "ml-auto flex-row-reverse" : ""
                   )}
                 >
                   <div className={cn(
-                    "h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-sm border border-white",
-                    msg.role === 'user' ? "bg-white text-foreground" : "bg-white text-primary"
+                    "h-7 w-7 rounded-full flex items-center justify-center shrink-0",
+                    msg.role === 'user' ? "bg-violet-500 text-white" : "bg-white/10 text-violet-400"
                   )}>
-                    {msg.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-5 w-5" />}
+                    {msg.role === 'user' ? <User className="h-3.5 w-3.5" /> : <Bot className="h-4 w-4" />}
                   </div>
                   <div className={cn(
-                    "p-4 rounded-2xl text-sm shadow-sm leading-relaxed",
+                    "p-3 rounded-2xl text-sm leading-relaxed",
                     msg.role === 'user' 
-                      ? "bg-foreground text-white rounded-tr-sm" 
-                      : "bg-white text-foreground border border-border/50 rounded-tl-sm"
+                      ? "bg-violet-500 text-white rounded-tr-sm" 
+                      : "bg-white/10 text-white/90 rounded-tl-sm"
                   )}>
                     {msg.text}
                   </div>
@@ -119,48 +121,50 @@ export function AssistantWidget() {
               <motion.div 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }}
-                className="flex gap-3 max-w-[85%]"
+                className="flex gap-2 max-w-[85%]"
               >
-                 <div className="h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center shrink-0 shadow-sm border border-white">
-                    <Bot className="h-5 w-5" />
+                 <div className="h-7 w-7 rounded-full bg-white/10 text-violet-400 flex items-center justify-center shrink-0">
+                    <Bot className="h-4 w-4" />
                  </div>
-                 <div className="bg-white p-4 rounded-2xl rounded-tl-sm shadow-sm border border-border/50 flex gap-1 items-center h-12">
-                   <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                   <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                   <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"></span>
+                 <div className="bg-white/10 p-3 rounded-2xl rounded-tl-sm flex gap-1 items-center">
+                   <span className="w-1.5 h-1.5 bg-violet-400/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                   <span className="w-1.5 h-1.5 bg-violet-400/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                   <span className="w-1.5 h-1.5 bg-violet-400/60 rounded-full animate-bounce"></span>
                  </div>
               </motion.div>
             )}
           </div>
         </ScrollArea>
-      </CardContent>
+      </div>
       
-      <CardFooter className="p-4 border-t bg-white">
-        <form onSubmit={sendMessage} className="flex w-full gap-3 items-center">
+      <div className="p-4 border-t border-white/10 relative z-10">
+        <form onSubmit={sendMessage} className="flex w-full gap-2 items-center">
           <Input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Frage zu Terminen, E-Mails oder Aufgaben..." 
-            className="bg-secondary/30 border-transparent shadow-none focus-visible:ring-1 focus-visible:ring-primary/20 focus-visible:bg-white transition-all h-11"
+            placeholder="Frage stellen..." 
+            className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-violet-500/50 focus-visible:bg-white/15 transition-all h-10"
             disabled={chat.isPending}
           />
           <Button 
             type="submit" 
             size="icon" 
             className={cn(
-              "shrink-0 h-11 w-11 rounded-lg transition-all shadow-sm",
-              input.trim() && !chat.isPending ? "bg-primary hover:bg-primary/90 text-white" : "bg-muted text-muted-foreground"
+              "shrink-0 h-10 w-10 rounded-xl transition-all",
+              input.trim() && !chat.isPending 
+                ? "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-lg shadow-violet-500/30" 
+                : "bg-white/10 text-white/40"
             )}
             disabled={!input.trim() || chat.isPending}
           >
             {chat.isPending ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4" />
             )}
           </Button>
         </form>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }

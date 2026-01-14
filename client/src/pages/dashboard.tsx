@@ -38,7 +38,7 @@ export default function Dashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { config, isLoading: layoutLoading, updateLayouts, toggleWidget, updateWidgetSettings } = useDashboardLayout();
+  const { config, isLoading: layoutLoading, updateLayouts, toggleWidget, removeWidget, updateWidgetSettings } = useDashboardLayout();
 
   useEffect(() => {
     const newTab = pathToTab[location];
@@ -124,6 +124,7 @@ export default function Dashboard() {
                 config={config}
                 onLayoutChange={updateLayouts}
                 onSettingsChange={updateWidgetSettings}
+                onRemoveWidget={removeWidget}
               />
             )}
           </motion.div>

@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bitcoin, TrendingUp, TrendingDown, Loader2, AlertCircle } from "lucide-react";
+import { Bitcoin, TrendingUp, Loader2, AlertCircle, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 
 interface BtcData {
   price: number;
@@ -31,42 +31,57 @@ export function BtcWidget() {
   };
 
   return (
-    <Card className="h-full border-none shadow-sm bg-gradient-to-br from-orange-50 to-yellow-50 overflow-hidden flex flex-col">
-      <CardHeader className="px-6 py-4 border-b bg-orange-100/50 flex flex-row items-center justify-between space-y-0">
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider font-bold text-orange-600/70">Krypto</span>
-          <CardTitle className="text-lg font-bold tracking-tight text-orange-900 flex items-center gap-2">
-            <Bitcoin className="h-5 w-5 text-orange-500" />
-            Bitcoin
-          </CardTitle>
+    <div className="h-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-2xl overflow-hidden flex flex-col relative">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+      <div className="px-5 py-4 flex items-center justify-between relative z-10">
+        <div className="flex items-center gap-3">
+          <motion.div 
+            className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
+            whileHover={{ scale: 1.1, rotate: 10 }}
+            transition={{ type: "spring", stiffness: 400 }}
+          >
+            <Bitcoin className="h-5 w-5 text-white" />
+          </motion.div>
+          <div>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-white/70">Krypto</span>
+            <h3 className="text-base font-bold text-white">Bitcoin</h3>
+          </div>
         </div>
-      </CardHeader>
-      <CardContent className="px-6 py-4 flex-1 flex items-center justify-center">
+        <motion.div 
+          className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/20 text-white text-xs font-medium"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+        >
+          <Sparkles className="h-3 w-3" />
+          Live
+        </motion.div>
+      </div>
+      <div className="flex-1 flex items-center justify-center px-5 pb-5 relative z-10">
         {isLoading ? (
-          <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-white/70" />
         ) : error ? (
           <div className="flex flex-col items-center text-center">
-            <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">Preis nicht verfügbar</p>
+            <AlertCircle className="h-8 w-8 text-white/70 mb-2" />
+            <p className="text-sm text-white/70">Nicht verfügbar</p>
           </div>
         ) : data ? (
-          <div className="text-center">
-            <div className="text-3xl font-bold text-orange-900">
+          <motion.div 
+            className="text-center"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+          >
+            <div className="text-4xl font-black text-white tracking-tight drop-shadow-lg">
               {formatPrice(data.price)}
             </div>
             {data.priceUsd && (
-              <div className="text-sm text-orange-600/70 mt-1">
+              <div className="text-sm text-white/80 mt-1 font-medium">
                 ${data.priceUsd.toLocaleString("en-US")} USD
               </div>
             )}
-            {data.stale && (
-              <div className="text-xs text-muted-foreground mt-2">
-                (zwischengespeichert)
-              </div>
-            )}
-          </div>
+          </motion.div>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
