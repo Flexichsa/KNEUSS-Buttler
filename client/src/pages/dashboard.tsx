@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { AppSidebar } from "@/components/layout/app-sidebar";
 import Header from "@/components/layout/header";
 import { CalendarWidget } from "@/components/widgets/calendar-widget";
 import { MailWidget } from "@/components/widgets/mail-widget";
@@ -38,8 +37,7 @@ const tabToPath: Record<string, string> = {
 export default function Dashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { 
+    const { 
     config, 
     tabs,
     activeTabId,
@@ -202,15 +200,11 @@ export default function Dashboard() {
       <Header 
         title="KNEUSS" 
         subtitle="Digital Assistant"
-        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <AppSidebar activeTab={activeTab} setActiveTab={handleTabChange} />
-
         {/* Main Content */}
-        <main className="flex-1 lg:ml-64 overflow-y-auto bg-secondary/30">
+        <main className="flex-1 overflow-y-auto bg-secondary/30">
           {/* Page Title Section */}
           <div className="px-6 py-6 border-b bg-white/50 backdrop-blur-sm">
             <div className="flex items-center justify-between">
