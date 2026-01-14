@@ -29,8 +29,24 @@ export function useDashboardLayout() {
 
   useEffect(() => {
     if (savedConfig) {
-      setLocalConfig(savedConfig);
+      // Merge saved config with defaults to ensure new widgets are included
+      const mergedEnabledWidgets = Array.from(new Set([
+        ...DEFAULT_CONFIG.enabledWidgets,
+        ...savedConfig.enabledWidgets,
+      ])).filter(id => savedConfig.enabledWidgets.includes(id) || !savedConfig.layouts.some(l => l.i === id));
+      
+      // For existing users, keep their settings; for new widgets, use defaults
+      setLocalConfig({
+        ...DEFAULT_CONFIG,
+        ...savedConfig,
+        enabledWidgets: savedConfig.enabledWidgets,
+        widgetSettings: {
+          ...DEFAULT_CONFIG.widgetSettings,
+          ...savedConfig.widgetSettings,
+        },
+      });
     }
+    // If savedConfig is null/undefined, keep using DEFAULT_CONFIG
   }, [savedConfig]);
 
   const saveMutation = useMutation({

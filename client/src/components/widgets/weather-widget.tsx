@@ -91,14 +91,19 @@ export function WeatherWidget({ city = "Berlin", onCityChange }: WeatherWidgetPr
       <CardContent className="px-6 py-4 flex-1 flex items-center justify-center">
         {isLoading ? (
           <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-        ) : error || (data && !data.configured && data.configured !== undefined) ? (
-          <div className="flex flex-col items-center text-center">
-            <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">
+        ) : error || (data && data.configured === false) ? (
+          <div className="flex flex-col items-center text-center px-4">
+            <AlertCircle className="h-8 w-8 text-amber-500 mb-2" />
+            <p className="text-sm font-medium text-muted-foreground">
               {data?.configured === false 
                 ? "Wetter-API nicht konfiguriert" 
                 : "Wetter nicht verfügbar"}
             </p>
+            {data?.configured === false && (
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                OPENWEATHER_API_KEY benötigt
+              </p>
+            )}
           </div>
         ) : data ? (
           <div className="flex items-center gap-4">
