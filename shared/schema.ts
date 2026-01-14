@@ -1,7 +1,26 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+export const WidgetLayoutSchema = z.object({
+  i: z.string(),
+  x: z.number(),
+  y: z.number(),
+  w: z.number(),
+  h: z.number(),
+  minW: z.number().optional(),
+  minH: z.number().optional(),
+});
+
+export const DashboardConfigSchema = z.object({
+  layouts: z.array(WidgetLayoutSchema),
+  enabledWidgets: z.array(z.string()),
+  widgetSettings: z.record(z.string(), z.any()).optional(),
+});
+
+export type WidgetLayout = z.infer<typeof WidgetLayoutSchema>;
+export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -39,6 +58,13 @@ export const notes = pgTable("notes", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const dashboardLayouts = pgTable("dashboard_layouts", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id").notNull().unique(),
+  config: jsonb("config").notNull(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
@@ -81,3 +107,5 @@ export type OAuthToken = typeof oauthTokens.$inferSelect;
 
 export type InsertOAuthState = z.infer<typeof insertOAuthStateSchema>;
 export type OAuthState = typeof oauthStates.$inferSelect;
+
+export type DashboardLayout = typeof dashboardLayouts.$inferSelect;

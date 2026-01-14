@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout } from "@shared/schema";
 import { eq, and, lt } from "drizzle-orm";
 
 export interface IStorage {
@@ -30,6 +30,10 @@ export interface IStorage {
   createNote(note: InsertNote): Promise<Note>;
   updateNote(id: number, note: Partial<InsertNote>): Promise<Note | undefined>;
   deleteNote(id: number): Promise<void>;
+  
+  // Dashboard Layouts
+  getDashboardLayout(sessionId: string): Promise<DashboardConfig | undefined>;
+  saveDashboardLayout(sessionId: string, config: DashboardConfig): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -146,6 +150,26 @@ export class DatabaseStorage implements IStorage {
 
   async deleteNote(id: number): Promise<void> {
     await db.delete(notes).where(eq(notes.id, id));
+  }
+
+  // Dashboard Layouts
+  async getDashboardLayout(sessionId: string): Promise<DashboardConfig | undefined> {
+    const [layout] = await db.select().from(dashboardLayouts).where(eq(dashboardLayouts.sessionId, sessionId));
+    if (layout) {
+      return layout.config as DashboardConfig;
+    }
+    return undefined;
+  }
+
+  async saveDashboardLayout(sessionId: string, config: DashboardConfig): Promise<void> {
+    const existing = await db.select().from(dashboardLayouts).where(eq(dashboardLayouts.sessionId, sessionId));
+    if (existing.length > 0) {
+      await db.update(dashboardLayouts)
+        .set({ config, updatedAt: new Date() })
+        .where(eq(dashboardLayouts.sessionId, sessionId));
+    } else {
+      await db.insert(dashboardLayouts).values({ sessionId, config });
+    }
   }
 }
 

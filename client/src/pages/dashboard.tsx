@@ -8,7 +8,10 @@ import { TodoWidget } from "@/components/widgets/todo-widget";
 import { AssistantWidget } from "@/components/widgets/assistant-widget";
 import { NotesView } from "@/components/views/notes-view";
 import { SettingsView } from "@/components/views/settings-view";
-import { Search } from "lucide-react";
+import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
+import { WidgetPicker } from "@/components/dashboard/widget-picker";
+import { useDashboardLayout } from "@/hooks/use-dashboard-layout";
+import { Search, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const pathToTab: Record<string, string> = {
@@ -35,6 +38,7 @@ export default function Dashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { config, isLoading: layoutLoading, updateLayouts, toggleWidget, updateWidgetSettings } = useDashboardLayout();
 
   useEffect(() => {
     const newTab = pathToTab[location];
@@ -106,33 +110,22 @@ export default function Dashboard() {
         return (
           <motion.div 
             key="dashboard"
-            className="grid grid-cols-12 gap-6 pb-10"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            className="pb-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            {/* Main Column (Left) */}
-            <div className="col-span-12 lg:col-span-8 space-y-6">
-              <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="h-[320px]">
-                  <CalendarWidget />
-                </div>
-                <div className="h-[320px]">
-                  <TodoWidget />
-                </div>
-              </motion.div>
-              
-              <motion.div variants={itemVariants}>
-                <MailWidget />
-              </motion.div>
-            </div>
-
-            {/* Assistant Column (Right) */}
-            <motion.div variants={itemVariants} className="col-span-12 lg:col-span-4 h-full">
-              <div className="lg:sticky lg:top-24">
-                <AssistantWidget />
+            {layoutLoading ? (
+              <div className="flex items-center justify-center h-[50vh]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-            </motion.div>
+            ) : (
+              <DashboardGrid
+                config={config}
+                onLayoutChange={updateLayouts}
+                onSettingsChange={updateWidgetSettings}
+              />
+            )}
           </motion.div>
         );
       case "notes":
@@ -216,6 +209,12 @@ export default function Dashboard() {
               </div>
               
               <div className="hidden md:flex items-center gap-4">
+                {activeTab === "dashboard" && (
+                  <WidgetPicker
+                    enabledWidgets={config.enabledWidgets}
+                    onToggleWidget={toggleWidget}
+                  />
+                )}
                 <div className="relative group">
                   <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input 

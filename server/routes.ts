@@ -1,10 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, insertNoteSchema } from "@shared/schema";
+import { insertTodoSchema, insertNoteSchema, DashboardConfigSchema } from "@shared/schema";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser } from "./outlook";
 import { chatCompletion, summarizeEmails } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
+
+const btcCache: { price: number | null; timestamp: number } = { price: null, timestamp: 0 };
+const weatherCache: Map<string, { data: any; timestamp: number }> = new Map();
 
 export async function registerRoutes(
   httpServer: Server,
@@ -279,6 +282,97 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to delete note" });
+    }
+  });
+
+  // Dashboard Layout
+  app.get("/api/dashboard/layout/:sessionId", async (req, res) => {
+    try {
+      const config = await storage.getDashboardLayout(req.params.sessionId);
+      res.json(config || null);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch layout" });
+    }
+  });
+
+  app.put("/api/dashboard/layout/:sessionId", async (req, res) => {
+    try {
+      const config = DashboardConfigSchema.parse(req.body);
+      await storage.saveDashboardLayout(req.params.sessionId, config);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Invalid layout data" });
+    }
+  });
+
+  // Bitcoin Price (CoinGecko API - no key required)
+  app.get("/api/crypto/btc", async (req, res) => {
+    try {
+      const now = Date.now();
+      if (btcCache.price && now - btcCache.timestamp < 60000) {
+        return res.json({ price: btcCache.price, cached: true });
+      }
+      
+      const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur");
+      if (!response.ok) throw new Error("CoinGecko API error");
+      const data = await response.json();
+      
+      btcCache.price = data.bitcoin.eur;
+      btcCache.timestamp = now;
+      
+      res.json({ 
+        price: data.bitcoin.eur, 
+        priceUsd: data.bitcoin.usd,
+        cached: false 
+      });
+    } catch (error: any) {
+      if (btcCache.price) {
+        return res.json({ price: btcCache.price, cached: true, stale: true });
+      }
+      res.status(500).json({ error: error.message || "Failed to fetch BTC price" });
+    }
+  });
+
+  // Weather (OpenWeatherMap API)
+  app.get("/api/weather", async (req, res) => {
+    try {
+      const city = (req.query.city as string) || "Berlin";
+      const apiKey = process.env.OPENWEATHER_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(503).json({ error: "Weather API not configured", configured: false });
+      }
+      
+      const cacheKey = city.toLowerCase();
+      const cached = weatherCache.get(cacheKey);
+      const now = Date.now();
+      
+      if (cached && now - cached.timestamp < 300000) {
+        return res.json({ ...cached.data, cached: true });
+      }
+      
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=de`
+      );
+      
+      if (!response.ok) throw new Error("Weather API error");
+      const data = await response.json();
+      
+      const weather = {
+        city: data.name,
+        country: data.sys.country,
+        temp: Math.round(data.main.temp),
+        feels_like: Math.round(data.main.feels_like),
+        description: data.weather[0].description,
+        icon: data.weather[0].icon,
+        humidity: data.main.humidity,
+        wind: data.wind.speed
+      };
+      
+      weatherCache.set(cacheKey, { data: weather, timestamp: now });
+      res.json({ ...weather, cached: false, configured: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch weather" });
     }
   });
 
