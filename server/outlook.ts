@@ -417,3 +417,128 @@ export async function getAllTodoTasks(includeCompleted: boolean = false): Promis
   
   return results;
 }
+
+// ============================================================================
+// OneDrive Integration (using Replit OneDrive connector)
+// ============================================================================
+
+let oneDriveConnectionSettings: any;
+
+async function getOneDriveAccessToken() {
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const xReplitToken = process.env.REPL_IDENTITY 
+    ? 'repl ' + process.env.REPL_IDENTITY 
+    : process.env.WEB_REPL_RENEWAL 
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+    : null;
+
+  if (!xReplitToken) {
+    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+  }
+
+  oneDriveConnectionSettings = await fetch(
+    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=onedrive',
+    {
+      headers: {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': xReplitToken,
+        'Cache-Control': 'no-cache'
+      }
+    }
+  ).then(res => res.json()).then(data => data.items?.[0]);
+
+  const accessToken = oneDriveConnectionSettings?.settings?.access_token || oneDriveConnectionSettings?.settings?.oauth?.credentials?.access_token;
+
+  if (!oneDriveConnectionSettings || !accessToken) {
+    throw new Error('OneDrive not connected');
+  }
+  return accessToken;
+}
+
+export async function getUncachableOneDriveClient() {
+  const accessToken = await getOneDriveAccessToken();
+
+  return Client.initWithMiddleware({
+    authProvider: {
+      getAccessToken: async () => accessToken
+    }
+  });
+}
+
+export async function isOneDriveConnected(): Promise<boolean> {
+  try {
+    await getOneDriveAccessToken();
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export interface OneDriveItem {
+  id: string;
+  name: string;
+  size: number;
+  lastModifiedDateTime: string;
+  webUrl: string;
+  isFolder: boolean;
+  mimeType?: string;
+  thumbnailUrl?: string;
+}
+
+export async function getOneDriveFiles(folderId?: string): Promise<OneDriveItem[]> {
+  const client = await getUncachableOneDriveClient();
+  
+  try {
+    const path = folderId 
+      ? `/me/drive/items/${folderId}/children`
+      : '/me/drive/root/children';
+    
+    const items = await client
+      .api(path)
+      .select('id,name,size,lastModifiedDateTime,webUrl,folder,file')
+      .top(50)
+      .orderby('lastModifiedDateTime DESC')
+      .get();
+
+    console.log(`[OneDrive] Fetched ${items.value?.length || 0} items`);
+
+    return items.value.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      size: item.size || 0,
+      lastModifiedDateTime: item.lastModifiedDateTime,
+      webUrl: item.webUrl,
+      isFolder: !!item.folder,
+      mimeType: item.file?.mimeType
+    }));
+  } catch (error: any) {
+    console.error('[OneDrive] Error fetching files:', error.message);
+    throw error;
+  }
+}
+
+export async function getRecentOneDriveFiles(): Promise<OneDriveItem[]> {
+  const client = await getUncachableOneDriveClient();
+  
+  try {
+    const items = await client
+      .api('/me/drive/recent')
+      .top(20)
+      .get();
+
+    console.log(`[OneDrive] Fetched ${items.value?.length || 0} recent items`);
+
+    return items.value.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      size: item.size || 0,
+      lastModifiedDateTime: item.lastModifiedDateTime,
+      webUrl: item.webUrl,
+      isFolder: !!item.folder,
+      mimeType: item.file?.mimeType
+    }));
+  } catch (error: any) {
+    console.error('[OneDrive] Error fetching recent files:', error.message);
+    throw error;
+  }
+}

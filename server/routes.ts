@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTodoSchema, insertNoteSchema, DashboardConfigSchema } from "@shared/schema";
-import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks } from "./outlook";
+import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
 
@@ -178,6 +178,37 @@ export async function registerRoutes(
       res.json(data);
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to fetch all tasks" });
+    }
+  });
+
+  // OneDrive - Check connection status
+  app.get("/api/onedrive/status", async (req, res) => {
+    try {
+      const connected = await isOneDriveConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  // OneDrive - Get files from root or specific folder
+  app.get("/api/onedrive/files", async (req, res) => {
+    try {
+      const folderId = req.query.folderId as string | undefined;
+      const files = await getOneDriveFiles(folderId);
+      res.json(files);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch files" });
+    }
+  });
+
+  // OneDrive - Get recent files
+  app.get("/api/onedrive/recent", async (req, res) => {
+    try {
+      const files = await getRecentOneDriveFiles();
+      res.json(files);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch recent files" });
     }
   });
 

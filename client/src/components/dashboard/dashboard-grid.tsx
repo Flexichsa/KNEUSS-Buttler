@@ -10,6 +10,7 @@ import { AssistantWidget } from "@/components/widgets/assistant-widget";
 import { BtcWidget } from "@/components/widgets/btc-widget";
 import { WeatherWidget } from "@/components/widgets/weather-widget";
 import { MsTodoWidget } from "@/components/widgets/mstodo-widget";
+import { OneDriveWidget } from "@/components/widgets/onedrive-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings } from "@shared/schema";
 import { X, GripVertical, Settings2 } from "lucide-react";
@@ -166,6 +167,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         );
       case "mstodo":
         return <MsTodoWidget />;
+      case "onedrive":
+        return <OneDriveWidget />;
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
