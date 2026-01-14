@@ -1,6 +1,6 @@
 import { Cloud, Sun, CloudRain, Snowflake, Wind, Droplets, Loader2, AlertCircle, Settings2, CloudSun, CloudFog, CloudLightning, Gauge, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -42,19 +42,40 @@ const getWeatherIcon = (icon: string, size: "lg" | "sm" = "lg") => {
   return <Cloud className={`${baseClass} text-white/80 drop-shadow-lg`} />;
 };
 
-interface WeatherWidgetProps {
+interface WeatherSettings {
   city?: string;
+  showWind?: boolean;
+  showHumidity?: boolean;
+  showPressure?: boolean;
+  showHourlyForecast?: boolean;
+}
+
+interface WeatherWidgetProps {
+  widgetId?: string;
+  city?: string;
+  settings?: WeatherSettings;
   onCityChange?: (city: string) => void;
 }
 
-export function WeatherWidget({ city = "Mägenwil", onCityChange }: WeatherWidgetProps) {
+export function WeatherWidget({ widgetId = "weather-1", city, settings, onCityChange }: WeatherWidgetProps) {
+  // Use city from settings if available, otherwise fall back to prop or default
+  const effectiveCity = settings?.city || city || "Berlin";
+  const showWind = settings?.showWind !== false;
+  const showHumidity = settings?.showHumidity !== false;
+  const showPressure = settings?.showPressure !== false;
+  const showHourlyForecast = settings?.showHourlyForecast !== false;
   const [editMode, setEditMode] = useState(false);
-  const [cityInput, setCityInput] = useState(city);
+  const [cityInput, setCityInput] = useState(effectiveCity);
+
+  // Sync cityInput when settings change
+  useEffect(() => {
+    setCityInput(effectiveCity);
+  }, [effectiveCity]);
 
   const { data, isLoading, error, refetch } = useQuery<WeatherData>({
-    queryKey: ["weather", city],
+    queryKey: ["weather", widgetId, effectiveCity],
     queryFn: async () => {
-      const res = await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
+      const res = await fetch(`/api/weather?city=${encodeURIComponent(effectiveCity)}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to fetch weather");
       return json;
@@ -155,20 +176,24 @@ export function WeatherWidget({ city = "Mägenwil", onCityChange }: WeatherWidge
             </div>
 
             <div className="flex items-center gap-4 text-xs text-white/80 mb-3">
-              <span className="flex items-center gap-1">
-                <Wind className="h-3.5 w-3.5" /> {data.wind} m/s
-              </span>
-              <span className="flex items-center gap-1">
-                <Droplets className="h-3.5 w-3.5" /> {data.humidity}%
-              </span>
-              {data.pressure && (
+              {showWind && (
+                <span className="flex items-center gap-1">
+                  <Wind className="h-3.5 w-3.5" /> {data.wind} m/s
+                </span>
+              )}
+              {showHumidity && (
+                <span className="flex items-center gap-1">
+                  <Droplets className="h-3.5 w-3.5" /> {data.humidity}%
+                </span>
+              )}
+              {showPressure && data.pressure && (
                 <span className="flex items-center gap-1">
                   <Gauge className="h-3.5 w-3.5" /> {data.pressure} hPa
                 </span>
               )}
             </div>
 
-            {data.hourlyForecast && data.hourlyForecast.length > 0 && (
+            {showHourlyForecast && data.hourlyForecast && data.hourlyForecast.length > 0 && (
               <div className="mt-auto">
                 <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 scrollbar-hide">
                   <button className="text-white/50 hover:text-white/80 flex-shrink-0">

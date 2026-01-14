@@ -35,7 +35,19 @@ const COIN_ICONS: Record<string, string> = {
   ripple: "✕",
 };
 
-function CoinRow({ coin, index }: { coin: CoinData; index: number }) {
+interface CryptoSettings {
+  coins?: string[];
+  show1h?: boolean;
+  show24h?: boolean;
+  show7d?: boolean;
+  showChart?: boolean;
+}
+
+function CoinRow({ coin, index, settings }: { coin: CoinData; index: number; settings?: CryptoSettings }) {
+  const show1h = settings?.show1h !== false;
+  const show24h = settings?.show24h !== false;
+  const show7d = settings?.show7d !== false;
+  const showChart = settings?.showChart !== false;
   const sparklineData = useMemo(() => {
     if (!coin.sparkline?.length) return [];
     const step = Math.max(1, Math.floor(coin.sparkline.length / 20));
@@ -77,27 +89,29 @@ function CoinRow({ coin, index }: { coin: CoinData; index: number }) {
         </div>
       </div>
 
-      <div className="flex-1 h-8 mx-2">
-        {sparklineData.length > 0 && (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={sparklineData}>
-              <defs>
-                <linearGradient id={`sparkline-gradient-${coin.id}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={isPositive7d ? "rgba(74, 222, 128, 0.3)" : "rgba(248, 113, 113, 0.3)"} />
-                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
-                dataKey="price"
-                stroke={isPositive7d ? "#4ade80" : "#f87171"}
-                strokeWidth={1.5}
-                fill={`url(#sparkline-gradient-${coin.id})`}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      {showChart && (
+        <div className="flex-1 h-8 mx-2">
+          {sparklineData.length > 0 && (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={sparklineData}>
+                <defs>
+                  <linearGradient id={`sparkline-gradient-${coin.id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={isPositive7d ? "rgba(74, 222, 128, 0.3)" : "rgba(248, 113, 113, 0.3)"} />
+                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                  </linearGradient>
+                </defs>
+                <Area
+                  type="monotone"
+                  dataKey="price"
+                  stroke={isPositive7d ? "#4ade80" : "#f87171"}
+                  strokeWidth={1.5}
+                  fill={`url(#sparkline-gradient-${coin.id})`}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      )}
 
       <div className="text-right min-w-[70px]">
         <div className="text-sm font-bold text-white">{formatPrice(coin.price)}</div>
@@ -107,39 +121,50 @@ function CoinRow({ coin, index }: { coin: CoinData; index: number }) {
       </div>
 
       <div className="flex flex-col items-end gap-0.5 min-w-[90px]">
-        <div className="flex items-center gap-1">
-          <span className={cn(
-            "text-[10px] font-semibold",
-            isPositive1h ? "text-green-400" : "text-red-400"
-          )}>
-            {isPositive1h ? "+" : ""}{change1h.toFixed(2)}%
-          </span>
-          <span className="text-[9px] text-white/40">1H</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className={cn(
-            "text-[10px] font-semibold",
-            isPositive24h ? "text-green-400" : "text-red-400"
-          )}>
-            {isPositive24h ? "+" : ""}{coin.change24h.toFixed(2)}%
-          </span>
-          <span className="text-[9px] text-white/40">24H</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className={cn(
-            "text-[10px] font-semibold",
-            isPositive7d ? "text-green-400" : "text-red-400"
-          )}>
-            {isPositive7d ? "+" : ""}{coin.change7d.toFixed(2)}%
-          </span>
-          <span className="text-[9px] text-white/40">7D</span>
-        </div>
+        {show1h && (
+          <div className="flex items-center gap-1">
+            <span className={cn(
+              "text-[10px] font-semibold",
+              isPositive1h ? "text-green-400" : "text-red-400"
+            )}>
+              {isPositive1h ? "+" : ""}{change1h.toFixed(2)}%
+            </span>
+            <span className="text-[9px] text-white/40">1H</span>
+          </div>
+        )}
+        {show24h && (
+          <div className="flex items-center gap-1">
+            <span className={cn(
+              "text-[10px] font-semibold",
+              isPositive24h ? "text-green-400" : "text-red-400"
+            )}>
+              {isPositive24h ? "+" : ""}{coin.change24h.toFixed(2)}%
+            </span>
+            <span className="text-[9px] text-white/40">24H</span>
+          </div>
+        )}
+        {show7d && (
+          <div className="flex items-center gap-1">
+            <span className={cn(
+              "text-[10px] font-semibold",
+              isPositive7d ? "text-green-400" : "text-red-400"
+            )}>
+              {isPositive7d ? "+" : ""}{coin.change7d.toFixed(2)}%
+            </span>
+            <span className="text-[9px] text-white/40">7D</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export function BtcWidget() {
+interface BtcWidgetProps {
+  settings?: CryptoSettings;
+}
+
+export function BtcWidget({ settings }: BtcWidgetProps) {
+  const selectedCoins = settings?.coins || ["bitcoin", "ethereum", "solana", "dogecoin", "cardano", "ripple"];
   const { data, isLoading, error } = useQuery<CryptoResponse>({
     queryKey: ["crypto-prices"],
     queryFn: async () => {
@@ -167,9 +192,11 @@ export function BtcWidget() {
           </div>
         ) : data?.coins && data.coins.length > 0 ? (
           <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {data.coins.slice(0, 6).map((coin, index) => (
-              <CoinRow key={coin.id} coin={coin} index={index} />
-            ))}
+            {data.coins
+              .filter(coin => selectedCoins.includes(coin.id))
+              .map((coin, index) => (
+                <CoinRow key={coin.id} coin={coin} index={index} settings={settings} />
+              ))}
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-white/50 text-sm">

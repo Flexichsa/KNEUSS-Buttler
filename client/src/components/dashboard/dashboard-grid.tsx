@@ -10,9 +10,10 @@ import { AssistantWidget } from "@/components/widgets/assistant-widget";
 import { BtcWidget } from "@/components/widgets/btc-widget";
 import { WeatherWidget } from "@/components/widgets/weather-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
-import type { DashboardConfig, WidgetLayout } from "@shared/schema";
-import { X, GripVertical } from "lucide-react";
+import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings } from "@shared/schema";
+import { X, GripVertical, Settings2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
 
 interface DashboardGridProps {
   config: DashboardConfig;
@@ -25,22 +26,43 @@ const COLS = 12;
 const ROW_HEIGHT = 80;
 
 const DEFAULT_LAYOUTS: WidgetLayout[] = [
-  { i: "calendar", x: 0, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
-  { i: "todo", x: 6, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
-  { i: "mail", x: 0, y: 4, w: 8, h: 4, minW: 4, minH: 3 },
-  { i: "assistant", x: 8, y: 4, w: 4, h: 6, minW: 3, minH: 4 },
-  { i: "btc", x: 0, y: 8, w: 4, h: 5, minW: 3, minH: 4 },
-  { i: "weather", x: 4, y: 8, w: 5, h: 4, minW: 4, minH: 3 },
+  { i: "calendar-1", x: 0, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
+  { i: "todo-1", x: 6, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
+  { i: "mail-1", x: 0, y: 4, w: 8, h: 4, minW: 4, minH: 3 },
+  { i: "assistant-1", x: 8, y: 4, w: 4, h: 6, minW: 3, minH: 4 },
+  { i: "btc-1", x: 0, y: 8, w: 4, h: 5, minW: 3, minH: 4 },
+  { i: "weather-1", x: 4, y: 8, w: 5, h: 4, minW: 4, minH: 3 },
+];
+
+const DEFAULT_INSTANCES: WidgetInstance[] = [
+  { id: "calendar-1", type: "calendar" },
+  { id: "todo-1", type: "todo" },
+  { id: "mail-1", type: "mail" },
+  { id: "assistant-1", type: "assistant" },
 ];
 
 export const DEFAULT_CONFIG: DashboardConfig = {
   layouts: DEFAULT_LAYOUTS,
-  enabledWidgets: ["calendar", "todo", "mail", "assistant"],
-  widgetSettings: { weather: { city: "Berlin" } },
+  enabledWidgets: ["calendar-1", "todo-1", "mail-1", "assistant-1"],
+  widgetInstances: DEFAULT_INSTANCES,
+  widgetSettings: { 
+    "weather-1": { city: "Berlin", showWind: true, showHumidity: true, showPressure: true, showHourlyForecast: true },
+    "btc-1": { coins: ["bitcoin", "ethereum", "solana", "dogecoin", "cardano", "ripple"], show1h: true, show24h: true, show7d: true, showChart: true }
+  },
 };
+
+export function getWidgetType(instanceId: string, instances?: WidgetInstance[]): string {
+  if (instances) {
+    const instance = instances.find(i => i.id === instanceId);
+    if (instance) return instance.type;
+  }
+  const match = instanceId.match(/^([a-z]+)-\d+$/);
+  return match ? match[1] : instanceId;
+}
 
 export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemoveWidget }: DashboardGridProps) {
   const [containerWidth, setContainerWidth] = useState(1200);
+  const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
 
   useEffect(() => {
     const updateWidth = () => {
@@ -81,10 +103,10 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     [onLayoutChange, convertLayout]
   );
 
-  const handleWeatherCityChange = useCallback(
-    (city: string) => {
+  const handleSettingsChange = useCallback(
+    (widgetId: string, settings: any) => {
       if (onSettingsChange) {
-        onSettingsChange("weather", { city });
+        onSettingsChange(widgetId, settings);
       }
     },
     [onSettingsChange]
@@ -96,7 +118,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         const existingLayout = config.layouts.find((l) => l.i === widgetId);
         if (existingLayout) return existingLayout;
 
-        const widgetDef = AVAILABLE_WIDGETS.find((w) => w.id === widgetId);
+        const widgetType = getWidgetType(widgetId, config.widgetInstances);
+        const widgetDef = AVAILABLE_WIDGETS.find((w) => w.id === widgetType);
         if (!widgetDef) return null;
 
         const maxY = config.layouts.reduce((max, l) => Math.max(max, l.y + l.h), 0);
@@ -111,12 +134,13 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         };
       })
       .filter(Boolean) as WidgetLayout[];
-  }, [config.enabledWidgets, config.layouts]);
+  }, [config.enabledWidgets, config.layouts, config.widgetInstances]);
 
   const renderWidget = (widgetId: string) => {
+    const widgetType = getWidgetType(widgetId, config.widgetInstances);
     const settings = config.widgetSettings?.[widgetId] || {};
 
-    switch (widgetId) {
+    switch (widgetType) {
       case "calendar":
         return <CalendarWidget />;
       case "todo":
@@ -126,17 +150,27 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
       case "assistant":
         return <AssistantWidget />;
       case "btc":
-        return <BtcWidget />;
+        return (
+          <BtcWidget
+            settings={settings as CryptoSettings}
+          />
+        );
       case "weather":
         return (
           <WeatherWidget
-            city={settings.city || "Berlin"}
-            onCityChange={handleWeatherCityChange}
+            widgetId={widgetId}
+            settings={settings as WeatherSettings}
+            onCityChange={(city) => handleSettingsChange(widgetId, { ...settings, city })}
           />
         );
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
+  };
+
+  const canHaveSettings = (widgetId: string) => {
+    const widgetType = getWidgetType(widgetId, config.widgetInstances);
+    return widgetType === "weather" || widgetType === "btc";
   };
 
   return (
@@ -166,19 +200,40 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
             <div className="widget-drag-handle absolute top-3 left-3 w-8 h-8 cursor-move z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 hover:bg-black/10">
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
-            {onRemoveWidget && (
-              <button
-                onClick={() => onRemoveWidget(widgetId)}
-                className="absolute top-3 right-3 w-7 h-7 cursor-pointer z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all bg-black/5 hover:bg-red-500 hover:text-white text-muted-foreground"
-                data-testid={`button-remove-widget-${widgetId}`}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+            <div className="absolute top-3 right-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+              {canHaveSettings(widgetId) && (
+                <button
+                  onClick={() => setSettingsWidgetId(widgetId)}
+                  className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground transition-all"
+                  data-testid={`button-settings-widget-${widgetId}`}
+                >
+                  <Settings2 className="h-4 w-4" />
+                </button>
+              )}
+              {onRemoveWidget && (
+                <button
+                  onClick={() => onRemoveWidget(widgetId)}
+                  className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
+                  data-testid={`button-remove-widget-${widgetId}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
             <div className="h-full relative z-10 overflow-hidden rounded-2xl">{renderWidget(widgetId)}</div>
           </div>
         ))}
       </ReactGridLayout>
+
+      {settingsWidgetId && (
+        <WidgetSettingsDialog
+          widgetId={settingsWidgetId}
+          widgetType={getWidgetType(settingsWidgetId, config.widgetInstances)}
+          settings={config.widgetSettings?.[settingsWidgetId] || {}}
+          onSettingsChange={(settings) => handleSettingsChange(settingsWidgetId, settings)}
+          onClose={() => setSettingsWidgetId(null)}
+        />
+      )}
     </div>
   );
 }
