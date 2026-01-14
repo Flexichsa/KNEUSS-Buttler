@@ -45,7 +45,7 @@ Schema validation uses Zod via drizzle-zod for type-safe insert operations.
 ### Authentication & External Services
 - **Microsoft Integration**: OAuth2 via Replit Connectors for Outlook access
 - **Outlook Client**: Microsoft Graph API client (`@microsoft/microsoft-graph-client`)
-- **AI Integration**: OpenAI GPT-4o-mini via Replit AI Integrations
+- **AI Integration**: OpenAI GPT-4o-mini via user's own API key
 - **Token Management**: Access tokens retrieved from Replit Connectors API with automatic refresh
 
 ### Build & Deployment
@@ -64,7 +64,7 @@ Schema validation uses Zod via drizzle-zod for type-safe insert operations.
 ### OpenAI API
 - Model: GPT-4o-mini for chat completions
 - Used for AI assistant chat, email drafting, and content summarization
-- Accessed via Replit AI Integrations (custom base URL)
+- Accessed via user's own OpenAI API key (direct API)
 
 ### PostgreSQL Database
 - Connection via `DATABASE_URL` environment variable
@@ -73,7 +73,6 @@ Schema validation uses Zod via drizzle-zod for type-safe insert operations.
 
 ### Required Environment Variables
 - `DATABASE_URL`: PostgreSQL connection string
-- `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API key from Replit integrations
-- `AI_INTEGRATIONS_OPENAI_BASE_URL`: OpenAI base URL from Replit integrations
-- `REPLIT_CONNECTORS_HOSTNAME`: For Microsoft OAuth token retrieval
-- `REPL_IDENTITY` or `WEB_REPL_RENEWAL`: For Replit authentication
+- `OPENAI_API_KEY`: User's own OpenAI API key
+- `MICROSOFT_CLIENT_ID`: Azure AD app client ID for Outlook integration
+- `MICROSOFT_CLIENT_SECRET`: Azure AD app client secret for Outlook integration
