@@ -11,11 +11,14 @@ import { BtcWidget } from "@/components/widgets/btc-widget";
 import { WeatherWidget } from "@/components/widgets/weather-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import type { DashboardConfig, WidgetLayout } from "@shared/schema";
+import { X, GripVertical } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface DashboardGridProps {
   config: DashboardConfig;
   onLayoutChange: (layouts: WidgetLayout[]) => void;
   onSettingsChange?: (widgetId: string, settings: any) => void;
+  onRemoveWidget?: (widgetId: string) => void;
 }
 
 const COLS = 12;
@@ -36,7 +39,7 @@ export const DEFAULT_CONFIG: DashboardConfig = {
   widgetSettings: { weather: { city: "Berlin" } },
 };
 
-export function DashboardGrid({ config, onLayoutChange, onSettingsChange }: DashboardGridProps) {
+export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemoveWidget }: DashboardGridProps) {
   const [containerWidth, setContainerWidth] = useState(1200);
 
   useEffect(() => {
@@ -155,9 +158,24 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange }: Dash
         margin={[16, 16] as [number, number]}
       >
         {config.enabledWidgets.map((widgetId) => (
-          <div key={widgetId} className="widget-container relative">
-            <div className="widget-drag-handle absolute top-0 left-0 right-0 h-14 cursor-move z-10 bg-transparent" />
-            <div className="h-full">{renderWidget(widgetId)}</div>
+          <div 
+            key={widgetId} 
+            className="widget-container relative group"
+          >
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl border border-white/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-white/70 group-hover:scale-[1.01] z-0" />
+            <div className="widget-drag-handle absolute top-3 left-3 w-8 h-8 cursor-move z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 hover:bg-black/10">
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
+            {onRemoveWidget && (
+              <button
+                onClick={() => onRemoveWidget(widgetId)}
+                className="absolute top-3 right-3 w-7 h-7 cursor-pointer z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-all bg-black/5 hover:bg-red-500 hover:text-white text-muted-foreground"
+                data-testid={`button-remove-widget-${widgetId}`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <div className="h-full relative z-10 overflow-hidden rounded-2xl">{renderWidget(widgetId)}</div>
           </div>
         ))}
       </ReactGridLayout>

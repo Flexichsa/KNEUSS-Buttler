@@ -92,12 +92,17 @@ export function useDashboardLayout() {
     saveMutation.mutate(newConfig);
   };
 
+  const removeWidget = (widgetId: string) => {
+    toggleWidget(widgetId, false);
+  };
+
   return {
     config: localConfig,
     isLoading,
     isSaving: saveMutation.isPending,
     updateLayouts,
     toggleWidget,
+    removeWidget,
     updateWidgetSettings,
   };
 }

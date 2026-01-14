@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cloud, Sun, CloudRain, Snowflake, Wind, Droplets, Loader2, AlertCircle, Settings2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 interface WeatherData {
   city: string;
@@ -19,10 +19,10 @@ interface WeatherData {
 }
 
 const getWeatherIcon = (icon: string) => {
-  if (icon.includes("01") || icon.includes("02")) return <Sun className="h-12 w-12 text-yellow-500" />;
-  if (icon.includes("09") || icon.includes("10")) return <CloudRain className="h-12 w-12 text-blue-500" />;
-  if (icon.includes("13")) return <Snowflake className="h-12 w-12 text-blue-300" />;
-  return <Cloud className="h-12 w-12 text-gray-400" />;
+  if (icon.includes("01") || icon.includes("02")) return <Sun className="h-16 w-16 text-yellow-300 drop-shadow-lg" />;
+  if (icon.includes("09") || icon.includes("10")) return <CloudRain className="h-16 w-16 text-white drop-shadow-lg" />;
+  if (icon.includes("13")) return <Snowflake className="h-16 w-16 text-white drop-shadow-lg" />;
+  return <Cloud className="h-16 w-16 text-white/80 drop-shadow-lg" />;
 };
 
 interface WeatherWidgetProps {
@@ -55,63 +55,69 @@ export function WeatherWidget({ city = "Berlin", onCityChange }: WeatherWidgetPr
   };
 
   return (
-    <Card className="h-full border-none shadow-sm bg-gradient-to-br from-blue-50 to-sky-50 overflow-hidden flex flex-col">
-      <CardHeader className="px-6 py-4 border-b bg-blue-100/50 flex flex-row items-center justify-between space-y-0">
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider font-bold text-blue-600/70">Wetter</span>
+    <div className="h-full bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 rounded-2xl overflow-hidden flex flex-col relative">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+      <div className="px-5 py-4 flex items-center justify-between relative z-10">
+        <div>
+          <span className="text-[10px] uppercase tracking-wider font-bold text-white/70">Wetter</span>
           {editMode ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mt-1">
               <Input
                 value={cityInput}
                 onChange={(e) => setCityInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCitySubmit()}
-                className="h-7 w-32 text-sm"
+                className="h-7 w-28 text-sm bg-white/20 border-white/30 text-white placeholder:text-white/50"
                 placeholder="Stadt"
                 autoFocus
               />
-              <Button size="sm" variant="ghost" onClick={handleCitySubmit} className="h-7 px-2">
+              <Button size="sm" variant="ghost" onClick={handleCitySubmit} className="h-7 px-2 text-white hover:bg-white/20">
                 OK
               </Button>
             </div>
           ) : (
-            <CardTitle className="text-lg font-bold tracking-tight text-blue-900 flex items-center gap-2">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
               {data?.city || city}
               {onCityChange && (
                 <button
                   onClick={() => setEditMode(true)}
-                  className="hover:text-blue-600 transition-colors"
+                  className="hover:text-white/80 transition-colors"
                 >
                   <Settings2 className="h-4 w-4" />
                 </button>
               )}
-            </CardTitle>
+            </h3>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="px-6 py-4 flex-1 flex items-center justify-center">
+      </div>
+      <div className="flex-1 flex items-center justify-center px-5 pb-5 relative z-10">
         {isLoading ? (
-          <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-white/70" />
         ) : error || (data && data.configured === false) ? (
           <div className="flex flex-col items-center text-center px-4">
-            <AlertCircle className="h-8 w-8 text-amber-500 mb-2" />
-            <p className="text-sm font-medium text-muted-foreground">
+            <AlertCircle className="h-10 w-10 text-white/70 mb-2" />
+            <p className="text-sm font-medium text-white/90">
               {data?.configured === false 
-                ? "Wetter-API nicht konfiguriert" 
-                : "Wetter nicht verfügbar"}
+                ? "API nicht konfiguriert" 
+                : "Nicht verfügbar"}
             </p>
-            {data?.configured === false && (
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                OPENWEATHER_API_KEY benötigt
-              </p>
-            )}
           </div>
         ) : data ? (
-          <div className="flex items-center gap-4">
-            {getWeatherIcon(data.icon)}
+          <motion.div 
+            className="flex items-center gap-4"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+          >
+            <motion.div
+              animate={{ y: [0, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+            >
+              {getWeatherIcon(data.icon)}
+            </motion.div>
             <div>
-              <div className="text-3xl font-bold text-blue-900">{data.temp}°C</div>
-              <div className="text-sm text-blue-600 capitalize">{data.description}</div>
-              <div className="flex items-center gap-3 mt-1 text-xs text-blue-500">
+              <div className="text-4xl font-black text-white drop-shadow-lg">{data.temp}°C</div>
+              <div className="text-sm text-white/80 capitalize font-medium">{data.description}</div>
+              <div className="flex items-center gap-3 mt-1 text-xs text-white/70">
                 <span className="flex items-center gap-1">
                   <Droplets className="h-3 w-3" /> {data.humidity}%
                 </span>
@@ -120,9 +126,9 @@ export function WeatherWidget({ city = "Berlin", onCityChange }: WeatherWidgetPr
                 </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
