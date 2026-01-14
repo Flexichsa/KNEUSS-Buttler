@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, User, ArrowLeft, Bell, Menu } from "lucide-react";
+import { LogOut, User, ArrowLeft, Bell, Menu, Settings } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import {
   DropdownMenu,
@@ -23,7 +23,7 @@ export default function Header({
   subtitle = "Digitaler Assistent",
   onMenuClick
 }: HeaderProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const isHomePage = location === "/";
 
   return (
@@ -89,6 +89,14 @@ export default function Header({
               <DropdownMenuItem className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="cursor-pointer" 
+                data-testid="menu-settings"
+                onSelect={() => setLocation("/settings")}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Einstellungen</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer">
