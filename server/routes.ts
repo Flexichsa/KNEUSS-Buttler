@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTodoSchema, insertNoteSchema, DashboardConfigSchema } from "@shared/schema";
-import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser } from "./outlook";
+import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks } from "./outlook";
 import { chatCompletion, summarizeEmails } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
 
@@ -145,6 +145,39 @@ export async function registerRoutes(
       res.json(userInfo);
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to fetch user info" });
+    }
+  });
+
+  // Microsoft To Do - Get all lists
+  app.get("/api/mstodo/lists", async (req, res) => {
+    try {
+      const lists = await getTodoLists();
+      res.json(lists);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch To Do lists" });
+    }
+  });
+
+  // Microsoft To Do - Get tasks from a specific list
+  app.get("/api/mstodo/lists/:listId/tasks", async (req, res) => {
+    try {
+      const listId = req.params.listId;
+      const includeCompleted = req.query.includeCompleted === 'true';
+      const tasks = await getTodoTasks(listId, includeCompleted);
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch tasks" });
+    }
+  });
+
+  // Microsoft To Do - Get all tasks from all lists
+  app.get("/api/mstodo/tasks", async (req, res) => {
+    try {
+      const includeCompleted = req.query.includeCompleted === 'true';
+      const data = await getAllTodoTasks(includeCompleted);
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch all tasks" });
     }
   });
 

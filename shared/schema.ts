@@ -34,17 +34,30 @@ export const CryptoSettingsSchema = z.object({
   showChart: z.boolean().default(true),
 });
 
-export const DashboardConfigSchema = z.object({
+export const DashboardTabSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  icon: z.string().optional(),
   layouts: z.array(WidgetLayoutSchema),
   enabledWidgets: z.array(z.string()),
   widgetInstances: z.array(WidgetInstanceSchema).optional(),
   widgetSettings: z.record(z.string(), z.any()).optional(),
 });
 
+export const DashboardConfigSchema = z.object({
+  layouts: z.array(WidgetLayoutSchema),
+  enabledWidgets: z.array(z.string()),
+  widgetInstances: z.array(WidgetInstanceSchema).optional(),
+  widgetSettings: z.record(z.string(), z.any()).optional(),
+  tabs: z.array(DashboardTabSchema).optional(),
+  activeTabId: z.string().optional(),
+});
+
 export type WidgetLayout = z.infer<typeof WidgetLayoutSchema>;
 export type WidgetInstance = z.infer<typeof WidgetInstanceSchema>;
 export type WeatherSettings = z.infer<typeof WeatherSettingsSchema>;
 export type CryptoSettings = z.infer<typeof CryptoSettingsSchema>;
+export type DashboardTab = z.infer<typeof DashboardTabSchema>;
 export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 
 export const users = pgTable("users", {

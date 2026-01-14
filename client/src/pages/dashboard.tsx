@@ -10,6 +10,7 @@ import { NotesView } from "@/components/views/notes-view";
 import { SettingsView } from "@/components/views/settings-view";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { WidgetPicker } from "@/components/dashboard/widget-picker";
+import { DashboardTabs } from "@/components/dashboard/dashboard-tabs";
 import { useDashboardLayout } from "@/hooks/use-dashboard-layout";
 import { Search, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,7 +39,20 @@ export default function Dashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { config, isLoading: layoutLoading, updateLayouts, addWidget, removeWidget, updateWidgetSettings } = useDashboardLayout();
+  const { 
+    config, 
+    tabs,
+    activeTabId,
+    isLoading: layoutLoading, 
+    updateLayouts, 
+    addWidget, 
+    removeWidget, 
+    updateWidgetSettings,
+    addTab,
+    renameTab,
+    deleteTab,
+    switchTab,
+  } = useDashboardLayout();
 
   useEffect(() => {
     const newTab = pathToTab[location];
@@ -227,6 +241,18 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* Dashboard Tabs */}
+          {activeTab === "dashboard" && (
+            <DashboardTabs
+              tabs={tabs}
+              activeTabId={activeTabId}
+              onSwitchTab={switchTab}
+              onAddTab={addTab}
+              onRenameTab={renameTab}
+              onDeleteTab={deleteTab}
+            />
+          )}
 
           {/* Content Area */}
           <div className="p-6">
