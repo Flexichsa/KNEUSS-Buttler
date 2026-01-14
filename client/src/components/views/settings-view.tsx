@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Check, Mail, Calendar, Loader2, AlertCircle, User, LogOut } from "lucide-react";
+import { Check, Mail, Calendar, Loader2, AlertCircle, User, LogOut, HardDrive, ExternalLink } from "lucide-react";
 import { useOutlookStatus, useOutlookUserInfo, useOAuthConfig, useUserOutlookStatus, useConnectOutlook, useDisconnectOutlook } from "@/hooks/use-outlook";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
@@ -26,6 +27,16 @@ export function SettingsView() {
   const { data: userInfo, isLoading: userLoading } = useOutlookUserInfo();
   const { data: userOAuthStatus, isLoading: oauthLoading } = useUserOutlookStatus(sessionId);
   
+  const { data: onedriveStatus, isLoading: onedriveLoading } = useQuery<{ connected: boolean }>({
+    queryKey: ["onedrive-status"],
+    queryFn: async () => {
+      const res = await fetch("/api/onedrive/status");
+      return res.json();
+    },
+    staleTime: 60000,
+    retry: false,
+  });
+  
   const connectOutlook = useConnectOutlook();
   const disconnectOutlook = useDisconnectOutlook();
   
@@ -34,6 +45,7 @@ export function SettingsView() {
   const legacyConnected = legacyStatus?.connected ?? false;
   const isConnected = userConnected || legacyConnected;
   const isLoading = legacyLoading || oauthLoading;
+  const onedriveConnected = onedriveStatus?.connected ?? false;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -138,18 +150,48 @@ export function SettingsView() {
               </div>
             </div>
 
-            {/* OneDrive Integration (Placeholder) */}
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-white opacity-60">
+            {/* OneDrive Integration */}
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-white">
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 bg-[#0078D4] rounded-md flex items-center justify-center text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19c0-1.7-1.3-3-3-3h-1.1c-.2-2.3-2.1-4-4.4-4-2.3 0-4.3 1.8-4.3 4H4c-2.2 0-4 1.8-4 4s1.8 4 4 4h13.5c2.5 0 4.5-2 4.5-4.5S20 19 17.5 19z"/></svg>
+                  <HardDrive className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Microsoft OneDrive</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Microsoft OneDrive</h3>
+                    {onedriveLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    ) : onedriveConnected ? (
+                      <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 gap-1" data-testid="badge-onedrive-connected">
+                        <Check className="h-3 w-3" />
+                        Verbunden
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200" data-testid="badge-onedrive-disconnected">
+                        Nicht verbunden
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">Zugriff auf Dateien und Dokumente</p>
                 </div>
               </div>
-              <Button variant="outline" disabled>Kommt bald</Button>
+              {!onedriveConnected && (
+                <div className="text-xs text-muted-foreground text-right max-w-[200px]">
+                  Aktiviere OneDrive über die Replit Connections
+                </div>
+              )}
+              {onedriveConnected && (
+                <a 
+                  href="https://onedrive.live.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  data-testid="link-onedrive-open"
+                >
+                  OneDrive öffnen
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
             </div>
           </CardContent>
         </Card>
