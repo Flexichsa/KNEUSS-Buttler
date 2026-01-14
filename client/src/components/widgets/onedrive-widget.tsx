@@ -90,16 +90,23 @@ export function OneDriveWidget() {
 
   return (
     <div className="h-full flex flex-col" data-testid="onedrive-widget">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <a 
+        href="https://onedrive.live.com" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center justify-between px-4 py-3 border-b hover:bg-muted/50 transition-colors cursor-pointer group"
+        data-testid="onedrive-widget-header"
+      >
         <div className="flex items-center gap-2">
           <HardDrive className="h-5 w-5 text-blue-600" />
-          <h3 className="font-semibold text-sm">OneDrive</h3>
+          <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">OneDrive</h3>
+          <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
         <Badge variant="secondary" className="text-xs">
           <Clock className="h-3 w-3 mr-1" />
-          Zuletzt bearbeitet
+          {files?.length || 0} Dateien
         </Badge>
-      </div>
+      </a>
 
       {!files || files.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">
@@ -146,6 +153,17 @@ export function OneDriveWidget() {
           </div>
         </ScrollArea>
       )}
+      
+      <a
+        href="https://onedrive.live.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 px-4 py-2 border-t text-sm text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors"
+        data-testid="onedrive-open-all"
+      >
+        <span>Alle Dateien in OneDrive anzeigen</span>
+        <ExternalLink className="h-3 w-3" />
+      </a>
     </div>
   );
 }
