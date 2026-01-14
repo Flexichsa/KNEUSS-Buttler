@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -151,6 +151,31 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
         <div className="flex gap-3 mt-2 text-[10px] text-white/70">
           <span className="flex items-center gap-1"><Wind className="h-3 w-3" /> 3.2 m/s</span>
           <span className="flex items-center gap-1"><Droplets className="h-3 w-3" /> 65%</span>
+        </div>
+      </div>
+    )
+  },
+  { 
+    id: "mstodo", 
+    name: "Microsoft To Do", 
+    description: "Deine Microsoft To Do Aufgaben",
+    icon: <ListTodo className="h-5 w-5" />, 
+    defaultSize: { w: 5, h: 5 }, 
+    minSize: { w: 4, h: 4 },
+    previewGradient: "from-blue-600 to-blue-800",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <div className="w-4 h-4 rounded-full border-2 border-blue-300" />
+          <span>Projekt abschliessen</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <div className="w-4 h-4 rounded-full border-2 border-red-400" />
+          <span>Wichtige Aufgabe</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/60 text-xs">
+          <div className="w-4 h-4 rounded-full border-2 border-white/40 bg-white/30" />
+          <span className="line-through">Erledigt</span>
         </div>
       </div>
     )

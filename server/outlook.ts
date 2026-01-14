@@ -321,3 +321,99 @@ export async function getOutlookUserInfoForUser(sessionId: string): Promise<{ em
     throw error;
   }
 }
+
+// Microsoft To Do interfaces
+export interface MicrosoftTodoList {
+  id: string;
+  displayName: string;
+  isOwner: boolean;
+  wellknownListName?: string;
+}
+
+export interface MicrosoftTodoTask {
+  id: string;
+  title: string;
+  status: 'notStarted' | 'inProgress' | 'completed' | 'waitingOnOthers' | 'deferred';
+  importance: 'low' | 'normal' | 'high';
+  isReminderOn: boolean;
+  dueDateTime?: { dateTime: string; timeZone: string };
+  completedDateTime?: { dateTime: string; timeZone: string };
+  createdDateTime: string;
+  lastModifiedDateTime: string;
+  body?: { content: string; contentType: string };
+}
+
+// Get all To Do lists (uses Replit connector)
+export async function getTodoLists(): Promise<MicrosoftTodoList[]> {
+  const client = await getUncachableOutlookClient();
+  
+  try {
+    const lists = await client
+      .api('/me/todo/lists')
+      .select('id,displayName,isOwner,wellknownListName')
+      .get();
+
+    console.log(`[MSTodo] Fetched ${lists.value?.length || 0} To Do lists`);
+
+    return lists.value.map((list: any) => ({
+      id: list.id,
+      displayName: list.displayName,
+      isOwner: list.isOwner,
+      wellknownListName: list.wellknownListName
+    }));
+  } catch (error: any) {
+    console.error('[MSTodo] Error fetching To Do lists:', error.message);
+    throw error;
+  }
+}
+
+// Get tasks from a specific To Do list
+export async function getTodoTasks(listId: string, includeCompleted: boolean = false): Promise<MicrosoftTodoTask[]> {
+  const client = await getUncachableOutlookClient();
+  
+  try {
+    let api = client
+      .api(`/me/todo/lists/${listId}/tasks`)
+      .select('id,title,status,importance,isReminderOn,dueDateTime,completedDateTime,createdDateTime,lastModifiedDateTime,body')
+      .orderby('createdDateTime DESC')
+      .top(50);
+    
+    if (!includeCompleted) {
+      api = api.filter("status ne 'completed'");
+    }
+
+    const tasks = await api.get();
+
+    console.log(`[MSTodo] Fetched ${tasks.value?.length || 0} tasks from list ${listId}`);
+
+    return tasks.value.map((task: any) => ({
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      importance: task.importance,
+      isReminderOn: task.isReminderOn,
+      dueDateTime: task.dueDateTime,
+      completedDateTime: task.completedDateTime,
+      createdDateTime: task.createdDateTime,
+      lastModifiedDateTime: task.lastModifiedDateTime,
+      body: task.body
+    }));
+  } catch (error: any) {
+    console.error('[MSTodo] Error fetching tasks:', error.message);
+    throw error;
+  }
+}
+
+// Get all tasks from all lists combined
+export async function getAllTodoTasks(includeCompleted: boolean = false): Promise<{list: MicrosoftTodoList; tasks: MicrosoftTodoTask[]}[]> {
+  const lists = await getTodoLists();
+  
+  const results = await Promise.all(
+    lists.map(async (list) => ({
+      list,
+      tasks: await getTodoTasks(list.id, includeCompleted)
+    }))
+  );
+  
+  return results;
+}

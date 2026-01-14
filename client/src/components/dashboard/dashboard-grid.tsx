@@ -9,6 +9,7 @@ import { TodoWidget } from "@/components/widgets/todo-widget";
 import { AssistantWidget } from "@/components/widgets/assistant-widget";
 import { BtcWidget } from "@/components/widgets/btc-widget";
 import { WeatherWidget } from "@/components/widgets/weather-widget";
+import { MsTodoWidget } from "@/components/widgets/mstodo-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings } from "@shared/schema";
 import { X, GripVertical, Settings2 } from "lucide-react";
@@ -163,6 +164,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
             onCityChange={(city) => handleSettingsChange(widgetId, { ...settings, city })}
           />
         );
+      case "mstodo":
+        return <MsTodoWidget />;
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
