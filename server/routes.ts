@@ -382,16 +382,10 @@ export async function registerRoutes(
     }
   });
 
-  // Weather (OpenWeatherMap API)
+  // Weather (Open-Meteo API - free, no API key required)
   app.get("/api/weather", async (req, res) => {
     try {
       const city = (req.query.city as string) || "Berlin";
-      const apiKey = process.env.OPENWEATHER_API_KEY;
-      
-      if (!apiKey) {
-        return res.status(503).json({ error: "Weather API not configured", configured: false });
-      }
-      
       const cacheKey = city.toLowerCase();
       const cached = weatherCache.get(cacheKey);
       const now = Date.now();
@@ -400,27 +394,121 @@ export async function registerRoutes(
         return res.json({ ...cached.data, cached: true });
       }
       
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=de`
+      // First geocode the city name to coordinates
+      const geoResponse = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=de&format=json`
+      );
+      if (!geoResponse.ok) throw new Error("Geocoding API error");
+      const geoData = await geoResponse.json();
+      
+      if (!geoData.results || geoData.results.length === 0) {
+        return res.status(404).json({ error: "Stadt nicht gefunden" });
+      }
+      
+      const location = geoData.results[0];
+      const { latitude, longitude, name, country } = location;
+      
+      // Fetch weather data with hourly forecast
+      const weatherResponse = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1`
       );
       
-      if (!response.ok) throw new Error("Weather API error");
-      const data = await response.json();
+      if (!weatherResponse.ok) throw new Error("Weather API error");
+      const weatherData = await weatherResponse.json();
+      
+      const current = weatherData.current;
+      const hourly = weatherData.hourly;
+      
+      // Get weather description from WMO code
+      const getWeatherDescription = (code: number): string => {
+        const descriptions: Record<number, string> = {
+          0: "Klar",
+          1: "Überwiegend klar",
+          2: "Teilweise bewölkt",
+          3: "Bewölkt",
+          45: "Nebel",
+          48: "Reifnebel",
+          51: "Leichter Nieselregen",
+          53: "Nieselregen",
+          55: "Starker Nieselregen",
+          61: "Leichter Regen",
+          63: "Regen",
+          65: "Starkregen",
+          71: "Leichter Schneefall",
+          73: "Schneefall",
+          75: "Starker Schneefall",
+          80: "Regenschauer",
+          81: "Starke Regenschauer",
+          82: "Heftige Regenschauer",
+          85: "Schneeschauer",
+          86: "Starke Schneeschauer",
+          95: "Gewitter",
+          96: "Gewitter mit Hagel",
+          99: "Schweres Gewitter mit Hagel"
+        };
+        return descriptions[code] || "Unbekannt";
+      };
+      
+      // Get icon code based on WMO weather code
+      const getIconCode = (code: number): string => {
+        if (code === 0) return "01d";
+        if (code <= 2) return "02d";
+        if (code === 3) return "03d";
+        if (code >= 45 && code <= 48) return "50d";
+        if (code >= 51 && code <= 55) return "09d";
+        if (code >= 61 && code <= 65) return "10d";
+        if (code >= 71 && code <= 77) return "13d";
+        if (code >= 80 && code <= 82) return "09d";
+        if (code >= 85 && code <= 86) return "13d";
+        if (code >= 95) return "11d";
+        return "03d";
+      };
+      
+      // Create hourly forecast (next 8 hours from current time)
+      const nowTime = new Date();
+      let startIndex = 0;
+      
+      // Find the index closest to current time in the hourly data
+      for (let i = 0; i < hourly.time.length; i++) {
+        const entryTime = new Date(hourly.time[i]);
+        if (entryTime >= nowTime) {
+          startIndex = i;
+          break;
+        }
+      }
+      
+      const hourlyForecast = [];
+      for (let i = 0; i < 8; i++) {
+        const idx = startIndex + i;
+        if (idx < hourly.time.length && hourly.temperature_2m[idx] !== undefined) {
+          hourlyForecast.push({
+            time: hourly.time[idx],
+            hour: new Date(hourly.time[idx]).getHours(),
+            temp: Math.round(hourly.temperature_2m[idx]),
+            weatherCode: hourly.weather_code[idx],
+            icon: getIconCode(hourly.weather_code[idx])
+          });
+        }
+      }
       
       const weather = {
-        city: data.name,
-        country: data.sys.country,
-        temp: Math.round(data.main.temp),
-        feels_like: Math.round(data.main.feels_like),
-        description: data.weather[0].description,
-        icon: data.weather[0].icon,
-        humidity: data.main.humidity,
-        wind: data.wind.speed
+        city: name,
+        country: country || "",
+        temp: Math.round(current.temperature_2m),
+        feels_like: Math.round(current.apparent_temperature),
+        description: getWeatherDescription(current.weather_code),
+        icon: getIconCode(current.weather_code),
+        humidity: current.relative_humidity_2m,
+        wind: (current.wind_speed_10m / 3.6).toFixed(1), // km/h to m/s
+        pressure: Math.round(current.surface_pressure),
+        hourlyForecast,
+        configured: true
       };
       
       weatherCache.set(cacheKey, { data: weather, timestamp: now });
-      res.json({ ...weather, cached: false, configured: true });
+      res.json({ ...weather, cached: false });
     } catch (error: any) {
+      console.error("[Weather] Error:", error);
       res.status(500).json({ error: error.message || "Failed to fetch weather" });
     }
   });

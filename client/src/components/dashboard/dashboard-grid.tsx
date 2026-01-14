@@ -29,8 +29,8 @@ const DEFAULT_LAYOUTS: WidgetLayout[] = [
   { i: "todo", x: 6, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
   { i: "mail", x: 0, y: 4, w: 8, h: 4, minW: 4, minH: 3 },
   { i: "assistant", x: 8, y: 4, w: 4, h: 6, minW: 3, minH: 4 },
-  { i: "btc", x: 0, y: 8, w: 4, h: 3, minW: 3, minH: 2 },
-  { i: "weather", x: 4, y: 8, w: 4, h: 3, minW: 3, minH: 2 },
+  { i: "btc", x: 0, y: 8, w: 4, h: 5, minW: 3, minH: 4 },
+  { i: "weather", x: 4, y: 8, w: 5, h: 4, minW: 4, minH: 3 },
 ];
 
 export const DEFAULT_CONFIG: DashboardConfig = {
