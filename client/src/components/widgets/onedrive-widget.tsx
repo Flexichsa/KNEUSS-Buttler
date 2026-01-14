@@ -1,0 +1,151 @@
+import { useQuery } from "@tanstack/react-query";
+import { HardDrive, File, Folder, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, Loader2, AlertCircle, ExternalLink, Clock } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { format, parseISO, formatDistanceToNow } from "date-fns";
+import { de } from "date-fns/locale";
+
+interface OneDriveItem {
+  id: string;
+  name: string;
+  size: number;
+  lastModifiedDateTime: string;
+  webUrl: string;
+  isFolder: boolean;
+  mimeType?: string;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+function getFileIcon(item: OneDriveItem) {
+  if (item.isFolder) {
+    return <Folder className="h-5 w-5 text-yellow-500" />;
+  }
+  
+  const mimeType = item.mimeType || "";
+  const name = item.name.toLowerCase();
+  
+  if (mimeType.startsWith("image/") || /\.(jpg|jpeg|png|gif|svg|webp)$/.test(name)) {
+    return <FileImage className="h-5 w-5 text-pink-500" />;
+  }
+  if (mimeType.startsWith("video/") || /\.(mp4|mov|avi|mkv)$/.test(name)) {
+    return <FileVideo className="h-5 w-5 text-purple-500" />;
+  }
+  if (mimeType.startsWith("audio/") || /\.(mp3|wav|ogg|m4a)$/.test(name)) {
+    return <FileAudio className="h-5 w-5 text-green-500" />;
+  }
+  if (/\.(xlsx?|csv)$/.test(name) || mimeType.includes("spreadsheet")) {
+    return <FileSpreadsheet className="h-5 w-5 text-emerald-600" />;
+  }
+  if (/\.(pptx?|ppt)$/.test(name) || mimeType.includes("presentation")) {
+    return <Presentation className="h-5 w-5 text-orange-500" />;
+  }
+  if (/\.(docx?|pdf|txt|md)$/.test(name) || mimeType.includes("document") || mimeType.includes("text")) {
+    return <FileText className="h-5 w-5 text-blue-500" />;
+  }
+  
+  return <File className="h-5 w-5 text-gray-500" />;
+}
+
+export function OneDriveWidget() {
+  const { data: files, isLoading, error } = useQuery<OneDriveItem[]>({
+    queryKey: ["onedrive-recent"],
+    queryFn: async () => {
+      const res = await fetch("/api/onedrive/recent");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to fetch files");
+      }
+      return res.json();
+    },
+    refetchInterval: 120000,
+    staleTime: 60000,
+    retry: false,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center" data-testid="onedrive-widget-loading">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground p-4" data-testid="onedrive-widget-error">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-sm text-center">OneDrive nicht verbunden</p>
+        <p className="text-xs text-center opacity-70">Verbinde OneDrive in den Einstellungen</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col" data-testid="onedrive-widget">
+      <div className="flex items-center justify-between px-4 py-3 border-b">
+        <div className="flex items-center gap-2">
+          <HardDrive className="h-5 w-5 text-blue-600" />
+          <h3 className="font-semibold text-sm">OneDrive</h3>
+        </div>
+        <Badge variant="secondary" className="text-xs">
+          <Clock className="h-3 w-3 mr-1" />
+          Zuletzt bearbeitet
+        </Badge>
+      </div>
+
+      {!files || files.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">
+          <Folder className="h-10 w-10 text-muted-foreground/50" />
+          <p className="text-sm">Keine Dateien gefunden</p>
+        </div>
+      ) : (
+        <ScrollArea className="flex-1">
+          <div className="p-2 space-y-1">
+            {files.map((item) => (
+              <a
+                key={item.id}
+                href={item.webUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                data-testid={`file-${item.id}`}
+              >
+                <div className="flex-shrink-0">
+                  {getFileIcon(item)}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm truncate group-hover:text-primary transition-colors">
+                    {item.name}
+                  </p>
+                  
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                    {!item.isFolder && (
+                      <span>{formatFileSize(item.size)}</span>
+                    )}
+                    <span>
+                      {formatDistanceToNow(parseISO(item.lastModifiedDateTime), { 
+                        addSuffix: true, 
+                        locale: de 
+                      })}
+                    </span>
+                  </div>
+                </div>
+                
+                <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              </a>
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+    </div>
+  );
+}

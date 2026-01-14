@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -176,6 +176,31 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
         <div className="flex items-center gap-2 text-white/60 text-xs">
           <div className="w-4 h-4 rounded-full border-2 border-white/40 bg-white/30" />
           <span className="line-through">Erledigt</span>
+        </div>
+      </div>
+    )
+  },
+  { 
+    id: "onedrive", 
+    name: "OneDrive", 
+    description: "Deine Dateien und Dokumente",
+    icon: <HardDrive className="h-5 w-5" />, 
+    defaultSize: { w: 5, h: 5 }, 
+    minSize: { w: 4, h: 4 },
+    previewGradient: "from-sky-500 to-blue-700",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <Folder className="h-4 w-4 text-yellow-300" />
+          <span>Dokumente</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <File className="h-4 w-4 text-blue-300" />
+          <span>Bericht.docx</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <File className="h-4 w-4 text-green-300" />
+          <span>Tabelle.xlsx</span>
         </div>
       </div>
     )
