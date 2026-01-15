@@ -11,6 +11,7 @@ import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { WidgetPicker } from "@/components/dashboard/widget-picker";
 import { DashboardTabs } from "@/components/dashboard/dashboard-tabs";
 import { useDashboardLayout } from "@/hooks/use-dashboard-layout";
+import { useAuth } from "@/hooks/use-auth";
 import { Search, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -37,7 +38,8 @@ const tabToPath: Record<string, string> = {
 export default function Dashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
-    const { 
+  const { user } = useAuth();
+  const { 
     config, 
     tabs,
     activeTabId,
@@ -90,9 +92,19 @@ export default function Dashboard() {
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Guten Morgen';
+    if (hour < 18) return 'Guten Tag';
+    return 'Guten Abend';
+  };
+
   const getPageTitle = () => {
     switch (activeTab) {
-      case 'dashboard': return 'Guten Morgen, Alex';
+      case 'dashboard': {
+        const firstName = user?.firstName || user?.email?.split('@')[0] || 'Benutzer';
+        return `${getGreeting()}, ${firstName}`;
+      }
       case 'calendar': return 'Kalender';
       case 'mail': return 'E-Mails';
       case 'todos': return 'Aufgaben';
