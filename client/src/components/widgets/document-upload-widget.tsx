@@ -8,13 +8,16 @@ import { cn } from "@/lib/utils";
 
 function generateId(): string {
   try {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
       return crypto.randomUUID();
     }
-  } catch (e) {
+  } catch {
     // Fallback for environments where crypto.randomUUID is not supported
   }
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}-${Math.random().toString(36).slice(2, 11)}`;
+  const timestamp = Date.now().toString(36);
+  const randomPart1 = Math.random().toString(36).slice(2, 11);
+  const randomPart2 = Math.random().toString(36).slice(2, 11);
+  return `${timestamp}-${randomPart1}-${randomPart2}`;
 }
 
 interface ProcessedDocument {
@@ -27,6 +30,7 @@ interface ProcessedDocument {
   status: "processing" | "ready" | "error";
   error?: string;
   downloadUrl?: string;
+  file?: File;
 }
 
 export function DocumentUploadWidget() {
@@ -88,12 +92,22 @@ export function DocumentUploadWidget() {
         documentType: "",
         date: new Date().toISOString().split("T")[0],
         status: "processing",
+        file: file,
       };
       newDocs.push(doc);
       uploadMutation.mutate(file);
     });
     
     setDocuments(prev => [...prev, ...newDocs]);
+  }, [uploadMutation]);
+
+  const retryUpload = useCallback((doc: ProcessedDocument) => {
+    if (!doc.file) return;
+    
+    setDocuments(prev => prev.map(d => 
+      d.id === doc.id ? { ...d, status: "processing" as const, error: undefined } : d
+    ));
+    uploadMutation.mutate(doc.file);
   }, [uploadMutation]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -260,14 +274,11 @@ export function DocumentUploadWidget() {
                           <Download className="h-4 w-4" />
                         </Button>
                       )}
-                      {doc.status === "error" && (
+                      {doc.status === "error" && doc.file && (
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => {
-                            const file = new File([], doc.originalName);
-                            uploadMutation.mutate(file);
-                          }}
+                          onClick={() => retryUpload(doc)}
                           className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                           data-testid={`retry-${doc.id}`}
                         >
