@@ -13,7 +13,7 @@ import path from "path";
 const loadPdfParse = async () => {
   try {
     const mod = await import("pdf-parse");
-    return mod.default || mod;
+    return (mod as any).default || mod;
   } catch {
     return null;
   }
