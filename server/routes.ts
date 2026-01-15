@@ -5,6 +5,7 @@ import { insertTodoSchema, insertNoteSchema, DashboardConfigSchema } from "@shar
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -32,6 +33,10 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // Setup Replit Auth (must be before other routes)
+  await setupAuth(app);
+  registerAuthRoutes(app);
 
   // OAuth Configuration Status
   app.get("/api/auth/oauth-config", async (req, res) => {

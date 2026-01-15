@@ -3,6 +3,8 @@ import { pgTable, text, varchar, serial, boolean, timestamp, jsonb } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export * from "./models/auth";
+
 export const WidgetLayoutSchema = z.object({
   i: z.string(),
   x: z.number(),
