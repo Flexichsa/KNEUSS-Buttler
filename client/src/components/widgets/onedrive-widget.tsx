@@ -56,14 +56,18 @@ function getFileIcon(item: OneDriveItem) {
 
 export function OneDriveWidget() {
   const { data: files, isLoading, error } = useQuery<OneDriveItem[]>({
-    queryKey: ["onedrive-recent"],
+    queryKey: ["onedrive-files"],
     queryFn: async () => {
-      const res = await fetch("/api/onedrive/recent");
+      const res = await fetch("/api/onedrive/files");
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Failed to fetch files");
       }
-      return res.json();
+      const allFiles = await res.json() as OneDriveItem[];
+      return allFiles.filter(item => {
+        const name = item.name.toLowerCase();
+        return !name.includes("onenote") && !name.endsWith(".one") && !name.endsWith(".onepkg");
+      });
     },
     refetchInterval: 120000,
     staleTime: 60000,
