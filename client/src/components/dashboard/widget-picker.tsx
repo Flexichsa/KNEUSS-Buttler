@@ -29,7 +29,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Outlook Termine und Ereignisse",
     icon: <Calendar className="h-5 w-5" />, 
     defaultSize: { w: 6, h: 4 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-orange-400 to-red-500",
     previewContent: (
       <div className="flex flex-col gap-1.5 w-full">
@@ -49,7 +49,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "To-Do Liste verwalten",
     icon: <CheckSquare className="h-5 w-5" />, 
     defaultSize: { w: 6, h: 4 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-green-400 to-emerald-600",
     previewContent: (
       <div className="flex flex-col gap-1.5 w-full">
@@ -72,7 +72,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Outlook Posteingang",
     icon: <Mail className="h-5 w-5" />, 
     defaultSize: { w: 8, h: 4 }, 
-    minSize: { w: 4, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-blue-400 to-indigo-600",
     previewContent: (
       <div className="flex flex-col gap-1.5 w-full">
@@ -93,7 +93,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "GPT-Chat für Hilfe",
     icon: <MessageSquare className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 6 }, 
-    minSize: { w: 3, h: 4 },
+    minSize: { w: 2, h: 3 },
     previewGradient: "from-violet-500 to-purple-700",
     previewContent: (
       <div className="flex flex-col gap-1.5 w-full">
@@ -112,7 +112,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Bitcoin, Ethereum & mehr",
     icon: <Coins className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 5 }, 
-    minSize: { w: 3, h: 4 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-slate-800 via-purple-900 to-slate-900",
     previewContent: (
       <div className="flex flex-col gap-1 w-full">
@@ -137,7 +137,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Aktuelle Wetterdaten",
     icon: <Cloud className="h-5 w-5" />, 
     defaultSize: { w: 5, h: 4 }, 
-    minSize: { w: 4, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-sky-400 via-blue-500 to-blue-600",
     previewContent: (
       <div className="flex flex-col w-full">
@@ -161,7 +161,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Deine Microsoft To Do Aufgaben",
     icon: <ListTodo className="h-5 w-5" />, 
     defaultSize: { w: 5, h: 5 }, 
-    minSize: { w: 4, h: 4 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-blue-600 to-blue-800",
     previewContent: (
       <div className="flex flex-col gap-1.5 w-full">
@@ -186,7 +186,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Deine Dateien und Dokumente",
     icon: <HardDrive className="h-5 w-5" />, 
     defaultSize: { w: 5, h: 5 }, 
-    minSize: { w: 4, h: 4 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-sky-500 to-blue-700",
     previewContent: (
       <div className="flex flex-col gap-1.5 w-full">
@@ -211,7 +211,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Dokumente automatisch benennen",
     icon: <Upload className="h-5 w-5" />, 
     defaultSize: { w: 5, h: 5 }, 
-    minSize: { w: 4, h: 4 },
+    minSize: { w: 2, h: 3 },
     previewGradient: "from-emerald-500 to-teal-700",
     previewContent: (
       <div className="flex flex-col gap-1.5 w-full">
