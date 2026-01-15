@@ -3,8 +3,19 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertTodoSchema, insertNoteSchema, DashboardConfigSchema } from "@shared/schema";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
-import { chatCompletion, summarizeEmails } from "./openai";
+import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
+
+const upload = multer({ 
+  dest: "/tmp/uploads",
+  limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 const cryptoCache: Map<string, { data: any; timestamp: number }> = new Map();
 const weatherCache: Map<string, { data: any; timestamp: number }> = new Map();
@@ -575,6 +586,82 @@ export async function registerRoutes(
       console.error("[Weather] Error:", error);
       res.status(500).json({ error: error.message || "Failed to fetch weather" });
     }
+  });
+
+  // Document Upload and Analysis
+  const uploadedFiles = new Map<string, { originalName: string; filePath: string; suggestedName: string }>();
+  
+  app.post("/api/documents/analyze", upload.single("file"), async (req, res) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ error: "Keine Datei hochgeladen" });
+      }
+      
+      console.log(`[Documents] Analyzing file: ${file.originalname}`);
+      
+      let textContent = "";
+      const ext = path.extname(file.originalname).toLowerCase();
+      
+      if (ext === ".pdf") {
+        const dataBuffer = fs.readFileSync(file.path);
+        const pdfData = await pdfParse(dataBuffer);
+        textContent = pdfData.text;
+      } else if (ext === ".txt") {
+        textContent = fs.readFileSync(file.path, "utf-8");
+      } else if (ext === ".doc" || ext === ".docx") {
+        textContent = `Dateiname: ${file.originalname}`;
+      } else {
+        textContent = `Dateiname: ${file.originalname}`;
+      }
+      
+      const analysis = await analyzeDocument(textContent, file.originalname);
+      
+      const fileId = crypto.randomUUID();
+      const newExt = path.extname(file.originalname);
+      const suggestedNameWithExt = `${analysis.suggestedName}${newExt}`;
+      
+      uploadedFiles.set(fileId, {
+        originalName: file.originalname,
+        filePath: file.path,
+        suggestedName: suggestedNameWithExt,
+      });
+      
+      console.log(`[Documents] Analysis complete: ${suggestedNameWithExt}`);
+      
+      res.json({
+        fileId,
+        originalName: file.originalname,
+        suggestedName: suggestedNameWithExt,
+        companyName: analysis.companyName,
+        documentType: analysis.documentType,
+        date: analysis.date,
+        downloadUrl: `/api/documents/download/${fileId}`,
+      });
+    } catch (error: any) {
+      console.error("[Documents] Analysis error:", error);
+      res.status(500).json({ error: error.message || "Analyse fehlgeschlagen" });
+    }
+  });
+  
+  app.get("/api/documents/download/:fileId", (req, res) => {
+    const fileId = req.params.fileId;
+    const fileInfo = uploadedFiles.get(fileId);
+    
+    if (!fileInfo) {
+      return res.status(404).json({ error: "Datei nicht gefunden" });
+    }
+    
+    if (!fs.existsSync(fileInfo.filePath)) {
+      uploadedFiles.delete(fileId);
+      return res.status(404).json({ error: "Datei nicht mehr verfügbar" });
+    }
+    
+    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(fileInfo.suggestedName)}"`);
+    res.setHeader("Content-Type", "application/octet-stream");
+    
+    const readStream = fs.createReadStream(fileInfo.filePath);
+    readStream.pipe(res);
   });
 
   return httpServer;
