@@ -73,3 +73,78 @@ export async function summarizeEmails(emails: Array<{subject: string, sender: st
 
   return response.choices[0]?.message?.content || 'No summary available.';
 }
+
+export interface DocumentAnalysis {
+  companyName: string;
+  documentType: string;
+  date: string;
+  suggestedName: string;
+}
+
+export async function analyzeDocument(textContent: string, originalFileName: string): Promise<DocumentAnalysis> {
+  const today = new Date().toISOString().split('T')[0];
+  
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'system',
+        content: `You are a document analysis assistant. Analyze the document content and extract:
+1. Company/Organization name (the sender or issuer of the document)
+2. Document type (e.g., Rechnung, Vertrag, Angebot, Lieferschein, Brief, Bericht, etc.)
+3. Document date (if found in content, otherwise use today's date)
+
+Respond in JSON format only:
+{
+  "companyName": "extracted company name",
+  "documentType": "document type in German",
+  "date": "YYYY-MM-DD format"
+}
+
+Rules:
+- Use the company that SENT or ISSUED the document, not the recipient
+- If company name not found, use "Unbekannt"
+- If document type unclear, use "Dokument"
+- If no date in content, use today's date: ${today}
+- Keep company names short and clean (no "GmbH", "AG", etc.)
+- German document types preferred`
+      },
+      {
+        role: 'user',
+        content: `Original filename: ${originalFileName}\n\nDocument content:\n${textContent.slice(0, 4000)}`
+      }
+    ],
+    temperature: 0.3,
+    max_tokens: 200,
+  });
+
+  const content = response.choices[0]?.message?.content || '{}';
+  
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      const companyName = (parsed.companyName || 'Unbekannt').replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '').trim();
+      const documentType = (parsed.documentType || 'Dokument').replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '').trim();
+      const date = parsed.date || today;
+      
+      const suggestedName = `${date}_${companyName}_${documentType}`.replace(/\s+/g, '-');
+      
+      return {
+        companyName,
+        documentType,
+        date,
+        suggestedName,
+      };
+    }
+  } catch (e) {
+    console.error('[OpenAI] Failed to parse document analysis:', e);
+  }
+
+  return {
+    companyName: 'Unbekannt',
+    documentType: 'Dokument',
+    date: today,
+    suggestedName: `${today}_Unbekannt_Dokument`,
+  };
+}

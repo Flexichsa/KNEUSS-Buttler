@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -201,6 +201,27 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
         <div className="flex items-center gap-2 text-white/90 text-xs">
           <File className="h-4 w-4 text-green-300" />
           <span>Tabelle.xlsx</span>
+        </div>
+      </div>
+    )
+  },
+  { 
+    id: "docupload", 
+    name: "Dokument Umbenenner", 
+    description: "Dokumente automatisch benennen",
+    icon: <Upload className="h-5 w-5" />, 
+    defaultSize: { w: 5, h: 5 }, 
+    minSize: { w: 4, h: 4 },
+    previewGradient: "from-emerald-500 to-teal-700",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <Upload className="h-4 w-4 text-white/70" />
+          <span>Hochladen</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <FileText className="h-4 w-4 text-emerald-300" />
+          <span>2026-01-15_Firma_Rechnung</span>
         </div>
       </div>
     )
