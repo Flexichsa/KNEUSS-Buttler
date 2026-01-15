@@ -14,15 +14,14 @@ import crypto from "crypto";
 const loadPdfParse = async () => {
   try {
     const mod = await import("pdf-parse");
-    const pdfParse = (mod as any).default || mod;
-    return typeof pdfParse === 'function' ? pdfParse : null;
+    return (mod as any).PDFParse || null;
   } catch (e) {
     console.error("[PDF] Failed to load pdf-parse:", e);
     return null;
   }
 };
 
-let pdfParseInstance: ((buffer: Buffer) => Promise<{ text: string }>) | null = null;
+let PDFParseClass: any = null;
 
 const upload = multer({ 
   dest: "/tmp/uploads",
@@ -620,16 +619,18 @@ export async function registerRoutes(
       const ext = path.extname(file.originalname).toLowerCase();
       
       if (ext === ".pdf") {
-        if (!pdfParseInstance) {
-          pdfParseInstance = await loadPdfParse();
+        if (!PDFParseClass) {
+          PDFParseClass = await loadPdfParse();
         }
-        if (!pdfParseInstance) {
+        if (!PDFParseClass) {
           return res.status(500).json({ error: "PDF-Verarbeitung nicht verfügbar" });
         }
         try {
           const dataBuffer = fs.readFileSync(file.path);
-          const pdfData = await pdfParseInstance(dataBuffer);
-          textContent = pdfData?.text || "";
+          const parser = new PDFParseClass({ data: dataBuffer });
+          const result = await parser.getText();
+          textContent = result?.text || "";
+          await parser.destroy();
         } catch (pdfError: any) {
           console.error("[Documents] PDF parsing error:", pdfError);
           textContent = `Dateiname: ${file.originalname}`;
