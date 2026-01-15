@@ -624,7 +624,17 @@ export async function registerRoutes(
           return res.status(500).json({ error: "PDF-Verarbeitung nicht verfügbar" });
         }
         const dataBuffer = fs.readFileSync(file.path);
-        const pdfData = await pdfParseInstance(dataBuffer);
+        const pdfData = await pdfParseInstance(dataBuffer, {
+          pagerender: function(pageData: any) {
+            return pageData.getTextContent().then(function(textContent: any) {
+              let text = '';
+              for (const item of textContent.items) {
+                text += (item as any).str + ' ';
+              }
+              return text;
+            });
+          }
+        });
         textContent = pdfData.text;
       } else if (ext === ".txt") {
         textContent = fs.readFileSync(file.path, "utf-8");
