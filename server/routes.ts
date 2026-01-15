@@ -9,6 +9,7 @@ import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 
 const loadPdfParse = async () => {
   try {
@@ -624,17 +625,7 @@ export async function registerRoutes(
           return res.status(500).json({ error: "PDF-Verarbeitung nicht verfügbar" });
         }
         const dataBuffer = fs.readFileSync(file.path);
-        const pdfData = await pdfParseInstance(dataBuffer, {
-          pagerender: function(pageData: any) {
-            return pageData.getTextContent().then(function(textContent: any) {
-              let text = '';
-              for (const item of textContent.items) {
-                text += (item as any).str + ' ';
-              }
-              return text;
-            });
-          }
-        });
+        const pdfData = await pdfParseInstance(dataBuffer);
         textContent = pdfData.text;
       } else if (ext === ".txt") {
         textContent = fs.readFileSync(file.path, "utf-8");
