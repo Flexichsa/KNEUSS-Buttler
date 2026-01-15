@@ -6,6 +6,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
 interface ProcessedDocument {
   id: string;
   originalName: string;
@@ -70,7 +77,7 @@ export function DocumentUploadWidget() {
     
     Array.from(files).forEach(file => {
       const doc: ProcessedDocument = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         originalName: file.name,
         suggestedName: "",
         companyName: "",
