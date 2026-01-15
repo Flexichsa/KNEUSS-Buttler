@@ -8,9 +8,17 @@ import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigu
 import multer from "multer";
 import fs from "fs";
 import path from "path";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+
+const loadPdfParse = async () => {
+  try {
+    const mod = await import("pdf-parse");
+    return mod.default || mod;
+  } catch {
+    return null;
+  }
+};
+
+let pdfParseInstance: any = null;
 
 const upload = multer({ 
   dest: "/tmp/uploads",
@@ -604,8 +612,14 @@ export async function registerRoutes(
       const ext = path.extname(file.originalname).toLowerCase();
       
       if (ext === ".pdf") {
+        if (!pdfParseInstance) {
+          pdfParseInstance = await loadPdfParse();
+        }
+        if (!pdfParseInstance) {
+          return res.status(500).json({ error: "PDF-Verarbeitung nicht verfügbar" });
+        }
         const dataBuffer = fs.readFileSync(file.path);
-        const pdfData = await pdfParse(dataBuffer);
+        const pdfData = await pdfParseInstance(dataBuffer);
         textContent = pdfData.text;
       } else if (ext === ".txt") {
         textContent = fs.readFileSync(file.path, "utf-8");
