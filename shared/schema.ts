@@ -64,8 +64,8 @@ export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  username: text("username").unique(),
+  password: text("password"),
 });
 
 export const oauthTokens = pgTable("oauth_tokens", {
