@@ -73,63 +73,63 @@ function CoinCard({ coin, onRefresh }: { coin: CoinData; onRefresh: () => void }
 
   return (
     <div 
-      className="h-full bg-white rounded-2xl p-4 pr-12 flex flex-col"
+      className="h-full bg-white rounded-2xl p-3 flex flex-col overflow-hidden"
       data-testid={`crypto-card-${coin.id}`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 min-w-0">
           <div 
-            className="w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold shadow-md"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-base font-bold shadow-md flex-shrink-0"
             style={{ backgroundColor: logo.bg, color: logo.color }}
           >
             {logo.icon}
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-gray-900">{coin.name}</span>
-            <span className="text-gray-400 text-sm">{coin.symbol.toUpperCase()}</span>
+          <div className="flex items-center gap-1 min-w-0">
+            <span className="font-semibold text-gray-900 text-sm truncate">{coin.name}</span>
+            <span className="text-gray-400 text-xs flex-shrink-0">{coin.symbol.toUpperCase()}</span>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 flex-shrink-0">
           <a 
             href={`https://coinmarketcap.com/currencies/${coin.id}/`}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
             data-testid="btn-coinmarketcap"
             title="Auf CoinMarketCap ansehen"
           >
-            <ExternalLink className="w-4 h-4 text-gray-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
           </a>
           <button 
             onClick={onRefresh}
-            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
             data-testid="btn-refresh-crypto"
             title="Aktualisieren"
           >
-            <RefreshCw className="w-4 h-4 text-gray-400" />
+            <RefreshCw className="w-3.5 h-3.5 text-gray-400" />
           </button>
         </div>
       </div>
 
-      <div className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="text-xl font-bold text-gray-900 mb-1">
         {formatPrice(coin.price)}
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-2 mb-2">
         <div className={cn(
-          "flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium",
+          "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium",
           isPositive ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
         )}>
           {isPositive ? (
-            <TrendingUp className="w-3.5 h-3.5" />
+            <TrendingUp className="w-3 h-3" />
           ) : (
-            <TrendingDown className="w-3.5 h-3.5" />
+            <TrendingDown className="w-3 h-3" />
           )}
           <span>{isPositive ? "+" : ""}{coin.change24h.toFixed(2)}%</span>
         </div>
         
         {sparklineData.length > 0 && (
-          <div className="flex-1 h-8">
+          <div className="flex-1 h-6 min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={sparklineData}>
                 <defs>
@@ -151,14 +151,14 @@ function CoinCard({ coin, onRefresh }: { coin: CoinData; onRefresh: () => void }
         )}
       </div>
 
-      <div className="flex gap-6 mt-auto pt-2 border-t border-gray-100">
-        <div>
-          <div className="text-xs text-gray-400 mb-0.5">Market Cap</div>
-          <div className="text-sm font-semibold text-gray-700">{formatLargeNumber(coin.marketCap)}</div>
+      <div className="flex gap-4 mt-auto pt-1.5 border-t border-gray-100">
+        <div className="min-w-0">
+          <div className="text-[10px] text-gray-400">Market Cap</div>
+          <div className="text-xs font-semibold text-gray-700 truncate">{formatLargeNumber(coin.marketCap)}</div>
         </div>
-        <div>
-          <div className="text-xs text-gray-400 mb-0.5">24h Volume</div>
-          <div className="text-sm font-semibold text-gray-700">{formatLargeNumber(coin.volume)}</div>
+        <div className="min-w-0">
+          <div className="text-[10px] text-gray-400">24h Volume</div>
+          <div className="text-xs font-semibold text-gray-700 truncate">{formatLargeNumber(coin.volume)}</div>
         </div>
       </div>
     </div>
