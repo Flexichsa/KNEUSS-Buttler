@@ -12,8 +12,12 @@ import { WeatherWidget } from "@/components/widgets/weather-widget";
 import { MsTodoWidget } from "@/components/widgets/mstodo-widget";
 import { OneDriveWidget } from "@/components/widgets/onedrive-widget";
 import { DocumentUploadWidget } from "@/components/widgets/document-upload-widget";
+import { ClockWidget } from "@/components/widgets/clock-widget";
+import { CalculatorWidget } from "@/components/widgets/calculator-widget";
+import { DateTimeWidget } from "@/components/widgets/datetime-widget";
+import { SingleCoinWidget } from "@/components/widgets/single-coin-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
-import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings } from "@shared/schema";
+import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings } from "@shared/schema";
 import { X, GripVertical, Settings2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
@@ -145,7 +149,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
     switch (widgetType) {
       case "calendar":
-        return <CalendarWidget />;
+        return <CalendarWidget settings={settings as CalendarSettings} />;
       case "todo":
         return <TodoWidget />;
       case "mail":
@@ -172,6 +176,14 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         return <OneDriveWidget />;
       case "docupload":
         return <DocumentUploadWidget />;
+      case "clock":
+        return <ClockWidget settings={settings as ClockSettings} />;
+      case "calculator":
+        return <CalculatorWidget />;
+      case "datetime":
+        return <DateTimeWidget />;
+      case "singlecoin":
+        return <SingleCoinWidget settings={settings as SingleCoinSettings} />;
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
@@ -179,7 +191,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   const canHaveSettings = (widgetId: string) => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
-    return widgetType === "weather" || widgetType === "btc";
+    return ["weather", "btc", "clock", "singlecoin", "calendar"].includes(widgetType);
   };
 
   return (
