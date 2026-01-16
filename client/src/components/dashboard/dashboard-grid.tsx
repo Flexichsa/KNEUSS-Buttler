@@ -21,10 +21,12 @@ import { GainersLosersWidget } from "@/components/widgets/gainers-losers-widget"
 import { AsanaWidget } from "@/components/widgets/asana-widget";
 import { ContactsWidget } from "@/components/widgets/contacts-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
-import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings } from "@shared/schema";
+import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WidgetSizeMode } from "@shared/schema";
 import { X, GripVertical, Settings2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 interface DashboardGridProps {
   config: DashboardConfig;
@@ -34,15 +36,15 @@ interface DashboardGridProps {
 }
 
 const COLS = 12;
-const ROW_HEIGHT = 80;
+const ROW_HEIGHT = 70;
 
 const DEFAULT_LAYOUTS: WidgetLayout[] = [
-  { i: "calendar-1", x: 0, y: 0, w: 6, h: 4, minW: 1, minH: 1 },
-  { i: "todo-1", x: 6, y: 0, w: 6, h: 4, minW: 1, minH: 1 },
-  { i: "mail-1", x: 0, y: 4, w: 8, h: 4, minW: 1, minH: 1 },
-  { i: "assistant-1", x: 8, y: 4, w: 4, h: 6, minW: 1, minH: 2 },
-  { i: "btc-1", x: 0, y: 8, w: 4, h: 5, minW: 1, minH: 1 },
-  { i: "weather-1", x: 4, y: 8, w: 5, h: 4, minW: 1, minH: 1 },
+  { i: "calendar-1", x: 0, y: 0, w: 6, h: 4, minW: 1, minH: 1, sizeMode: "standard" },
+  { i: "todo-1", x: 6, y: 0, w: 6, h: 4, minW: 1, minH: 1, sizeMode: "standard" },
+  { i: "mail-1", x: 0, y: 4, w: 8, h: 4, minW: 1, minH: 1, sizeMode: "standard" },
+  { i: "assistant-1", x: 8, y: 4, w: 4, h: 6, minW: 1, minH: 2, sizeMode: "standard" },
+  { i: "btc-1", x: 0, y: 8, w: 4, h: 5, minW: 1, minH: 1, sizeMode: "standard" },
+  { i: "weather-1", x: 4, y: 8, w: 5, h: 4, minW: 1, minH: 1, sizeMode: "standard" },
 ];
 
 const DEFAULT_INSTANCES: WidgetInstance[] = [
@@ -74,6 +76,21 @@ export function getWidgetType(instanceId: string, instances?: WidgetInstance[]):
 export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemoveWidget }: DashboardGridProps) {
   const [containerWidth, setContainerWidth] = useState(1200);
   const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
+  const [expandedIconWidgetId, setExpandedIconWidgetId] = useState<string | null>(null);
+
+  const getWidgetSizeMode = (widgetId: string): WidgetSizeMode => {
+    const layout = config.layouts.find(l => l.i === widgetId);
+    return layout?.sizeMode || "standard";
+  };
+
+  const isIconMode = (widgetId: string): boolean => {
+    return getWidgetSizeMode(widgetId) === "icon";
+  };
+
+  const getWidgetInfo = (widgetId: string) => {
+    const widgetType = getWidgetType(widgetId, config.widgetInstances);
+    return AVAILABLE_WIDGETS.find(w => w.id === widgetType);
+  };
 
   useEffect(() => {
     const updateWidth = () => {
@@ -89,16 +106,20 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   }, []);
 
   const convertLayout = useCallback((layout: any[]): WidgetLayout[] => {
-    return layout.map((item: any) => ({
-      i: item.i,
-      x: item.x,
-      y: item.y,
-      w: item.w,
-      h: item.h,
-      minW: item.minW,
-      minH: item.minH,
-    }));
-  }, []);
+    return layout.map((item: any) => {
+      const existingLayout = config.layouts.find(l => l.i === item.i);
+      return {
+        i: item.i,
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h,
+        minW: item.minW,
+        minH: item.minH,
+        sizeMode: existingLayout?.sizeMode ?? "standard",
+      };
+    });
+  }, [config.layouts]);
 
   const handleDragStop = useCallback(
     (layout: any[]) => {
@@ -142,6 +163,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
           h: widgetDef.defaultSize.h,
           minW: widgetDef.minSize?.w,
           minH: widgetDef.minSize?.h,
+          sizeMode: "standard" as WidgetSizeMode,
         };
       })
       .filter(Boolean) as WidgetLayout[];
@@ -206,6 +228,39 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     return ["weather", "btc", "clock", "singlecoin", "calendar"].includes(widgetType);
   };
 
+  const renderIconWidget = (widgetId: string) => {
+    const widgetInfo = getWidgetInfo(widgetId);
+    if (!widgetInfo) return null;
+    
+    return (
+      <button
+        onClick={() => setExpandedIconWidgetId(widgetId)}
+        className={cn(
+          "w-full h-full flex items-center justify-center cursor-pointer",
+          "bg-gradient-to-br text-white rounded-2xl transition-all hover:scale-105",
+          widgetInfo.previewGradient
+        )}
+        data-testid={`icon-widget-${widgetId}`}
+      >
+        <div className="p-2">
+          {widgetInfo.icon}
+        </div>
+      </button>
+    );
+  };
+
+  const renderCompactWidget = (widgetId: string) => {
+    const sizeMode = getWidgetSizeMode(widgetId);
+    return (
+      <div className={cn(
+        "h-full relative z-10 overflow-hidden rounded-2xl",
+        sizeMode === "compact" && "compact-mode"
+      )}>
+        {renderWidget(widgetId)}
+      </div>
+    );
+  };
+
   return (
     <div id="dashboard-grid-container" className="w-full">
       <ReactGridLayout
@@ -224,38 +279,53 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         isDraggable={true}
         margin={[16, 16] as [number, number]}
       >
-        {config.enabledWidgets.map((widgetId) => (
-          <div 
-            key={widgetId} 
-            className="widget-container relative group"
-          >
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl border border-white/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-white/70 group-hover:scale-[1.01] z-0" />
-            <div className="widget-drag-handle absolute top-3 left-3 w-8 h-8 cursor-move z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 hover:bg-black/10">
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="absolute top-3 right-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-              {canHaveSettings(widgetId) && (
-                <button
-                  onClick={() => setSettingsWidgetId(widgetId)}
-                  className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground transition-all"
-                  data-testid={`button-settings-widget-${widgetId}`}
-                >
-                  <Settings2 className="h-4 w-4" />
-                </button>
+        {config.enabledWidgets.map((widgetId) => {
+          const iconMode = isIconMode(widgetId);
+          const sizeMode = getWidgetSizeMode(widgetId);
+          
+          return (
+            <div 
+              key={widgetId} 
+              className={cn(
+                "widget-container relative group",
+                iconMode && "icon-widget"
               )}
-              {onRemoveWidget && (
-                <button
-                  onClick={() => onRemoveWidget(widgetId)}
-                  className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
-                  data-testid={`button-remove-widget-${widgetId}`}
-                >
-                  <X className="h-4 w-4" />
-                </button>
+              data-size-mode={sizeMode}
+            >
+              {iconMode ? (
+                renderIconWidget(widgetId)
+              ) : (
+                <>
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl border border-white/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-white/70 group-hover:scale-[1.01] z-0" />
+                  <div className="widget-drag-handle absolute top-3 left-3 w-8 h-8 cursor-move z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 hover:bg-black/10">
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="absolute top-3 right-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {canHaveSettings(widgetId) && (
+                      <button
+                        onClick={() => setSettingsWidgetId(widgetId)}
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground transition-all"
+                        data-testid={`button-settings-widget-${widgetId}`}
+                      >
+                        <Settings2 className="h-4 w-4" />
+                      </button>
+                    )}
+                    {onRemoveWidget && (
+                      <button
+                        onClick={() => onRemoveWidget(widgetId)}
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
+                        data-testid={`button-remove-widget-${widgetId}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  {renderCompactWidget(widgetId)}
+                </>
               )}
             </div>
-            <div className="h-full relative z-10 overflow-hidden rounded-2xl">{renderWidget(widgetId)}</div>
-          </div>
-        ))}
+          );
+        })}
       </ReactGridLayout>
 
       {settingsWidgetId && (
@@ -267,6 +337,24 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
           onClose={() => setSettingsWidgetId(null)}
         />
       )}
+
+      <Dialog open={!!expandedIconWidgetId} onOpenChange={(open) => !open && setExpandedIconWidgetId(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          {expandedIconWidgetId && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {getWidgetInfo(expandedIconWidgetId)?.icon}
+                  {getWidgetInfo(expandedIconWidgetId)?.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-auto min-h-[400px]">
+                {renderWidget(expandedIconWidgetId)}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -7,13 +7,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { WidgetSizeMode } from "@shared/schema";
 
 export type WidgetCategory = "all" | "productivity" | "finance" | "microsoft" | "tools" | "info";
+
+export interface WidgetSizeOption {
+  mode: WidgetSizeMode;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+  gridSize: { w: number; h: number };
+  minSize: { w: number; h: number };
+}
 
 export interface WidgetDefinition {
   id: string;
@@ -25,7 +35,43 @@ export interface WidgetDefinition {
   previewGradient: string;
   previewContent: React.ReactNode;
   category: WidgetCategory;
+  sizeOptions?: WidgetSizeOption[];
 }
+
+export const DEFAULT_SIZE_OPTIONS: WidgetSizeOption[] = [
+  {
+    mode: "icon",
+    name: "Icon",
+    description: "Nur Icon - Klick öffnet Popup",
+    icon: <Minimize2 className="h-4 w-4" />,
+    gridSize: { w: 1, h: 1 },
+    minSize: { w: 1, h: 1 },
+  },
+  {
+    mode: "compact",
+    name: "Kompakt",
+    description: "Minimale Ansicht",
+    icon: <Square className="h-4 w-4" />,
+    gridSize: { w: 2, h: 2 },
+    minSize: { w: 2, h: 2 },
+  },
+  {
+    mode: "standard",
+    name: "Standard",
+    description: "Normale Ansicht",
+    icon: <SquareStack className="h-4 w-4" />,
+    gridSize: { w: 4, h: 3 },
+    minSize: { w: 3, h: 2 },
+  },
+  {
+    mode: "large",
+    name: "Groß",
+    description: "Erweiterte Ansicht",
+    icon: <Maximize2 className="h-4 w-4" />,
+    gridSize: { w: 6, h: 5 },
+    minSize: { w: 4, h: 3 },
+  },
+];
 
 const CATEGORIES: { id: WidgetCategory; name: string; icon: React.ReactNode }[] = [
   { id: "all", name: "Alle", icon: <LayoutGrid className="h-4 w-4" /> },
@@ -407,13 +453,13 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
 
 interface WidgetPickerProps {
   enabledWidgets: string[];
-  onAddWidget: (widgetType: string) => void;
+  onAddWidget: (widgetType: string, sizeMode?: WidgetSizeMode, gridSize?: { w: number; h: number }) => void;
 }
 
-function WidgetPreviewCard({ widget, onAdd }: { widget: WidgetDefinition; onAdd: () => void }) {
+function WidgetPreviewCard({ widget, onSelect }: { widget: WidgetDefinition; onSelect: () => void }) {
   return (
     <button
-      onClick={onAdd}
+      onClick={onSelect}
       className={cn(
         "relative group rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer text-left w-full",
         "bg-gradient-to-br", widget.previewGradient
@@ -444,13 +490,109 @@ function WidgetPreviewCard({ widget, onAdd }: { widget: WidgetDefinition; onAdd:
   );
 }
 
+function WidgetSizeSelector({ 
+  widget, 
+  onSelectSize, 
+  onBack 
+}: { 
+  widget: WidgetDefinition; 
+  onSelectSize: (sizeMode: WidgetSizeMode, gridSize: { w: number; h: number }) => void;
+  onBack: () => void;
+}) {
+  const sizeOptions = widget.sizeOptions || DEFAULT_SIZE_OPTIONS;
+  
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-3 mb-4">
+        <button
+          onClick={onBack}
+          className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+          data-testid="button-back-to-widgets"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <div className={cn("p-2 rounded-xl bg-gradient-to-br text-white", widget.previewGradient)}>
+          {widget.icon}
+        </div>
+        <div>
+          <h3 className="font-semibold">{widget.name}</h3>
+          <p className="text-xs text-muted-foreground">Wähle eine Größe</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        {sizeOptions.map((option) => (
+          <button
+            key={option.mode}
+            onClick={() => onSelectSize(option.mode, option.gridSize)}
+            className={cn(
+              "relative group rounded-xl border-2 border-border hover:border-primary transition-all p-4 text-left",
+              "hover:bg-muted/50"
+            )}
+            data-testid={`size-option-${option.mode}`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                {option.icon}
+              </div>
+              <div>
+                <div className="font-medium text-sm">{option.name}</div>
+                <div className="text-[10px] text-muted-foreground">{option.gridSize.w}×{option.gridSize.h}</div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">{option.description}</p>
+            
+            <div className="mt-3 flex justify-center">
+              <div 
+                className={cn(
+                  "bg-gradient-to-br rounded-lg flex items-center justify-center text-white",
+                  widget.previewGradient
+                )}
+                style={{
+                  width: option.mode === "icon" ? 32 : option.mode === "compact" ? 48 : option.mode === "standard" ? 72 : 96,
+                  height: option.mode === "icon" ? 32 : option.mode === "compact" ? 48 : option.mode === "standard" ? 54 : 72,
+                }}
+              >
+                {option.mode === "icon" ? (
+                  <div className="scale-75">{widget.icon}</div>
+                ) : (
+                  <div className="scale-50 opacity-70">{widget.icon}</div>
+                )}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps) {
   const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<WidgetCategory>("all");
+  const [selectedWidget, setSelectedWidget] = useState<WidgetDefinition | null>(null);
 
-  const handleAddWidget = (widgetType: string) => {
-    onAddWidget(widgetType);
-    setOpen(false);
+  const handleSelectWidget = (widget: WidgetDefinition) => {
+    setSelectedWidget(widget);
+  };
+
+  const handleSelectSize = (sizeMode: WidgetSizeMode, gridSize: { w: number; h: number }) => {
+    if (selectedWidget) {
+      onAddWidget(selectedWidget.id, sizeMode, gridSize);
+      setOpen(false);
+      setSelectedWidget(null);
+    }
+  };
+
+  const handleBack = () => {
+    setSelectedWidget(null);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setSelectedWidget(null);
+    }
   };
 
   const filteredWidgets = selectedCategory === "all" 
@@ -458,7 +600,7 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
     : AVAILABLE_WIDGETS.filter(w => w.category === selectedCategory);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2" data-testid="button-open-widget-picker">
           <LayoutGrid className="h-4 w-4" />
@@ -467,39 +609,52 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Widget hinzufügen</DialogTitle>
+          <DialogTitle>
+            {selectedWidget ? `${selectedWidget.name} - Größe wählen` : "Widget hinzufügen"}
+          </DialogTitle>
           <DialogDescription>
-            Wählen Sie eine Kategorie und klicken Sie auf ein Widget um es hinzuzufügen.
+            {selectedWidget 
+              ? "Wähle eine Ansichtsgröße für das Widget."
+              : "Wähle ein Widget und dann die gewünschte Größe."
+            }
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as WidgetCategory)} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-6 h-auto p-1">
-            {CATEGORIES.map((cat) => (
-              <TabsTrigger
-                key={cat.id}
-                value={cat.id}
-                className="flex flex-col gap-1 py-2 text-xs"
-                data-testid={`tab-category-${cat.id}`}
-              >
-                {cat.icon}
-                <span className="hidden sm:inline">{cat.name}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          
-          <ScrollArea className="flex-1 mt-4">
-            <div className="grid grid-cols-2 gap-4 pr-4">
-              {filteredWidgets.map((widget) => (
-                <WidgetPreviewCard
-                  key={widget.id}
-                  widget={widget}
-                  onAdd={() => handleAddWidget(widget.id)}
-                />
+        {selectedWidget ? (
+          <WidgetSizeSelector 
+            widget={selectedWidget} 
+            onSelectSize={handleSelectSize} 
+            onBack={handleBack} 
+          />
+        ) : (
+          <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as WidgetCategory)} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid grid-cols-6 h-auto p-1">
+              {CATEGORIES.map((cat) => (
+                <TabsTrigger
+                  key={cat.id}
+                  value={cat.id}
+                  className="flex flex-col gap-1 py-2 text-xs"
+                  data-testid={`tab-category-${cat.id}`}
+                >
+                  {cat.icon}
+                  <span className="hidden sm:inline">{cat.name}</span>
+                </TabsTrigger>
               ))}
-            </div>
-          </ScrollArea>
-        </Tabs>
+            </TabsList>
+            
+            <ScrollArea className="flex-1 mt-4">
+              <div className="grid grid-cols-2 gap-4 pr-4">
+                {filteredWidgets.map((widget) => (
+                  <WidgetPreviewCard
+                    key={widget.id}
+                    widget={widget}
+                    onSelect={() => handleSelectWidget(widget)}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );

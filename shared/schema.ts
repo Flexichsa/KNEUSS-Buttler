@@ -5,6 +5,9 @@ import { z } from "zod";
 
 export * from "./models/auth";
 
+export const WidgetSizeModeSchema = z.enum(["icon", "compact", "standard", "large"]);
+export type WidgetSizeMode = z.infer<typeof WidgetSizeModeSchema>;
+
 export const WidgetLayoutSchema = z.object({
   i: z.string(),
   x: z.number(),
@@ -13,6 +16,7 @@ export const WidgetLayoutSchema = z.object({
   h: z.number(),
   minW: z.number().optional(),
   minH: z.number().optional(),
+  sizeMode: WidgetSizeModeSchema.optional(),
 });
 
 export const WidgetInstanceSchema = z.object({

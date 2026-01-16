@@ -192,3 +192,26 @@
   border-radius: 1rem;
   overflow: visible !important;
 }
+
+/* Icon widget styling */
+.widget-container.icon-widget {
+  border-radius: 1rem;
+}
+
+/* Compact mode widget styling */
+.widget-container[data-size-mode="compact"] .compact-mode {
+  padding: 0.5rem;
+}
+
+.widget-container[data-size-mode="compact"] .compact-mode > * {
+  transform-origin: top left;
+}
+
+/* Widget size mode adjustments */
+.widget-container[data-size-mode="icon"] {
+  overflow: hidden !important;
+}
+
+.widget-container[data-size-mode="compact"] {
+  overflow: hidden !important;
+}
