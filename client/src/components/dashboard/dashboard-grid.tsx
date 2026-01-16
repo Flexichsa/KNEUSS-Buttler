@@ -29,6 +29,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils";
 import { useTodos } from "@/hooks/use-todos";
 import { useOutlookEmails, useOutlookEvents } from "@/hooks/use-outlook";
+import { useQuery } from "@tanstack/react-query";
 
 interface DashboardGridProps {
   config: DashboardConfig;
@@ -85,6 +86,23 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const { data: todos = [] } = useTodos();
   const { data: emails = [] } = useOutlookEmails(50);
   const { data: events = [] } = useOutlookEvents();
+  const { data: cryptoData, isLoading: cryptoLoading, isError: cryptoError } = useQuery<{ coins: Array<{ id: string; price: number; change24h: number }> }>({
+    queryKey: ["crypto-prices"],
+    queryFn: async () => {
+      const res = await fetch("/api/crypto");
+      if (!res.ok) throw new Error("Failed to fetch crypto prices");
+      return res.json();
+    },
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+
+  const formatCompactPrice = (price: number): string => {
+    if (price >= 1000) {
+      return `$${(price / 1000).toFixed(1)}K`;
+    }
+    return `$${price.toFixed(0)}`;
+  };
 
   const getWidgetBadge = (widgetId: string): number | null => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
@@ -268,30 +286,73 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     }
   }, []);
 
+  const getIconWidgetData = (widgetId: string): { text?: string; subtext?: string } | null => {
+    const widgetType = getWidgetType(widgetId, config.widgetInstances);
+    const settings = config.widgetSettings?.[widgetId] || {};
+    
+    switch (widgetType) {
+      case "btc":
+        if (cryptoError) return { text: "!", subtext: "Fehler" };
+        if (cryptoLoading || !cryptoData?.coins) return { text: "...", subtext: "" };
+        const btc = cryptoData.coins.find(c => c.id === "bitcoin");
+        if (btc) {
+          const isPositive = btc.change24h >= 0;
+          return {
+            text: formatCompactPrice(btc.price),
+            subtext: `${isPositive ? "+" : ""}${btc.change24h?.toFixed(1)}%`,
+          };
+        }
+        return { text: "...", subtext: "" };
+      case "singlecoin":
+        if (cryptoError) return { text: "!", subtext: "Fehler" };
+        if (cryptoLoading || !cryptoData?.coins) return { text: "...", subtext: "" };
+        const coinId = (settings as any).coinId || "bitcoin";
+        const coin = cryptoData.coins.find(c => c.id === coinId);
+        if (coin) {
+          const isPositive = coin.change24h >= 0;
+          return {
+            text: formatCompactPrice(coin.price),
+            subtext: `${isPositive ? "+" : ""}${coin.change24h?.toFixed(1)}%`,
+          };
+        }
+        return { text: "...", subtext: "" };
+      default:
+        return null;
+    }
+  };
+
   const renderIconWidget = (widgetId: string) => {
     const widgetInfo = getWidgetInfo(widgetId);
     if (!widgetInfo) return null;
     
     const badge = getWidgetBadge(widgetId);
+    const iconData = getIconWidgetData(widgetId);
     
     return (
       <button
         onClick={() => handleIconWidgetClick(widgetId)}
         className={cn(
-          "w-full h-full flex items-center justify-center cursor-pointer relative",
+          "w-full h-full flex flex-col items-center justify-center cursor-pointer relative",
           "bg-gradient-to-br text-white rounded-2xl transition-all hover:scale-105",
           widgetInfo.previewGradient
         )}
         data-testid={`icon-widget-${widgetId}`}
       >
-        <div className="p-2">
+        <div className="p-1">
           {widgetInfo.icon}
         </div>
-        {badge !== null && (
+        {iconData ? (
+          <div className="flex flex-col items-center mt-1">
+            <span className="text-xs font-bold leading-tight">{iconData.text}</span>
+            {iconData.subtext && (
+              <span className="text-[10px] opacity-80 leading-tight">{iconData.subtext}</span>
+            )}
+          </div>
+        ) : badge !== null ? (
           <span className="absolute bottom-2 right-2 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full shadow-lg">
             {badge > 99 ? "99+" : badge}
           </span>
-        )}
+        ) : null}
       </button>
     );
   };
