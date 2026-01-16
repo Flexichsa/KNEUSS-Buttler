@@ -27,6 +27,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useTodos } from "@/hooks/use-todos";
+import { useOutlookEmails, useOutlookEvents } from "@/hooks/use-outlook";
 
 interface DashboardGridProps {
   config: DashboardConfig;
@@ -77,6 +79,26 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const [containerWidth, setContainerWidth] = useState(1200);
   const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
   const [expandedIconWidgetId, setExpandedIconWidgetId] = useState<string | null>(null);
+
+  const { data: todos = [] } = useTodos();
+  const { data: emails = [] } = useOutlookEmails(50);
+  const { data: events = [] } = useOutlookEvents();
+
+  const getWidgetBadge = (widgetId: string): number | null => {
+    const widgetType = getWidgetType(widgetId, config.widgetInstances);
+    switch (widgetType) {
+      case "todo":
+        const pendingTodos = todos.filter(t => !t.completed).length;
+        return pendingTodos > 0 ? pendingTodos : null;
+      case "mail":
+        const unreadEmails = emails.filter((e: any) => !e.isRead).length;
+        return unreadEmails > 0 ? unreadEmails : null;
+      case "calendar":
+        return events.length > 0 ? events.length : null;
+      default:
+        return null;
+    }
+  };
 
   const getWidgetSizeMode = (widgetId: string): WidgetSizeMode => {
     const layout = config.layouts.find(l => l.i === widgetId);
@@ -232,11 +254,13 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     const widgetInfo = getWidgetInfo(widgetId);
     if (!widgetInfo) return null;
     
+    const badge = getWidgetBadge(widgetId);
+    
     return (
       <button
         onClick={() => setExpandedIconWidgetId(widgetId)}
         className={cn(
-          "w-full h-full flex items-center justify-center cursor-pointer",
+          "w-full h-full flex items-center justify-center cursor-pointer relative",
           "bg-gradient-to-br text-white rounded-2xl transition-all hover:scale-105",
           widgetInfo.previewGradient
         )}
@@ -245,6 +269,11 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         <div className="p-2">
           {widgetInfo.icon}
         </div>
+        {badge !== null && (
+          <span className="absolute bottom-2 right-2 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full shadow-lg">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
       </button>
     );
   };
