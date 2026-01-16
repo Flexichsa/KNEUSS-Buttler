@@ -453,6 +453,16 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/projects/reorder", async (req, res) => {
+    try {
+      const orderings = req.body as { id: number; orderIndex: number; parentProjectId: number | null }[];
+      await storage.reorderProjects(orderings);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to reorder projects" });
+    }
+  });
+
   app.get("/api/projects/export/csv", async (req, res) => {
     try {
       const projects = await storage.getProjects();

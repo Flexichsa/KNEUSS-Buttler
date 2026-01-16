@@ -139,6 +139,7 @@ export const dashboardLayouts = pgTable("dashboard_layouts", {
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
   parentProjectId: integer("parent_project_id"),
+  orderIndex: integer("order_index").notNull().default(0),
   name: text("name").notNull(),
   description: text("description"),
   priority: text("priority").notNull().default("medium"),
