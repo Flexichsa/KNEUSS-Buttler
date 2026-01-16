@@ -237,41 +237,41 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
       className="h-full rounded-2xl overflow-hidden flex flex-col bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-white/10"
       data-testid="crypto-widget"
     >
-      <div className="p-4 pb-2 flex items-center justify-between border-b border-white/10">
-        <div className="flex items-center gap-3">
+      <div className="p-2 flex items-center justify-between border-b border-white/10 gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-shrink">
           {coin.image ? (
-            <img src={coin.image} alt={coin.name} className="w-8 h-8 rounded-full shadow-lg" />
+            <img src={coin.image} alt={coin.name} className="w-6 h-6 rounded-full shadow-lg flex-shrink-0" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
               {coinIcon}
             </div>
           )}
-          <span className="text-white font-semibold text-lg">{coin.name}</span>
+          <span className="text-white font-semibold text-sm truncate">{coin.name}</span>
         </div>
-        <div className="text-right">
-          <div className="text-white/60 text-xs">{coin.symbol} =</div>
-          <div className="text-white font-bold">{formatPrice(coin.price)}</div>
+        <div className="text-right flex-shrink-0">
+          <div className="text-white/60 text-[10px]">{coin.symbol} =</div>
+          <div className="text-white font-bold text-sm">{formatPrice(coin.price)}</div>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 px-4 py-3 border-b border-white/10">
-        <div className="text-center">
-          <div className="text-white/50 text-xs mb-1">Rang</div>
-          <div className="text-white font-semibold">
+      <div className="grid grid-cols-3 gap-1 px-2 py-2 border-b border-white/10">
+        <div className="text-center min-w-0">
+          <div className="text-white/50 text-[10px] mb-0.5 truncate">Rang</div>
+          <div className="text-white font-semibold text-xs truncate">
             #{coin.rank}
           </div>
         </div>
-        <div className="text-center">
-          <div className="text-white/50 text-xs mb-1">Marktkap.</div>
-          <div className="text-white font-semibold text-sm">{formatCompact(coin.marketCap)}</div>
+        <div className="text-center min-w-0">
+          <div className="text-white/50 text-[10px] mb-0.5 truncate">Marktkap.</div>
+          <div className="text-white font-semibold text-xs truncate">{formatCompact(coin.marketCap)}</div>
         </div>
-        <div className="text-center">
-          <div className="text-white/50 text-xs mb-1">Tagesvolumen</div>
-          <div className="text-white font-semibold text-sm">{formatCompact(coin.volume)}</div>
+        <div className="text-center min-w-0">
+          <div className="text-white/50 text-[10px] mb-0.5 truncate">Volumen</div>
+          <div className="text-white font-semibold text-xs truncate">{formatCompact(coin.volume)}</div>
         </div>
       </div>
 
-      <div className="flex-1 min-h-[120px] px-2 py-2 relative">
+      <div className="flex-1 min-h-[80px] px-1 py-1 relative">
         <PriceChart 
           data={chartData} 
           isPositive={isPositive}
@@ -280,8 +280,8 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
         />
       </div>
 
-      <div className="px-4 py-3 border-t border-white/10">
-        <div className="flex justify-between items-end">
+      <div className="px-2 py-2 border-t border-white/10 overflow-hidden">
+        <div className="flex justify-around items-center gap-1 flex-wrap">
           {(["1h", "24h", "7d", "30d", "1y"] as TimeFrame[]).map((tf) => {
             const change = getChangeForTimeframe(tf);
             const positive = change >= 0;
@@ -292,7 +292,7 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
                 key={tf}
                 onClick={() => setSelectedTimeframe(tf)}
                 className={cn(
-                  "flex flex-col items-center px-3 py-2 rounded-lg transition-all",
+                  "flex flex-col items-center px-2 py-1.5 rounded-lg transition-all min-w-0 flex-shrink",
                   isSelected 
                     ? "bg-orange-500 text-white" 
                     : "hover:bg-white/5"
@@ -300,13 +300,13 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
                 data-testid={`timeframe-${tf}`}
               >
                 <span className={cn(
-                  "text-xs font-medium",
+                  "text-[10px] font-medium truncate",
                   isSelected ? "text-white" : "text-white/70"
                 )}>
                   {TIMEFRAME_LABELS[tf]}
                 </span>
                 <span className={cn(
-                  "text-sm font-bold",
+                  "text-xs font-bold truncate",
                   isSelected 
                     ? "text-white" 
                     : positive 
