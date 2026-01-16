@@ -293,7 +293,21 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
               data-size-mode={sizeMode}
             >
               {iconMode ? (
-                renderIconWidget(widgetId)
+                <div className="relative w-full h-full">
+                  {renderIconWidget(widgetId)}
+                  <div className="widget-drag-handle absolute top-1 left-1 w-6 h-6 cursor-move z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-black/30">
+                    <GripVertical className="h-3 w-3 text-white" />
+                  </div>
+                  {onRemoveWidget && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onRemoveWidget(widgetId); }}
+                      className="absolute top-1 right-1 w-6 h-6 cursor-pointer z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-red-500 text-white"
+                      data-testid={`button-remove-icon-widget-${widgetId}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
               ) : (
                 <>
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl border border-white/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-white/70 group-hover:scale-[1.01] z-0" />
