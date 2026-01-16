@@ -118,7 +118,7 @@ export function StatusReportWidget() {
     <div className="h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl overflow-hidden flex flex-col relative" data-testid="status-report-widget">
       <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
       
-      <div className="px-4 py-3 flex items-center justify-between relative z-10 border-b border-white/10">
+      <div className="px-4 pr-14 py-3 flex items-center justify-between relative z-10 border-b border-white/10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
             <ClipboardList className="h-4 w-4 text-white" />
