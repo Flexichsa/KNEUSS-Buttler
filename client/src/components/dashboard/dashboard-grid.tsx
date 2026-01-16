@@ -16,6 +16,7 @@ import { ClockWidget } from "@/components/widgets/clock-widget";
 import { CalculatorWidget } from "@/components/widgets/calculator-widget";
 import { DateTimeWidget } from "@/components/widgets/datetime-widget";
 import { SingleCoinWidget } from "@/components/widgets/single-coin-widget";
+import { StatusReportWidget } from "@/components/widgets/status-report-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings } from "@shared/schema";
 import { X, GripVertical, Settings2 } from "lucide-react";
@@ -184,6 +185,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         return <DateTimeWidget />;
       case "singlecoin":
         return <SingleCoinWidget settings={settings as SingleCoinSettings} />;
+      case "statusreport":
+        return <StatusReportWidget />;
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
