@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -445,6 +445,28 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
         <div className="flex items-center gap-2 text-white/60 text-xs">
           <Mail className="w-3 h-3" />
           <span>kontakt@bechtle.com</span>
+        </div>
+      </div>
+    )
+  },
+  { 
+    id: "weblink", 
+    name: "Webseiten-Link", 
+    description: "Schnellzugriff auf Webseiten",
+    icon: <Globe className="h-5 w-5" />, 
+    defaultSize: { w: 3, h: 3 }, 
+    minSize: { w: 2, h: 2 },
+    previewGradient: "from-cyan-500 to-blue-600",
+    category: "tools",
+    previewContent: (
+      <div className="flex flex-col items-center w-full">
+        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-2">
+          <Globe className="w-5 h-5 text-white" />
+        </div>
+        <div className="text-white text-xs font-medium">google.com</div>
+        <div className="flex items-center gap-1 text-white/60 text-[10px] mt-1">
+          <ExternalLink className="w-2.5 h-2.5" />
+          <span>Öffnen</span>
         </div>
       </div>
     )

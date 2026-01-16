@@ -20,8 +20,9 @@ import { StatusReportWidget } from "@/components/widgets/status-report-widget";
 import { GainersLosersWidget } from "@/components/widgets/gainers-losers-widget";
 import { AsanaWidget } from "@/components/widgets/asana-widget";
 import { ContactsWidget } from "@/components/widgets/contacts-widget";
+import { WeblinkWidget } from "@/components/widgets/weblink-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
-import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WidgetSizeMode } from "@shared/schema";
+import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WeblinkSettings, WidgetSizeMode } from "@shared/schema";
 import { X, GripVertical, Settings2, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
@@ -271,6 +272,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         return <AsanaWidget />;
       case "contacts":
         return <ContactsWidget />;
+      case "weblink":
+        return <WeblinkWidget settings={settings as WeblinkSettings} />;
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
@@ -278,7 +281,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   const canHaveSettings = (widgetId: string) => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
-    return ["weather", "btc", "clock", "singlecoin", "calendar"].includes(widgetType);
+    return ["weather", "btc", "clock", "singlecoin", "calendar", "weblink"].includes(widgetType);
   };
 
   const canExpandWidget = (widgetId: string) => {

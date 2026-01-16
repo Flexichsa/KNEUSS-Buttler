@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import type { WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings } from "@shared/schema";
+import type { WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WeblinkSettings } from "@shared/schema";
 
 interface WidgetSettingsDialogProps {
   widgetId: string;
@@ -354,6 +354,78 @@ function CalendarSettingsForm({ settings, onSettingsChange }: { settings: Calend
   );
 }
 
+const BACKGROUND_COLORS = [
+  { id: "#3b82f6", name: "Blau" },
+  { id: "#10b981", name: "Grün" },
+  { id: "#f59e0b", name: "Orange" },
+  { id: "#ef4444", name: "Rot" },
+  { id: "#8b5cf6", name: "Violett" },
+  { id: "#ec4899", name: "Pink" },
+  { id: "#06b6d4", name: "Cyan" },
+  { id: "#6366f1", name: "Indigo" },
+  { id: "#64748b", name: "Grau" },
+];
+
+function WeblinkSettingsForm({ settings, onSettingsChange }: { settings: WeblinkSettings; onSettingsChange: (s: WeblinkSettings) => void }) {
+  const [url, setUrl] = useState(settings.url || "");
+  const [title, setTitle] = useState(settings.title || "");
+  
+  const handleSave = () => {
+    onSettingsChange({ ...settings, url, title: title || undefined });
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="weblink-url">Webseiten-URL</Label>
+        <Input
+          id="weblink-url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="z.B. https://google.com"
+          data-testid="input-weblink-url"
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="weblink-title">Titel (optional)</Label>
+        <Input
+          id="weblink-title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="z.B. Google Suche"
+          data-testid="input-weblink-title"
+        />
+        <p className="text-xs text-muted-foreground">Leer lassen für automatischen Titel</p>
+      </div>
+      
+      <div className="space-y-2">
+        <Label>Hintergrundfarbe</Label>
+        <div className="flex flex-wrap gap-2">
+          {BACKGROUND_COLORS.map((color) => (
+            <button
+              key={color.id}
+              onClick={() => onSettingsChange({ ...settings, backgroundColor: color.id })}
+              className="w-8 h-8 rounded-lg border-2 transition-all"
+              style={{ 
+                backgroundColor: color.id,
+                borderColor: settings.backgroundColor === color.id ? "white" : "transparent",
+                boxShadow: settings.backgroundColor === color.id ? "0 0 0 2px black" : "none"
+              }}
+              title={color.name}
+              data-testid={`color-${color.id}`}
+            />
+          ))}
+        </div>
+      </div>
+      
+      <Button onClick={handleSave} className="w-full" data-testid="button-save-weblink">
+        Speichern
+      </Button>
+    </div>
+  );
+}
+
 export function WidgetSettingsDialog({ widgetId, widgetType, settings, onSettingsChange, onClose }: WidgetSettingsDialogProps) {
   const getTitle = () => {
     switch (widgetType) {
@@ -362,6 +434,7 @@ export function WidgetSettingsDialog({ widgetId, widgetType, settings, onSetting
       case "clock": return "Uhr-Widget Einstellungen";
       case "singlecoin": return "Coin-Widget Einstellungen";
       case "calendar": return "Kalender-Widget Einstellungen";
+      case "weblink": return "Webseiten-Link Einstellungen";
       default: return "Widget Einstellungen";
     }
   };
@@ -391,6 +464,9 @@ export function WidgetSettingsDialog({ widgetId, widgetType, settings, onSetting
           )}
           {widgetType === "calendar" && (
             <CalendarSettingsForm settings={settings} onSettingsChange={onSettingsChange} />
+          )}
+          {widgetType === "weblink" && (
+            <WeblinkSettingsForm settings={settings} onSettingsChange={onSettingsChange} />
           )}
         </div>
       </DialogContent>
