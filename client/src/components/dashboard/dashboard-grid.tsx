@@ -22,7 +22,7 @@ import { AsanaWidget } from "@/components/widgets/asana-widget";
 import { ContactsWidget } from "@/components/widgets/contacts-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WidgetSizeMode } from "@shared/schema";
-import { X, GripVertical, Settings2 } from "lucide-react";
+import { X, GripVertical, Settings2, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -80,6 +80,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const [containerWidth, setContainerWidth] = useState(1200);
   const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
   const [expandedIconWidgetId, setExpandedIconWidgetId] = useState<string | null>(null);
+  const [expandedWidgetId, setExpandedWidgetId] = useState<string | null>(null);
   const isDraggingRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -280,6 +281,17 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     return ["weather", "btc", "clock", "singlecoin", "calendar"].includes(widgetType);
   };
 
+  const canExpandWidget = (widgetId: string) => {
+    const widgetType = getWidgetType(widgetId, config.widgetInstances);
+    return ["contacts", "todo", "mail", "calendar", "asana", "mstodo", "onedrive", "docupload"].includes(widgetType);
+  };
+
+  const handleWidgetExpand = useCallback((widgetId: string) => {
+    if (!isDraggingRef.current) {
+      setExpandedWidgetId(widgetId);
+    }
+  }, []);
+
   const handleIconWidgetClick = useCallback((widgetId: string) => {
     if (!isDraggingRef.current) {
       setExpandedIconWidgetId(widgetId);
@@ -424,6 +436,16 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <div className="absolute top-3 right-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {canExpandWidget(widgetId) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleWidgetExpand(widgetId); }}
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-blue-500 hover:text-white text-muted-foreground transition-all"
+                        data-testid={`button-expand-widget-${widgetId}`}
+                        title="Vollansicht öffnen"
+                      >
+                        <Maximize2 className="h-4 w-4" />
+                      </button>
+                    )}
                     {canHaveSettings(widgetId) && (
                       <button
                         onClick={() => setSettingsWidgetId(widgetId)}
@@ -473,6 +495,29 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
               </DialogHeader>
               <div className="flex-1 overflow-auto min-h-[400px]">
                 {renderWidget(expandedIconWidgetId)}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!expandedWidgetId} onOpenChange={(open) => !open && setExpandedWidgetId(null)}>
+        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+          {expandedWidgetId && (
+            <>
+              <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                <DialogTitle className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
+                    {getWidgetInfo(expandedWidgetId)?.icon}
+                  </div>
+                  <div>
+                    <span className="block">{getWidgetInfo(expandedWidgetId)?.name}</span>
+                    <span className="text-sm font-normal text-muted-foreground">Vollansicht</span>
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-auto min-h-[500px]">
+                {renderWidget(expandedWidgetId)}
               </div>
             </>
           )}
