@@ -642,8 +642,8 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
               ))}
             </TabsList>
             
-            <ScrollArea className="flex-1 mt-4">
-              <div className="grid grid-cols-2 gap-4 pr-4">
+            <ScrollArea className="flex-1 mt-4 max-h-[55vh]">
+              <div className="grid grid-cols-2 gap-4 pr-4 pb-2">
                 {filteredWidgets.map((widget) => (
                   <WidgetPreviewCard
                     key={widget.id}
