@@ -1,8 +1,6 @@
-import { TrendingUp, TrendingDown, Loader2, AlertCircle, RefreshCw, ExternalLink } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
 interface CoinData {
   id: string;
@@ -26,13 +24,22 @@ interface CryptoResponse {
   stale?: boolean;
 }
 
-const COIN_LOGOS: Record<string, { bg: string; icon: string; color: string }> = {
-  bitcoin: { bg: "#F7931A", icon: "₿", color: "white" },
-  ethereum: { bg: "#627EEA", icon: "Ξ", color: "white" },
-  solana: { bg: "#14F195", icon: "◎", color: "black" },
-  dogecoin: { bg: "#C2A633", icon: "Ð", color: "white" },
-  cardano: { bg: "#0033AD", icon: "₳", color: "white" },
-  ripple: { bg: "#23292F", icon: "✕", color: "white" },
+const COIN_ICONS: Record<string, string> = {
+  bitcoin: "₿",
+  ethereum: "Ξ",
+  solana: "◎",
+  dogecoin: "Ð",
+  cardano: "₳",
+  ripple: "✕",
+  litecoin: "Ł",
+  polkadot: "●",
+  chainlink: "⬡",
+  stellar: "✦",
+  monero: "ɱ",
+  tron: "◈",
+  binancecoin: "◆",
+  usdtether: "₮",
+  luna: "🌙",
 };
 
 interface CryptoSettings {
@@ -43,135 +50,14 @@ interface CryptoSettings {
   showChart?: boolean;
 }
 
-function formatLargeNumber(num: number): string {
-  if (num >= 1e12) return `$${(num / 1e12).toFixed(2)} Tn`;
-  if (num >= 1e9) return `$${(num / 1e9).toFixed(2)} Bn`;
-  if (num >= 1e6) return `$${(num / 1e6).toFixed(2)} Mn`;
-  return `$${num.toLocaleString()}`;
-}
-
-function CoinCard({ coin, onRefresh }: { coin: CoinData; onRefresh: () => void }) {
-  const sparklineData = useMemo(() => {
-    if (!coin.sparkline?.length) return [];
-    const step = Math.max(1, Math.floor(coin.sparkline.length / 15));
-    return coin.sparkline
-      .filter((_, i) => i % step === 0)
-      .map((price, i) => ({ x: i, price }));
-  }, [coin.sparkline]);
-
-  const isPositive = coin.change24h >= 0;
-  const logo = COIN_LOGOS[coin.id] || { bg: "#6366f1", icon: coin.symbol[0], color: "white" };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price);
-  };
-
-  return (
-    <div 
-      className="h-full bg-white rounded-2xl p-3 flex flex-col overflow-hidden"
-      data-testid={`crypto-card-${coin.id}`}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div 
-            className="w-8 h-8 rounded-full flex items-center justify-center text-base font-bold shadow-md flex-shrink-0"
-            style={{ backgroundColor: logo.bg, color: logo.color }}
-          >
-            {logo.icon}
-          </div>
-          <div className="flex items-center gap-1 min-w-0">
-            <span className="font-semibold text-gray-900 text-sm truncate">{coin.name}</span>
-            <span className="text-gray-400 text-xs flex-shrink-0">{coin.symbol.toUpperCase()}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-0.5 flex-shrink-0">
-          <a 
-            href={`https://coinmarketcap.com/currencies/${coin.id}/`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-            data-testid="btn-coinmarketcap"
-            title="Auf CoinMarketCap ansehen"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
-          </a>
-          <button 
-            onClick={onRefresh}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-            data-testid="btn-refresh-crypto"
-            title="Aktualisieren"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-gray-400" />
-          </button>
-        </div>
-      </div>
-
-      <div className="text-xl font-bold text-gray-900 mb-1">
-        {formatPrice(coin.price)}
-      </div>
-
-      <div className="flex items-center gap-2 mb-2">
-        <div className={cn(
-          "flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium",
-          isPositive ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-        )}>
-          {isPositive ? (
-            <TrendingUp className="w-3 h-3" />
-          ) : (
-            <TrendingDown className="w-3 h-3" />
-          )}
-          <span>{isPositive ? "+" : ""}{coin.change24h.toFixed(2)}%</span>
-        </div>
-        
-        {sparklineData.length > 0 && (
-          <div className="flex-1 h-6 min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={sparklineData}>
-                <defs>
-                  <linearGradient id={`card-gradient-${coin.id}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={isPositive ? "rgba(34, 197, 94, 0.2)" : "rgba(239, 68, 68, 0.2)"} />
-                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="price"
-                  stroke={isPositive ? "#22c55e" : "#ef4444"}
-                  strokeWidth={1.5}
-                  fill={`url(#card-gradient-${coin.id})`}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-4 mt-auto pt-1.5 border-t border-gray-100">
-        <div className="min-w-0">
-          <div className="text-[10px] text-gray-400">Market Cap</div>
-          <div className="text-xs font-semibold text-gray-700 truncate">{formatLargeNumber(coin.marketCap)}</div>
-        </div>
-        <div className="min-w-0">
-          <div className="text-[10px] text-gray-400">24h Volume</div>
-          <div className="text-xs font-semibold text-gray-700 truncate">{formatLargeNumber(coin.volume)}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 interface BtcWidgetProps {
   settings?: CryptoSettings;
 }
 
 export function BtcWidget({ settings }: BtcWidgetProps) {
-  const queryClient = useQueryClient();
   const selectedCoins = settings?.coins || ["bitcoin"];
+  const coinId = selectedCoins[0] || "bitcoin";
+  
   const { data, isLoading, error } = useQuery<CryptoResponse>({
     queryKey: ["crypto-prices"],
     queryFn: async () => {
@@ -183,30 +69,75 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
     staleTime: 30000,
   });
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["crypto-prices"] });
+  const coin = data?.coins?.find(c => c.id === coinId);
+  const coinIcon = COIN_ICONS[coinId] || coin?.symbol?.[0] || "?";
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price);
   };
 
-  const firstCoin = data?.coins?.find(coin => selectedCoins.includes(coin.id));
+  if (isLoading) {
+    return (
+      <div 
+        className="h-full rounded-2xl flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900"
+        data-testid="crypto-widget"
+      >
+        <Loader2 className="h-6 w-6 animate-spin text-white/50" />
+      </div>
+    );
+  }
+
+  if (error || !coin) {
+    return (
+      <div 
+        className="h-full rounded-2xl flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900"
+        data-testid="crypto-widget"
+      >
+        <div className="text-white/60 text-sm">N/A</div>
+      </div>
+    );
+  }
+
+  const isPositive = coin.change24h >= 0;
+  const changePercent = Math.abs(coin.change24h).toFixed(2);
 
   return (
-    <div className="h-full" data-testid="crypto-widget">
-      {isLoading ? (
-        <div className="h-full bg-white rounded-2xl flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      ) : error ? (
-        <div className="h-full bg-white rounded-2xl flex flex-col items-center justify-center text-center px-4">
-          <AlertCircle className="h-8 w-8 text-gray-400 mb-2" />
-          <p className="text-sm text-gray-500">Nicht verfügbar</p>
-        </div>
-      ) : firstCoin ? (
-        <CoinCard coin={firstCoin} onRefresh={handleRefresh} />
-      ) : (
-        <div className="h-full bg-white rounded-2xl flex items-center justify-center text-gray-400 text-sm">
-          Keine Daten
-        </div>
+    <div 
+      className={cn(
+        "h-full rounded-2xl overflow-hidden flex flex-col p-4 relative",
+        isPositive 
+          ? "bg-gradient-to-br from-slate-800 via-slate-800 to-emerald-900/50" 
+          : "bg-gradient-to-br from-slate-800 via-slate-800 to-rose-900/50"
       )}
+      data-testid="crypto-widget"
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white text-sm">
+          {coinIcon}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-white font-semibold text-sm">{coin.symbol.toUpperCase()}</span>
+          <span className="text-white/60 text-xs">{formatPrice(coin.price)}</span>
+        </div>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center">
+        <span className={cn(
+          "text-3xl font-bold",
+          isPositive ? "text-emerald-400" : "text-rose-400"
+        )}>
+          {isPositive ? "+" : "-"}{changePercent}%
+        </span>
+      </div>
+
+      <div className="text-center">
+        <span className="text-white/40 text-[10px]">Press & hold to customize</span>
+      </div>
     </div>
   );
 }

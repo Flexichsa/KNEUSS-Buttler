@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons } from "@shared/schema";
-import { eq, and, lt, desc } from "drizzle-orm";
+import { eq, and, lt, desc, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -37,6 +37,8 @@ export interface IStorage {
   
   // Projects
   getProjects(): Promise<Project[]>;
+  getParentProjects(): Promise<Project[]>;
+  getSubprojects(parentId: number): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
@@ -197,6 +199,14 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(projects).orderBy(desc(projects.updatedAt));
   }
 
+  async getParentProjects(): Promise<Project[]> {
+    return db.select().from(projects).where(isNull(projects.parentProjectId)).orderBy(projects.name);
+  }
+
+  async getSubprojects(parentId: number): Promise<Project[]> {
+    return db.select().from(projects).where(eq(projects.parentProjectId, parentId)).orderBy(projects.name);
+  }
+
   async getProject(id: number): Promise<Project | undefined> {
     const [project] = await db.select().from(projects).where(eq(projects.id, id));
     return project;
@@ -217,6 +227,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteProject(id: number): Promise<void> {
+    await db.delete(projects).where(eq(projects.parentProjectId, id));
     await db.delete(projects).where(eq(projects.id, id));
   }
 
