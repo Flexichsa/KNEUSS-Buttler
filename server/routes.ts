@@ -450,11 +450,21 @@ export async function registerRoutes(
         planned: "Geplant"
       };
       
-      const csvHeader = "Projekt;Beschreibung;Priorität;Status;Verantwortlich;Fortschritt;Fällig am;Erstellt am\n";
+      const phaseLabels: Record<string, string> = {
+        planning: "Planung",
+        development: "Entwicklung",
+        testing: "Testing",
+        review: "Review",
+        deployment: "Deployment",
+        maintenance: "Wartung"
+      };
+      
+      const csvHeader = "Phase;Projekt;Beschreibung;Status;Kosten (CHF);Nächste Schritte;Priorität;Verantwortlich;Fortschritt;Fällig am;Erstellt am\n";
       const csvRows = projects.map(p => {
         const dueDate = p.dueDate ? new Date(p.dueDate).toLocaleDateString('de-DE') : "-";
         const createdAt = new Date(p.createdAt).toLocaleDateString('de-DE');
-        return `"${p.name}";"${p.description || ''}";"${priorityLabels[p.priority] || p.priority}";"${statusLabels[p.status] || p.status}";"${p.assignee || '-'}";"${p.progress}%";"${dueDate}";"${createdAt}"`;
+        const phase = p.phase ? (phaseLabels[p.phase] || p.phase) : "-";
+        return `"${phase}";"${p.name}";"${p.description || ''}";"${statusLabels[p.status] || p.status}";"${p.costs || '-'}";"${p.nextSteps || '-'}";"${priorityLabels[p.priority] || p.priority}";"${p.assignee || '-'}";"${p.progress}%";"${dueDate}";"${createdAt}"`;
       }).join("\n");
       
       res.setHeader("Content-Type", "text/csv; charset=utf-8");

@@ -140,6 +140,9 @@ export const projects = pgTable("projects", {
   assignee: text("assignee"),
   progress: integer("progress").notNull().default(0),
   dueDate: timestamp("due_date"),
+  phase: text("phase"),
+  costs: text("costs"),
+  nextSteps: text("next_steps"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
