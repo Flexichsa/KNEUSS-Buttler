@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useMemo } from "react";
-import type { DashboardConfig, DashboardTab, WidgetLayout } from "@shared/schema";
+import type { DashboardConfig, DashboardTab, WidgetLayout, WidgetSizeMode } from "@shared/schema";
 import { DEFAULT_CONFIG } from "@/components/dashboard/dashboard-grid";
+import { AVAILABLE_WIDGETS, DEFAULT_SIZE_OPTIONS } from "@/components/dashboard/widget-picker";
 
 function getSessionId(): string {
   let sessionId = localStorage.getItem("session_id");
@@ -17,7 +18,7 @@ const DEFAULT_TABS: DashboardTab[] = [
     id: "main",
     name: "Übersicht",
     icon: "home",
-    layouts: DEFAULT_CONFIG.layouts,
+    layouts: DEFAULT_CONFIG.layouts.map(l => ({ ...l, sizeMode: l.sizeMode ?? "standard" as const })),
     enabledWidgets: DEFAULT_CONFIG.enabledWidgets,
     widgetInstances: DEFAULT_CONFIG.widgetInstances,
     widgetSettings: DEFAULT_CONFIG.widgetSettings,
@@ -66,18 +67,31 @@ export function useDashboardLayout() {
     },
   });
 
+  const normalizeLayouts = (layouts: WidgetLayout[]): WidgetLayout[] => {
+    return layouts.map(l => ({
+      ...l,
+      sizeMode: l.sizeMode ?? "standard",
+    }));
+  };
+
   useEffect(() => {
     if (savedConfig) {
-      // Check if config has tabs (new format) or is legacy (old format)
       if (savedConfig.tabs && savedConfig.tabs.length > 0) {
-        // New format with tabs - use directly
-        setTabs(savedConfig.tabs);
-        setActiveTabId(savedConfig.activeTabId || savedConfig.tabs[0].id);
+        const normalizedTabs = savedConfig.tabs.map(tab => ({
+          ...tab,
+          layouts: normalizeLayouts(tab.layouts),
+        }));
+        const needsNormalization = savedConfig.tabs.some(tab => 
+          tab.layouts.some(l => !l.sizeMode)
+        );
+        setTabs(normalizedTabs);
+        setActiveTabId(savedConfig.activeTabId || normalizedTabs[0].id);
+        if (needsNormalization) {
+          saveMutation.mutate({ tabs: normalizedTabs, activeTabId: savedConfig.activeTabId || normalizedTabs[0].id });
+        }
       } else {
-        // Legacy format without tabs - migrate
         let widgetInstances = savedConfig.widgetInstances || [];
         
-        // Auto-generate widgetInstances for enabled widgets that don't have them
         savedConfig.enabledWidgets.forEach(widgetId => {
           if (!widgetInstances.find(i => i.id === widgetId)) {
             const match = widgetId.match(/^([a-z]+)(-\d+)?$/);
@@ -90,7 +104,7 @@ export function useDashboardLayout() {
           id: "main",
           name: "Übersicht",
           icon: "home",
-          layouts: savedConfig.layouts,
+          layouts: normalizeLayouts(savedConfig.layouts),
           enabledWidgets: savedConfig.enabledWidgets,
           widgetInstances,
           widgetSettings: {
@@ -102,7 +116,6 @@ export function useDashboardLayout() {
         setTabs([migratedTab]);
         setActiveTabId("main");
         
-        // Persist migrated config
         saveMutation.mutate({ tabs: [migratedTab], activeTabId: "main" });
       }
     }
@@ -173,9 +186,8 @@ export function useDashboardLayout() {
     saveCurrentState(newTabs);
   };
 
-  const addWidget = (widgetType: string) => {
+  const addWidget = (widgetType: string, sizeMode?: WidgetSizeMode, gridSize?: { w: number; h: number }) => {
     const currentTab = activeTab;
-    // Generate unique ID for this tab
     const existingIds = currentTab.enabledWidgets.filter(id => id.startsWith(`${widgetType}-`));
     let counter = 1;
     while (existingIds.includes(`${widgetType}-${counter}`)) {
@@ -192,11 +204,32 @@ export function useDashboardLayout() {
       widgetSettings[newId] = { coins: ["bitcoin", "ethereum", "solana", "dogecoin", "cardano", "ripple"], show1h: true, show24h: true, show7d: true, showChart: true };
     }
     
+    const widgetDef = AVAILABLE_WIDGETS.find(w => w.id === widgetType);
+    const sizeOption = sizeMode 
+      ? (widgetDef?.sizeOptions || DEFAULT_SIZE_OPTIONS).find(s => s.mode === sizeMode) 
+      : null;
+    
+    const finalGridSize = gridSize || sizeOption?.gridSize || widgetDef?.defaultSize || { w: 4, h: 3 };
+    const finalMinSize = sizeOption?.minSize || widgetDef?.minSize || { w: 1, h: 1 };
+    
+    const maxY = currentTab.layouts.reduce((max, l) => Math.max(max, l.y + l.h), 0);
+    const newLayout: WidgetLayout = {
+      i: newId,
+      x: 0,
+      y: maxY,
+      w: finalGridSize.w,
+      h: finalGridSize.h,
+      minW: finalMinSize.w,
+      minH: finalMinSize.h,
+      sizeMode: sizeMode || "standard",
+    };
+    
     const newTabs = tabs.map(tab => {
       if (tab.id !== activeTabId) return tab;
       return {
         ...tab,
         enabledWidgets: [...tab.enabledWidgets, newId],
+        layouts: [...tab.layouts, newLayout],
         widgetInstances: [...(tab.widgetInstances || []), newInstance],
         widgetSettings,
       };
