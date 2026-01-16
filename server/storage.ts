@@ -43,6 +43,7 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<void>;
+  reorderProjects(orderings: { id: number; orderIndex: number; parentProjectId: number | null }[]): Promise<void>;
   
   // Contacts
   getContacts(): Promise<ContactWithPersons[]>;
@@ -196,15 +197,23 @@ export class DatabaseStorage implements IStorage {
 
   // Projects
   async getProjects(): Promise<Project[]> {
-    return db.select().from(projects).orderBy(desc(projects.updatedAt));
+    return db.select().from(projects).orderBy(projects.orderIndex, projects.name);
   }
 
   async getParentProjects(): Promise<Project[]> {
-    return db.select().from(projects).where(isNull(projects.parentProjectId)).orderBy(projects.name);
+    return db.select().from(projects).where(isNull(projects.parentProjectId)).orderBy(projects.orderIndex, projects.name);
   }
 
   async getSubprojects(parentId: number): Promise<Project[]> {
-    return db.select().from(projects).where(eq(projects.parentProjectId, parentId)).orderBy(projects.name);
+    return db.select().from(projects).where(eq(projects.parentProjectId, parentId)).orderBy(projects.orderIndex, projects.name);
+  }
+
+  async reorderProjects(orderings: { id: number; orderIndex: number; parentProjectId: number | null }[]): Promise<void> {
+    for (const item of orderings) {
+      await db.update(projects)
+        .set({ orderIndex: item.orderIndex, parentProjectId: item.parentProjectId, updatedAt: new Date() })
+        .where(eq(projects.id, item.id));
+    }
   }
 
   async getProject(id: number): Promise<Project | undefined> {
