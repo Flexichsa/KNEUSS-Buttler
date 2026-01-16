@@ -6,6 +6,7 @@ import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getE
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { isAsanaConnected, getAsanaUser, getWorkspaces, getProjects as getAsanaProjects, getAllTasks as getAsanaTasks } from "./asana";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -804,6 +805,55 @@ export async function registerRoutes(
     
     const readStream = fs.createReadStream(fileInfo.filePath);
     readStream.pipe(res);
+  });
+
+  // Asana Integration
+  app.get("/api/asana/status", async (req, res) => {
+    try {
+      const connected = await isAsanaConnected();
+      res.json({ connected });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/asana/user", async (req, res) => {
+    try {
+      const user = await getAsanaUser();
+      res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch Asana user" });
+    }
+  });
+
+  app.get("/api/asana/workspaces", async (req, res) => {
+    try {
+      const workspaces = await getWorkspaces();
+      res.json(workspaces);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch workspaces" });
+    }
+  });
+
+  app.get("/api/asana/projects", async (req, res) => {
+    try {
+      const workspaceGid = req.query.workspaceGid as string | undefined;
+      const projects = await getAsanaProjects(workspaceGid);
+      res.json(projects);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch projects" });
+    }
+  });
+
+  app.get("/api/asana/tasks", async (req, res) => {
+    try {
+      const workspaceGid = req.query.workspaceGid as string | undefined;
+      const includeCompleted = req.query.includeCompleted === 'true';
+      const tasks = await getAsanaTasks(workspaceGid, includeCompleted);
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch tasks" });
+    }
   });
 
   return httpServer;
