@@ -19,6 +19,7 @@ import { SingleCoinWidget } from "@/components/widgets/single-coin-widget";
 import { StatusReportWidget } from "@/components/widgets/status-report-widget";
 import { GainersLosersWidget } from "@/components/widgets/gainers-losers-widget";
 import { AsanaWidget } from "@/components/widgets/asana-widget";
+import { ContactsWidget } from "@/components/widgets/contacts-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import type { DashboardConfig, WidgetLayout, WidgetInstance, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings } from "@shared/schema";
 import { X, GripVertical, Settings2 } from "lucide-react";
@@ -193,6 +194,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         return <GainersLosersWidget />;
       case "asana":
         return <AsanaWidget />;
+      case "contacts":
+        return <ContactsWidget />;
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
