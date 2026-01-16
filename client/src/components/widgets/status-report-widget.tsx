@@ -61,6 +61,8 @@ interface SortableProjectItemProps {
   onOpenModal: (project: Project) => void;
   getPriorityConfig: (priority: string) => typeof PRIORITIES[0] | undefined;
   getStatusConfig: (status: string) => typeof STATUSES[0] | undefined;
+  aggregatedStatus?: string;
+  aggregatedProgress?: number;
 }
 
 function SortableProjectItem({
@@ -72,6 +74,8 @@ function SortableProjectItem({
   onOpenModal,
   getPriorityConfig,
   getStatusConfig,
+  aggregatedStatus,
+  aggregatedProgress,
 }: SortableProjectItemProps) {
   const {
     attributes,
@@ -87,8 +91,10 @@ function SortableProjectItem({
     transition,
   };
 
+  const displayStatus = aggregatedStatus ?? project.status;
+  const displayProgress = aggregatedProgress ?? project.progress;
   const priorityConfig = getPriorityConfig(project.priority);
-  const statusConfig = getStatusConfig(project.status);
+  const statusConfig = getStatusConfig(displayStatus);
 
   return (
     <div
@@ -171,17 +177,17 @@ function SortableProjectItem({
           )}
           
           <div className="hidden sm:flex items-center gap-1 text-[10px] text-white/50">
-            <span>{project.progress}%</span>
+            <span>{displayProgress}%</span>
           </div>
         </div>
       </div>
 
-      {!isSubproject && project.progress > 0 && (
+      {!isSubproject && displayProgress > 0 && (
         <div className="px-3 pb-3 pt-0">
           <div className="h-1 bg-white/10 rounded-full overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full transition-all duration-500"
-              style={{ width: `${project.progress}%` }}
+              style={{ width: `${displayProgress}%` }}
             />
           </div>
         </div>
@@ -290,14 +296,14 @@ export function StatusReportWidget() {
     }
     const avgProgress = Math.round(subs.reduce((sum, s) => sum + (s.progress || 0), 0) / subs.length);
     const allCompleted = subs.every(s => s.status === "completed");
-    const anyInProgress = subs.some(s => s.status === "in_progress" || s.status === "on_hold" || s.status === "at_risk");
-    const anyPlanned = subs.some(s => s.status === "planned");
+    const anyBlocked = subs.some(s => s.status === "blocked");
+    const anyInProgress = subs.some(s => s.status === "in_progress");
     let status = "planned";
     if (allCompleted) {
       status = "completed";
-    } else if (anyInProgress) {
-      status = "in_progress";
-    } else if (anyPlanned && avgProgress > 0) {
+    } else if (anyBlocked) {
+      status = "blocked";
+    } else if (anyInProgress || avgProgress > 0) {
       status = "in_progress";
     }
     return { status, progress: avgProgress };
@@ -753,6 +759,7 @@ export function StatusReportWidget() {
                     {parentProjects.map((parent) => {
                       const subprojects = getSubprojects(parent.id);
                       const isExpanded = expandedProjects.has(parent.id);
+                      const aggregated = subprojects.length > 0 ? getAggregatedValues(parent.id) : null;
                       return (
                         <div key={parent.id} className="space-y-2">
                           <SortableProjectItem
@@ -763,6 +770,8 @@ export function StatusReportWidget() {
                             onOpenModal={openProjectModal}
                             getPriorityConfig={getPriorityConfig}
                             getStatusConfig={getStatusConfig}
+                            aggregatedStatus={aggregated?.status}
+                            aggregatedProgress={aggregated?.progress}
                           />
                           
                           <AnimatePresence>

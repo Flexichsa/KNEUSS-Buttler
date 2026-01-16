@@ -377,6 +377,34 @@ export async function registerRoutes(
     }
   });
 
+  // Dashboard Layout
+  app.get("/api/dashboard/layout/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+      const config = await storage.getDashboardLayout(sessionId);
+      res.json(config || null);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch dashboard layout" });
+    }
+  });
+
+  app.put("/api/dashboard/layout/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+      const validatedConfig = DashboardConfigSchema.parse(req.body);
+      await storage.saveDashboardLayout(sessionId, validatedConfig);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to save dashboard layout" });
+    }
+  });
+
   // Projects (Status Reports)
   app.get("/api/projects", async (req, res) => {
     try {
