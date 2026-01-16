@@ -5,6 +5,7 @@ interface Todo {
   id: number;
   text: string;
   completed: boolean;
+  dueDate: string | null;
   createdAt: string;
 }
 
@@ -23,11 +24,11 @@ export function useCreateTodo() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (text: string) => {
+    mutationFn: async ({ text, dueDate }: { text: string; dueDate?: string | null }) => {
       const res = await fetch('/api/todos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, completed: false }),
+        body: JSON.stringify({ text, completed: false, dueDate: dueDate || null }),
       });
       if (!res.ok) throw new Error('Failed to create todo');
       return res.json() as Promise<Todo>;

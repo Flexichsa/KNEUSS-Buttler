@@ -113,6 +113,7 @@ export const todos = pgTable("todos", {
   id: serial("id").primaryKey(),
   text: text("text").notNull(),
   completed: boolean("completed").notNull().default(false),
+  dueDate: timestamp("due_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -152,9 +153,28 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertTodoSchema = createInsertSchema(todos).omit({
+export const insertTodoSchema = createInsertSchema(todos, {
+  dueDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    const parsed = new Date(val);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }),
+}).omit({
   id: true,
   createdAt: true,
+});
+
+export const updateTodoSchema = z.object({
+  completed: z.boolean().optional(),
+  text: z.string().optional(),
+  dueDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
+    if (val === undefined) return undefined;
+    if (val === null) return null;
+    if (val instanceof Date) return val;
+    const parsed = new Date(val);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }),
 });
 
 export const insertNoteSchema = createInsertSchema(notes).omit({
