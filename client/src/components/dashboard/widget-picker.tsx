@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -347,6 +347,32 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
           <span className="w-2 h-2 rounded-full bg-yellow-400" />
           <span className="flex-1">Projekt Gamma</span>
           <span className="text-[10px] text-white/60">30%</span>
+        </div>
+      </div>
+    )
+  },
+  { 
+    id: "asana", 
+    name: "Asana", 
+    description: "Projekte und Aufgaben aus Asana",
+    icon: <FolderKanban className="h-5 w-5" />, 
+    defaultSize: { w: 5, h: 5 }, 
+    minSize: { w: 3, h: 3 },
+    previewGradient: "from-pink-500 to-red-500",
+    category: "productivity",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <div className="w-3 h-3 rounded-full border-2 border-white/60" />
+          <span>Website Redesign</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <div className="w-3 h-3 rounded-full border-2 border-white/60" />
+          <span>Marketing Plan</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/60 text-xs">
+          <div className="w-3 h-3 rounded-full border-2 border-white/40 bg-white/30" />
+          <span className="line-through">Erledigt</span>
         </div>
       </div>
     )
