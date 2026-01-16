@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Loader2, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SingleCoinSettings } from "@shared/schema";
@@ -10,9 +10,12 @@ interface CoinData {
   name: string;
   image: string;
   price: number;
+  rank: number;
+  change1h: number;
   change24h: number;
   change7d: number;
-  change1h?: number;
+  change30d: number;
+  change1y: number;
   marketCap: number;
   volume: number;
   sparkline: number[];
@@ -36,25 +39,21 @@ const COIN_ICONS: Record<string, string> = {
   polkadot: "●",
   chainlink: "⬡",
   stellar: "✦",
-  monero: "ɱ",
-  tron: "◈",
+  vechain: "V",
   binancecoin: "◆",
-  usdtether: "₮",
-  luna: "🌙",
 };
 
-const COIN_COLORS: Record<string, { from: string; to: string; accent: string }> = {
-  bitcoin: { from: "from-orange-600", to: "to-amber-500", accent: "text-amber-400" },
-  ethereum: { from: "from-indigo-600", to: "to-purple-500", accent: "text-purple-400" },
-  solana: { from: "from-purple-600", to: "to-fuchsia-500", accent: "text-fuchsia-400" },
-  dogecoin: { from: "from-yellow-500", to: "to-amber-400", accent: "text-yellow-400" },
-  cardano: { from: "from-blue-600", to: "to-cyan-500", accent: "text-cyan-400" },
-  ripple: { from: "from-slate-500", to: "to-slate-400", accent: "text-slate-300" },
-  litecoin: { from: "from-slate-400", to: "to-blue-400", accent: "text-blue-400" },
-  binancecoin: { from: "from-yellow-500", to: "to-yellow-400", accent: "text-yellow-400" },
+const COIN_COLORS: Record<string, { bg: string; icon: string }> = {
+  bitcoin: { bg: "from-orange-600 to-amber-500", icon: "bg-gradient-to-br from-orange-500 to-yellow-500" },
+  ethereum: { bg: "from-indigo-600 to-purple-500", icon: "bg-gradient-to-br from-indigo-500 to-purple-500" },
+  solana: { bg: "from-purple-600 to-fuchsia-500", icon: "bg-gradient-to-br from-purple-500 to-fuchsia-500" },
+  dogecoin: { bg: "from-yellow-500 to-amber-400", icon: "bg-gradient-to-br from-yellow-500 to-amber-400" },
+  cardano: { bg: "from-blue-600 to-cyan-500", icon: "bg-gradient-to-br from-blue-500 to-cyan-500" },
+  ripple: { bg: "from-slate-500 to-slate-400", icon: "bg-gradient-to-br from-slate-500 to-slate-400" },
+  vechain: { bg: "from-blue-600 to-blue-400", icon: "bg-gradient-to-br from-blue-500 to-blue-400" },
 };
 
-function MiniSparkline({ data, color }: { data: number[]; color: string }) {
+function MiniSparkline({ data, isPositive }: { data: number[]; isPositive: boolean }) {
   if (!data || data.length < 2) return null;
   
   const min = Math.min(...data);
@@ -70,35 +69,31 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   return (
     <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
       <defs>
-        <linearGradient id="sparkGradSmall" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.3" />
+        <linearGradient id="miniSparkGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.4" />
           <stop offset="100%" stopColor="white" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon
         points={`0,100 ${points} 100,100`}
-        fill="url(#sparkGradSmall)"
+        fill="url(#miniSparkGrad)"
       />
       <polyline
         points={points}
         fill="none"
         stroke="white"
-        strokeWidth="3"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity="0.7"
+        opacity="0.8"
       />
     </svg>
   );
 }
 
 function formatCompactPrice(price: number): string {
-  if (price >= 1000) {
-    return `$${(price / 1000).toFixed(1)}K`;
-  }
-  if (price >= 1) {
-    return `$${price.toFixed(2)}`;
-  }
+  if (price >= 1000) return `$${(price / 1000).toFixed(1)}K`;
+  if (price >= 1) return `$${price.toFixed(2)}`;
   return `$${price.toFixed(4)}`;
 }
 
@@ -125,14 +120,14 @@ export function SingleCoinWidget({ settings }: SingleCoinWidgetProps) {
   }, [data, coinId]);
 
   const coinIcon = COIN_ICONS[coinId] || "?";
-  const colors = COIN_COLORS[coinId] || { from: "from-slate-600", to: "to-slate-500", accent: "text-slate-400" };
+  const colors = COIN_COLORS[coinId] || { bg: "from-slate-600 to-slate-500", icon: "bg-gradient-to-br from-slate-500 to-slate-400" };
 
   if (isLoading) {
     return (
       <div 
         className={cn(
-          "h-full rounded-2xl flex items-center justify-center",
-          "bg-gradient-to-br", colors.from, colors.to
+          "h-full rounded-2xl flex items-center justify-center bg-gradient-to-br",
+          colors.bg
         )}
         data-testid={`single-coin-widget-${coinId}`}
       >
@@ -145,8 +140,8 @@ export function SingleCoinWidget({ settings }: SingleCoinWidgetProps) {
     return (
       <div 
         className={cn(
-          "h-full rounded-2xl flex items-center justify-center",
-          "bg-gradient-to-br", colors.from, colors.to
+          "h-full rounded-2xl flex items-center justify-center bg-gradient-to-br",
+          colors.bg
         )}
         data-testid={`single-coin-widget-${coinId}`}
       >
@@ -161,36 +156,29 @@ export function SingleCoinWidget({ settings }: SingleCoinWidgetProps) {
   return (
     <div 
       className={cn(
-        "h-full rounded-2xl overflow-hidden flex flex-col relative",
-        "bg-gradient-to-br", colors.from, colors.to,
-        "shadow-lg"
+        "h-full rounded-2xl overflow-hidden flex flex-col relative bg-gradient-to-br",
+        colors.bg
       )}
       data-testid={`single-coin-widget-${coinId}`}
     >
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <MiniSparkline data={coin.sparkline} color="white" />
+      <div className="absolute inset-0 opacity-40 pointer-events-none">
+        <MiniSparkline data={coin.sparkline.slice(-24)} isPositive={isPositive} />
       </div>
 
-      <div className="relative z-10 p-3 flex flex-col h-full justify-between">
+      <div className="relative z-10 p-3 flex flex-col h-full">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-lg font-bold shadow-inner">
+          <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg", colors.icon)}>
             {coinIcon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-white/80 text-xs font-medium truncate">{coin.symbol.toUpperCase()}</div>
           </div>
         </div>
 
-        <div className="text-center py-2">
+        <div className="flex-1 flex flex-col items-center justify-center">
           <div className="text-white text-xl font-bold drop-shadow-lg">
             {formatCompactPrice(coin.price)}
           </div>
-        </div>
-
-        <div className="flex items-center justify-center">
           <div className={cn(
-            "flex items-center gap-1 px-2 py-1 rounded-full",
-            isPositive ? "bg-white/20 text-white" : "bg-black/20 text-white"
+            "flex items-center gap-0.5 mt-1",
+            isPositive ? "text-white" : "text-white/90"
           )}>
             <Icon className="h-3 w-3" />
             <span className="text-sm font-bold">

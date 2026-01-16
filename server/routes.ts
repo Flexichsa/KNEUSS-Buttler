@@ -526,9 +526,9 @@ export async function registerRoutes(
         return res.json({ ...cached.data, cached: true });
       }
       
-      const coins = "bitcoin,ethereum,solana,dogecoin,cardano,ripple";
+      const coins = "bitcoin,ethereum,solana,dogecoin,cardano,ripple,vechain";
       const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur&ids=${coins}&order=market_cap_desc&sparkline=true&price_change_percentage=24h,7d`
+        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coins}&order=market_cap_desc&sparkline=true&price_change_percentage=1h,24h,7d,30d,1y`
       );
       if (!response.ok) throw new Error("CoinGecko API error");
       const data = await response.json();
@@ -540,9 +540,12 @@ export async function registerRoutes(
           name: coin.name,
           image: coin.image,
           price: coin.current_price,
-          priceUsd: null,
-          change24h: coin.price_change_percentage_24h,
-          change7d: coin.price_change_percentage_7d_in_currency,
+          rank: coin.market_cap_rank,
+          change1h: coin.price_change_percentage_1h_in_currency || 0,
+          change24h: coin.price_change_percentage_24h || 0,
+          change7d: coin.price_change_percentage_7d_in_currency || 0,
+          change30d: coin.price_change_percentage_30d_in_currency || 0,
+          change1y: coin.price_change_percentage_1y_in_currency || 0,
           marketCap: coin.market_cap,
           volume: coin.total_volume,
           sparkline: coin.sparkline_in_7d?.price || [],

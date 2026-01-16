@@ -1,7 +1,7 @@
-import { Loader2, TrendingUp, TrendingDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Loader2, ArrowDown, ArrowUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 
 interface CoinData {
   id: string;
@@ -9,9 +9,12 @@ interface CoinData {
   name: string;
   image: string;
   price: number;
+  rank: number;
+  change1h: number;
   change24h: number;
   change7d: number;
-  change1h?: number;
+  change30d: number;
+  change1y: number;
   marketCap: number;
   volume: number;
   sparkline: number[];
@@ -36,26 +39,39 @@ const COIN_ICONS: Record<string, string> = {
   polkadot: "●",
   chainlink: "⬡",
   stellar: "✦",
-  monero: "ɱ",
-  tron: "◈",
+  vechain: "V",
   binancecoin: "◆",
-  usdtether: "₮",
-  luna: "🌙",
+};
+
+type TimeFrame = "1h" | "24h" | "7d" | "30d" | "1y";
+
+const TIMEFRAME_LABELS: Record<TimeFrame, string> = {
+  "1h": "Stunde",
+  "24h": "Tag",
+  "7d": "Woche",
+  "30d": "Monat",
+  "1y": "Jahr",
 };
 
 interface CryptoSettings {
   coins?: string[];
-  show1h?: boolean;
-  show24h?: boolean;
-  show7d?: boolean;
-  showChart?: boolean;
 }
 
 interface BtcWidgetProps {
   settings?: CryptoSettings;
 }
 
-function MiniSparkline({ data, isPositive }: { data: number[]; isPositive: boolean }) {
+function PriceChart({ 
+  data, 
+  isPositive,
+  minPrice,
+  maxPrice 
+}: { 
+  data: number[]; 
+  isPositive: boolean;
+  minPrice: number;
+  maxPrice: number;
+}) {
   if (!data || data.length < 2) return null;
   
   const min = Math.min(...data);
@@ -65,65 +81,83 @@ function MiniSparkline({ data, isPositive }: { data: number[]; isPositive: boole
   const points = data.map((val, i) => {
     const x = (i / (data.length - 1)) * 100;
     const y = 100 - ((val - min) / range) * 100;
-    return `${x},${y}`;
-  }).join(' ');
+    return { x, y, val };
+  });
 
-  const areaPoints = `0,100 ${points} 100,100`;
-
-  return (
-    <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={`sparkGrad-${isPositive ? 'up' : 'down'}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={isPositive ? "#10b981" : "#f43f5e"} stopOpacity="0.4" />
-          <stop offset="100%" stopColor={isPositive ? "#10b981" : "#f43f5e"} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon
-        points={areaPoints}
-        fill={`url(#sparkGrad-${isPositive ? 'up' : 'down'})`}
-      />
-      <polyline
-        points={points}
-        fill="none"
-        stroke={isPositive ? "#10b981" : "#f43f5e"}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function formatCompactNumber(num: number): string {
-  if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-  if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
-  return `$${num.toFixed(2)}`;
-}
-
-function ChangeIndicator({ value, label, size = "sm" }: { value: number; label: string; size?: "sm" | "lg" }) {
-  const isPositive = value >= 0;
-  const Icon = isPositive ? ArrowUp : ArrowDown;
+  const polylinePoints = points.map(p => `${p.x},${p.y}`).join(' ');
+  const areaPoints = `0,100 ${polylinePoints} 100,100`;
   
+  const minPoint = points.reduce((a, b) => a.val < b.val ? a : b);
+  const maxPoint = points.reduce((a, b) => a.val > b.val ? a : b);
+
+  const formatPrice = (price: number) => {
+    if (price >= 1000) return `$ ${price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    if (price >= 1) return `$ ${price.toFixed(2)}`;
+    return `$ ${price.toFixed(5)}`;
+  };
+
   return (
-    <div className={cn(
-      "flex items-center gap-1 rounded-full px-2 py-0.5",
-      isPositive ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400",
-      size === "lg" && "px-3 py-1"
-    )}>
-      <Icon className={cn("h-3 w-3", size === "lg" && "h-4 w-4")} />
-      <span className={cn("font-bold", size === "sm" ? "text-xs" : "text-sm")}>
-        {Math.abs(value).toFixed(2)}%
-      </span>
-      <span className="text-white/50 text-xs">{label}</span>
+    <div className="relative w-full h-full">
+      <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={isPositive ? "#10b981" : "#f43f5e"} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={isPositive ? "#10b981" : "#f43f5e"} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon points={areaPoints} fill="url(#chartGradient)" />
+        <polyline
+          points={polylinePoints}
+          fill="none"
+          stroke={isPositive ? "#10b981" : "#f43f5e"}
+          strokeWidth="0.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      
+      <div 
+        className="absolute flex items-center gap-1"
+        style={{ 
+          left: `${maxPoint.x}%`, 
+          top: `${maxPoint.y}%`,
+          transform: 'translate(-50%, -100%)'
+        }}
+      >
+        <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/50" />
+        <span className="text-xs text-emerald-400 font-medium whitespace-nowrap bg-slate-900/80 px-1 rounded">
+          {formatPrice(maxPrice)}
+        </span>
+      </div>
+      
+      <div 
+        className="absolute flex items-center gap-1"
+        style={{ 
+          left: `${minPoint.x}%`, 
+          top: `${minPoint.y}%`,
+          transform: 'translate(-50%, 10%)'
+        }}
+      >
+        <div className="w-2 h-2 rounded-full bg-rose-400 shadow-lg shadow-rose-400/50" />
+        <span className="text-xs text-rose-400 font-medium whitespace-nowrap bg-slate-900/80 px-1 rounded">
+          {formatPrice(minPrice)}
+        </span>
+      </div>
     </div>
   );
+}
+
+function formatCompact(num: number): string {
+  if (num >= 1e12) return `${(num / 1e12).toFixed(2)} Bio. $`;
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)} Mrd. $`;
+  if (num >= 1e6) return `${(num / 1e6).toFixed(2)} Mio. $`;
+  return `${num.toLocaleString()} $`;
 }
 
 export function BtcWidget({ settings }: BtcWidgetProps) {
   const selectedCoins = settings?.coins || ["bitcoin"];
   const coinId = selectedCoins[0] || "bitcoin";
+  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeFrame>("24h");
   
   const { data, isLoading, error } = useQuery<CryptoResponse>({
     queryKey: ["crypto-prices"],
@@ -139,20 +173,38 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
   const coin = data?.coins?.find(c => c.id === coinId);
   const coinIcon = COIN_ICONS[coinId] || coin?.symbol?.[0] || "?";
 
-  const pricePosition = useMemo(() => {
-    if (!coin) return 50;
-    const range = coin.high24h - coin.low24h;
-    if (range === 0) return 50;
-    return ((coin.price - coin.low24h) / range) * 100;
-  }, [coin]);
+  const getChangeForTimeframe = (tf: TimeFrame): number => {
+    if (!coin) return 0;
+    switch (tf) {
+      case "1h": return coin.change1h ?? 0;
+      case "24h": return coin.change24h ?? 0;
+      case "7d": return coin.change7d ?? 0;
+      case "30d": return coin.change30d ?? 0;
+      case "1y": return coin.change1y ?? 0;
+      default: return coin.change24h ?? 0;
+    }
+  };
+
+  const currentChange = getChangeForTimeframe(selectedTimeframe);
+  const isPositive = currentChange >= 0;
+
+  const chartData = useMemo(() => {
+    if (!coin?.sparkline) return [];
+    const sparkline = coin.sparkline;
+    switch (selectedTimeframe) {
+      case "1h": return sparkline.slice(-6);
+      case "24h": return sparkline.slice(-24);
+      case "7d": return sparkline;
+      case "30d": return sparkline;
+      case "1y": return sparkline;
+      default: return sparkline;
+    }
+  }, [coin?.sparkline, selectedTimeframe]);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price);
+    if (price >= 1000) return `$ ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (price >= 1) return `$ ${price.toFixed(2)}`;
+    return `$ ${price.toFixed(5)}`;
   };
 
   if (isLoading) {
@@ -172,111 +224,97 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
         className="h-full rounded-2xl flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
         data-testid="crypto-widget"
       >
-        <div className="text-white/60 text-sm">Unable to load data</div>
+        <div className="text-white/60 text-sm">Daten nicht verfügbar</div>
       </div>
     );
   }
 
-  const isPositive = coin.change24h >= 0;
-  const TrendIcon = isPositive ? TrendingUp : TrendingDown;
+  const minPrice = chartData.length > 0 ? Math.min(...chartData) : coin.price;
+  const maxPrice = chartData.length > 0 ? Math.max(...chartData) : coin.price;
 
   return (
     <div 
-      className={cn(
-        "h-full rounded-2xl overflow-hidden flex flex-col relative",
-        "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900",
-        "border border-white/10"
-      )}
+      className="h-full rounded-2xl overflow-hidden flex flex-col bg-gradient-to-br from-slate-900 via-slate-800/95 to-slate-900 border border-white/10"
       data-testid="crypto-widget"
     >
-      <div className={cn(
-        "absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl",
-        isPositive ? "bg-gradient-to-b from-emerald-400 to-emerald-600" : "bg-gradient-to-b from-rose-400 to-rose-600"
-      )} />
-      
-      <div className={cn(
-        "absolute inset-0 opacity-20 blur-3xl pointer-events-none",
-        isPositive ? "bg-emerald-500/30" : "bg-rose-500/30"
-      )} style={{ top: '30%' }} />
-
-      <div className="relative z-10 p-4 flex flex-col h-full">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              "w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold",
-              "bg-gradient-to-br shadow-lg",
-              isPositive 
-                ? "from-emerald-500/30 to-emerald-600/20 text-emerald-400 shadow-emerald-500/20" 
-                : "from-rose-500/30 to-rose-600/20 text-rose-400 shadow-rose-500/20"
-            )}>
-              {coinIcon}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-white font-bold text-lg">{coin.name}</span>
-                <span className="text-white/40 text-sm">{coin.symbol.toUpperCase()}</span>
-              </div>
-              <div className="text-white text-2xl font-bold">{formatPrice(coin.price)}</div>
-            </div>
+      <div className="p-4 pb-2 flex items-center justify-between border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            {coinIcon}
           </div>
-          <div className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-xl",
-            isPositive ? "bg-emerald-500/20" : "bg-rose-500/20"
-          )}>
-            <TrendIcon className={cn("h-5 w-5", isPositive ? "text-emerald-400" : "text-rose-400")} />
-            <span className={cn("text-2xl font-bold", isPositive ? "text-emerald-400" : "text-rose-400")}>
-              {isPositive ? "+" : ""}{coin.change24h.toFixed(2)}%
-            </span>
+          <span className="text-white font-semibold text-lg">{coin.name}</span>
+        </div>
+        <div className="text-right">
+          <div className="text-white/60 text-xs">{coin.symbol} =</div>
+          <div className="text-white font-bold">{formatPrice(coin.price)}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 px-4 py-3 border-b border-white/10">
+        <div className="text-center">
+          <div className="text-white/50 text-xs mb-1">Rang</div>
+          <div className="text-white font-semibold flex items-center justify-center gap-1">
+            <ArrowDown className="h-3 w-3 text-rose-400" />
+            {coin.rank}
           </div>
         </div>
-
-        <div className="flex gap-2 mb-3">
-          {coin.change1h !== undefined && <ChangeIndicator value={coin.change1h} label="1h" />}
-          <ChangeIndicator value={coin.change24h} label="24h" />
-          <ChangeIndicator value={coin.change7d} label="7d" />
+        <div className="text-center">
+          <div className="text-white/50 text-xs mb-1">Marktkap.</div>
+          <div className="text-white font-semibold text-sm">{formatCompact(coin.marketCap)}</div>
         </div>
-
-        <div className="flex-1 min-h-[60px] mb-3 relative">
-          <MiniSparkline data={coin.sparkline} isPositive={isPositive} />
+        <div className="text-center">
+          <div className="text-white/50 text-xs mb-1">Tagesvolumen</div>
+          <div className="text-white font-semibold text-sm">{formatCompact(coin.volume)}</div>
         </div>
+      </div>
 
-        <div className="mb-3">
-          <div className="flex justify-between text-xs text-white/50 mb-1">
-            <span>24h Range</span>
-            <span>{formatPrice(coin.low24h)} - {formatPrice(coin.high24h)}</span>
-          </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden relative">
-            <div 
-              className={cn(
-                "absolute left-0 top-0 h-full rounded-full",
-                isPositive ? "bg-gradient-to-r from-emerald-600 to-emerald-400" : "bg-gradient-to-r from-rose-600 to-rose-400"
-              )}
-              style={{ width: `${pricePosition}%` }}
-            />
-            <div 
-              className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-lg border-2"
-              style={{ 
-                left: `${pricePosition}%`, 
-                transform: 'translate(-50%, -50%)',
-                borderColor: isPositive ? '#10b981' : '#f43f5e'
-              }}
-            />
-          </div>
-        </div>
+      <div className="flex-1 min-h-[120px] px-2 py-2 relative">
+        <PriceChart 
+          data={chartData} 
+          isPositive={isPositive}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+        />
+      </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-            <div className="text-white/50 text-xs mb-1">Market Cap</div>
-            <div className="text-white font-bold">{formatCompactNumber(coin.marketCap)}</div>
-          </div>
-          <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-            <div className="text-white/50 text-xs mb-1">24h Volume</div>
-            <div className="text-white font-bold">{formatCompactNumber(coin.volume)}</div>
-          </div>
-        </div>
-
-        <div className="text-center mt-3">
-          <span className="text-white/30 text-[10px]">Press & hold to customize</span>
+      <div className="px-4 py-3 border-t border-white/10">
+        <div className="flex justify-between items-end">
+          {(["1h", "24h", "7d", "30d", "1y"] as TimeFrame[]).map((tf) => {
+            const change = getChangeForTimeframe(tf);
+            const positive = change >= 0;
+            const isSelected = selectedTimeframe === tf;
+            
+            return (
+              <button
+                key={tf}
+                onClick={() => setSelectedTimeframe(tf)}
+                className={cn(
+                  "flex flex-col items-center px-3 py-2 rounded-lg transition-all",
+                  isSelected 
+                    ? "bg-orange-500 text-white" 
+                    : "hover:bg-white/5"
+                )}
+                data-testid={`timeframe-${tf}`}
+              >
+                <span className={cn(
+                  "text-xs font-medium",
+                  isSelected ? "text-white" : "text-white/70"
+                )}>
+                  {TIMEFRAME_LABELS[tf]}
+                </span>
+                <span className={cn(
+                  "text-sm font-bold",
+                  isSelected 
+                    ? "text-white" 
+                    : positive 
+                      ? "text-emerald-400" 
+                      : "text-rose-400"
+                )}>
+                  {positive ? "+" : ""}{change.toFixed(1)}%
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
