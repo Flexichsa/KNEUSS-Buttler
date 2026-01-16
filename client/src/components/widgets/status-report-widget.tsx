@@ -282,6 +282,27 @@ export function StatusReportWidget() {
       .sort((a, b) => a.orderIndex - b.orderIndex);
   }, [projects]);
 
+  const getAggregatedValues = useCallback((parentId: number): { status: string; progress: number } => {
+    const subs = projects.filter(p => p.parentProjectId === parentId);
+    if (subs.length === 0) {
+      const parent = projects.find(p => p.id === parentId);
+      return { status: parent?.status || "planned", progress: parent?.progress || 0 };
+    }
+    const avgProgress = Math.round(subs.reduce((sum, s) => sum + (s.progress || 0), 0) / subs.length);
+    const allCompleted = subs.every(s => s.status === "completed");
+    const anyInProgress = subs.some(s => s.status === "in_progress" || s.status === "on_hold" || s.status === "at_risk");
+    const anyPlanned = subs.some(s => s.status === "planned");
+    let status = "planned";
+    if (allCompleted) {
+      status = "completed";
+    } else if (anyInProgress) {
+      status = "in_progress";
+    } else if (anyPlanned && avgProgress > 0) {
+      status = "in_progress";
+    }
+    return { status, progress: avgProgress };
+  }, [projects]);
+
   const getDescendantIds = useCallback((projectId: number): Set<number> => {
     const descendants = new Set<number>();
     const queue = [projectId];
