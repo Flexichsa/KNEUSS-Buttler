@@ -239,9 +239,13 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
     >
       <div className="p-4 pb-2 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-            {coinIcon}
-          </div>
+          {coin.image ? (
+            <img src={coin.image} alt={coin.name} className="w-8 h-8 rounded-full shadow-lg" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              {coinIcon}
+            </div>
+          )}
           <span className="text-white font-semibold text-lg">{coin.name}</span>
         </div>
         <div className="text-right">
