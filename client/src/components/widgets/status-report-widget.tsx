@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Plus, Trash2, Download, Loader2, AlertCircle, Pencil, X, Table, LayoutGrid } from "lucide-react";
+import { ClipboardList, Plus, Trash2, Download, Loader2, AlertCircle, Table, LayoutGrid, ChevronDown, ChevronRight, FolderOpen, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,9 +36,10 @@ const PHASES = [
 export function StatusReportWidget() {
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
+  const [viewMode, setViewMode] = useState<"cards" | "table" | "overview">("overview");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [editingProject, setEditingProject] = useState<Partial<Project> | null>(null);
+  const [expandedProjects, setExpandedProjects] = useState<Set<number>>(new Set());
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -49,6 +50,7 @@ export function StatusReportWidget() {
     phase: "",
     costs: "",
     nextSteps: "",
+    parentProjectId: null as number | null,
   });
 
   const { data: projects = [], isLoading, error } = useQuery<Project[]>({
@@ -59,6 +61,53 @@ export function StatusReportWidget() {
       return res.json();
     },
   });
+
+  const parentProjects = useMemo(() => {
+    return projects.filter(p => !p.parentProjectId);
+  }, [projects]);
+
+  const orphanedSubprojects = useMemo(() => {
+    const parentIds = new Set(parentProjects.map(p => p.id));
+    return projects.filter(p => p.parentProjectId && !parentIds.has(p.parentProjectId));
+  }, [projects, parentProjects]);
+
+  const getSubprojects = (parentId: number) => {
+    return projects.filter(p => p.parentProjectId === parentId);
+  };
+
+  const getDescendantIds = (projectId: number): Set<number> => {
+    const descendants = new Set<number>();
+    const queue = [projectId];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const children = projects.filter(p => p.parentProjectId === current);
+      for (const child of children) {
+        if (!descendants.has(child.id)) {
+          descendants.add(child.id);
+          queue.push(child.id);
+        }
+      }
+    }
+    return descendants;
+  };
+
+  const getValidParentOptions = (currentProjectId: number | undefined) => {
+    if (!currentProjectId) return parentProjects;
+    const descendants = getDescendantIds(currentProjectId);
+    return parentProjects.filter(p => p.id !== currentProjectId && !descendants.has(p.id));
+  };
+
+  const toggleProjectExpand = (projectId: number) => {
+    setExpandedProjects(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId);
+      } else {
+        newSet.add(projectId);
+      }
+      return newSet;
+    });
+  };
 
   const createMutation = useMutation({
     mutationFn: async (project: typeof newProject) => {
@@ -83,6 +132,7 @@ export function StatusReportWidget() {
         phase: "",
         costs: "",
         nextSteps: "",
+        parentProjectId: null,
       });
     },
   });
@@ -175,12 +225,12 @@ export function StatusReportWidget() {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => setViewMode(viewMode === "cards" ? "table" : "cards")}
+            onClick={() => setViewMode(viewMode === "overview" ? "table" : viewMode === "table" ? "cards" : "overview")}
             className="h-7 w-7 rounded-lg bg-white/10 hover:bg-white/20 text-white"
-            title={viewMode === "cards" ? "Tabellenansicht" : "Kartenansicht"}
+            title={viewMode === "overview" ? "Tabellenansicht" : viewMode === "table" ? "Kartenansicht" : "Übersicht"}
             data-testid="button-toggle-view"
           >
-            {viewMode === "cards" ? <Table className="h-3.5 w-3.5" /> : <LayoutGrid className="h-3.5 w-3.5" />}
+            {viewMode === "overview" ? <Table className="h-3.5 w-3.5" /> : viewMode === "table" ? <LayoutGrid className="h-3.5 w-3.5" /> : <FolderOpen className="h-3.5 w-3.5" />}
           </Button>
           <Button
             size="icon"
@@ -235,6 +285,24 @@ export function StatusReportWidget() {
                     className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
                     data-testid="input-project-name"
                   />
+                  <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+                    <Select
+                      value={newProject.parentProjectId?.toString() || "none"}
+                      onValueChange={(v) => setNewProject({ ...newProject, parentProjectId: v === "none" ? null : parseInt(v) })}
+                    >
+                      <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="select-parent-project">
+                        <SelectValue placeholder="Oberprojekt (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Kein Oberprojekt (Hauptprojekt)</SelectItem>
+                        {parentProjects.map((p) => (
+                          <SelectItem key={p.id} value={p.id.toString()}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Input
                     placeholder="Beschreibung"
                     value={newProject.description}
@@ -338,6 +406,111 @@ export function StatusReportWidget() {
                 <p className="text-sm text-white/50">Keine Projekte vorhanden</p>
                 <p className="text-xs text-white/30">Klicke + um ein Projekt hinzuzufügen</p>
               </div>
+            ) : viewMode === "overview" ? (
+              <div className="space-y-2">
+                {parentProjects.map((parent) => {
+                  const subprojects = getSubprojects(parent.id);
+                  const isExpanded = expandedProjects.has(parent.id);
+                  return (
+                    <div key={parent.id} className="bg-white/10 rounded-xl overflow-hidden">
+                      <div
+                        className="flex items-center gap-2 p-3 hover:bg-white/5 cursor-pointer transition-colors"
+                        onClick={() => subprojects.length > 0 ? toggleProjectExpand(parent.id) : openProjectModal(parent)}
+                        data-testid={`parent-project-${parent.id}`}
+                      >
+                        {subprojects.length > 0 ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleProjectExpand(parent.id); }}
+                            className="p-0.5 rounded hover:bg-white/10"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4 text-white/70" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-white/70" />
+                            )}
+                          </button>
+                        ) : (
+                          <div className="w-5" />
+                        )}
+                        <FolderOpen className="h-4 w-4 text-yellow-300" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-white truncate">{parent.name}</h4>
+                            {getPriorityBadge(parent.priority)}
+                            {subprojects.length > 0 && (
+                              <span className="text-[10px] text-white/50 bg-white/10 px-1.5 py-0.5 rounded">
+                                {subprojects.length} Unterprojekt{subprojects.length !== 1 ? "e" : ""}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {getStatusLabel(parent.status)}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openProjectModal(parent); }}
+                            className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <AnimatePresence>
+                        {isExpanded && subprojects.length > 0 && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="border-t border-white/10 bg-white/5"
+                          >
+                            {subprojects.map((sub) => (
+                              <div
+                                key={sub.id}
+                                onClick={() => openProjectModal(sub)}
+                                className="flex items-center gap-2 px-3 py-2 pl-10 hover:bg-white/10 cursor-pointer transition-colors border-b border-white/5 last:border-b-0"
+                                data-testid={`sub-project-${sub.id}`}
+                              >
+                                <FileText className="h-3.5 w-3.5 text-white/50" />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-xs text-white truncate">{sub.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {getPriorityBadge(sub.priority)}
+                                  {getStatusLabel(sub.status)}
+                                </div>
+                              </div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+                {orphanedSubprojects.length > 0 && (
+                  <div className="bg-white/10 rounded-xl overflow-hidden mt-2">
+                    <div className="flex items-center gap-2 p-3 bg-white/5 border-b border-white/10">
+                      <AlertCircle className="h-4 w-4 text-yellow-400" />
+                      <span className="text-xs text-white/70">Verwaiste Unterprojekte</span>
+                    </div>
+                    {orphanedSubprojects.map((orphan) => (
+                      <div
+                        key={orphan.id}
+                        onClick={() => openProjectModal(orphan)}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-white/10 cursor-pointer transition-colors border-b border-white/5 last:border-b-0"
+                        data-testid={`orphan-project-${orphan.id}`}
+                      >
+                        <FileText className="h-3.5 w-3.5 text-yellow-400" />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs text-white truncate">{orphan.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {getPriorityBadge(orphan.priority)}
+                          {getStatusLabel(orphan.status)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : viewMode === "table" ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-white">
@@ -360,7 +533,10 @@ export function StatusReportWidget() {
                       >
                         <td className="py-2 px-2">{getPhaseLabel(project.phase)}</td>
                         <td className="py-2 px-2 max-w-[150px] truncate" title={project.description || ""}>
-                          <div className="font-medium">{project.name}</div>
+                          <div className="font-medium flex items-center gap-1">
+                            {project.parentProjectId && <span className="text-white/40">↳</span>}
+                            {project.name}
+                          </div>
                           {project.description && <div className="text-white/60 truncate">{project.description}</div>}
                         </td>
                         <td className="py-2 px-2">{getStatusLabel(project.status)}</td>
@@ -386,6 +562,11 @@ export function StatusReportWidget() {
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {project.parentProjectId ? (
+                        <FileText className="h-3.5 w-3.5 text-white/50" />
+                      ) : (
+                        <FolderOpen className="h-3.5 w-3.5 text-yellow-300" />
+                      )}
                       {getPriorityBadge(project.priority)}
                       <h4 className="text-sm font-semibold text-white truncate">{project.name}</h4>
                     </div>
@@ -448,6 +629,26 @@ export function StatusReportWidget() {
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50 min-h-[80px] resize-none"
                   data-testid="modal-input-description"
                 />
+              </div>
+
+              <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+                <label className="text-xs text-white/70 mb-1 block">Oberprojekt</label>
+                <Select
+                  value={editingProject.parentProjectId?.toString() || "none"}
+                  onValueChange={(v) => setEditingProject({ ...editingProject, parentProjectId: v === "none" ? null : parseInt(v) })}
+                >
+                  <SelectTrigger className="bg-white/10 border-white/20 text-white" data-testid="modal-select-parent">
+                    <SelectValue placeholder="Oberprojekt wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Kein Oberprojekt (Hauptprojekt)</SelectItem>
+                    {getValidParentOptions(selectedProject?.id).map((p) => (
+                      <SelectItem key={p.id} value={p.id.toString()}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

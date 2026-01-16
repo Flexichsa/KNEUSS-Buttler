@@ -387,6 +387,25 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/projects/parents", async (req, res) => {
+    try {
+      const projects = await storage.getParentProjects();
+      res.json(projects);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch parent projects" });
+    }
+  });
+
+  app.get("/api/projects/:id/subprojects", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const subprojects = await storage.getSubprojects(id);
+      res.json(subprojects);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch subprojects" });
+    }
+  });
+
   app.get("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
