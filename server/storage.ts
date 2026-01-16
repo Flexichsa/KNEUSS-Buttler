@@ -21,7 +21,7 @@ export interface IStorage {
   // Todos
   getTodos(): Promise<Todo[]>;
   createTodo(todo: InsertTodo): Promise<Todo>;
-  updateTodo(id: number, completed: boolean): Promise<Todo | undefined>;
+  updateTodo(id: number, updates: Partial<Pick<Todo, 'completed' | 'dueDate' | 'text'>>): Promise<Todo | undefined>;
   deleteTodo(id: number): Promise<void>;
   
   // Notes
@@ -118,10 +118,10 @@ export class DatabaseStorage implements IStorage {
     return newTodo;
   }
 
-  async updateTodo(id: number, completed: boolean): Promise<Todo | undefined> {
+  async updateTodo(id: number, updates: Partial<Pick<Todo, 'completed' | 'dueDate' | 'text'>>): Promise<Todo | undefined> {
     const [updated] = await db
       .update(todos)
-      .set({ completed })
+      .set(updates)
       .where(eq(todos.id, id))
       .returning();
     return updated;

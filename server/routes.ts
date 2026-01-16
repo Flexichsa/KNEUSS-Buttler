@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema } from "@shared/schema";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
@@ -298,8 +298,9 @@ export async function registerRoutes(
   app.patch("/api/todos/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { completed } = req.body;
-      const todo = await storage.updateTodo(id, completed);
+      const validatedData = updateTodoSchema.parse(req.body);
+      
+      const todo = await storage.updateTodo(id, validatedData);
       if (!todo) {
         return res.status(404).json({ error: "Todo not found" });
       }
