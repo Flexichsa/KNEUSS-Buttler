@@ -121,7 +121,7 @@ export function MsTodoWidget() {
 
   return (
     <div className="h-full flex flex-col" data-testid="mstodo-widget">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <div className="flex items-center justify-between px-4 pr-14 py-3 border-b">
         <div className="flex items-center gap-2">
           <ListTodo className="h-5 w-5 text-blue-600" />
           <h3 className="font-semibold text-sm">Microsoft To Do</h3>

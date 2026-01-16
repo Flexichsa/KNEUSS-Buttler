@@ -195,7 +195,7 @@ export function AsanaWidget() {
     const projectColor = selectedProject.color ? (PROJECT_COLORS[selectedProject.color] || "bg-gray-400") : "bg-gray-400";
     return (
       <div className="h-full flex flex-col" data-testid="asana-widget">
-        <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100 relative z-10 bg-white">
+        <div className="flex items-center justify-between px-3 pr-14 py-3 border-b border-gray-100 relative z-10 bg-white">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedProject(null)}
@@ -246,7 +246,7 @@ export function AsanaWidget() {
 
   return (
     <div className="h-full flex flex-col" data-testid="asana-widget">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 pr-14 py-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <AsanaLogo className="w-8 h-8" />
           <div>

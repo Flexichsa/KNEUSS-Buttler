@@ -168,7 +168,7 @@ export function GainersLosersWidget() {
   }, [data?.coins]);
 
   return (
-    <div className="h-full p-5 flex flex-col" data-testid="gainers-losers-widget">
+    <div className="h-full p-5 pr-14 flex flex-col" data-testid="gainers-losers-widget">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-gray-900">Gainers & Losers</h2>
         <button 

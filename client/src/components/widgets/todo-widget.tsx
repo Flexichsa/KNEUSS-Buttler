@@ -28,7 +28,7 @@ export function TodoWidget() {
   return (
     <div className="h-full bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl overflow-hidden flex flex-col relative">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-      <div className="px-5 py-4 flex items-center justify-between relative z-10">
+      <div className="px-5 pr-14 py-4 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-3">
           <motion.div 
             className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center"

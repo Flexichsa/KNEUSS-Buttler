@@ -28,7 +28,7 @@ export function MailWidget() {
   return (
     <div className="h-full bg-gradient-to-br from-rose-400 via-pink-500 to-purple-500 rounded-2xl overflow-hidden flex flex-col relative">
       <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 translate-x-1/2" />
-      <div className="px-5 py-4 flex items-center justify-between relative z-10">
+      <div className="px-5 pr-14 py-4 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-3">
           <motion.div 
             className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center relative"

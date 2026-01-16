@@ -134,7 +134,7 @@ export function WeatherWidget({ widgetId = "weather-1", city, settings, onCityCh
       <div className="absolute inset-0 bg-black/10" />
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/20 to-transparent" />
       
-      <div className="relative z-10 flex-1 flex flex-col p-4">
+      <div className="relative z-10 flex-1 flex flex-col p-4 pr-12">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-white/70" />
