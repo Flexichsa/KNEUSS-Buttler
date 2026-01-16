@@ -36,6 +36,26 @@ export const CryptoSettingsSchema = z.object({
   showChart: z.boolean().default(true),
 });
 
+export const ClockSettingsSchema = z.object({
+  mode: z.enum(["digital", "analog"]).default("digital"),
+  showSeconds: z.boolean().default(true),
+  showDate: z.boolean().default(true),
+  use24Hour: z.boolean().default(true),
+});
+
+export const SingleCoinSettingsSchema = z.object({
+  coinId: z.string().default("bitcoin"),
+  showChart: z.boolean().default(true),
+  showChange: z.boolean().default(true),
+  variant: z.enum(["compact", "detailed", "chart"]).default("detailed"),
+});
+
+export const CalendarSettingsSchema = z.object({
+  viewMode: z.enum(["day", "week", "month", "list"]).default("list"),
+  showTime: z.boolean().default(true),
+  maxEvents: z.number().default(10),
+});
+
 export const DashboardTabSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -59,6 +79,9 @@ export type WidgetLayout = z.infer<typeof WidgetLayoutSchema>;
 export type WidgetInstance = z.infer<typeof WidgetInstanceSchema>;
 export type WeatherSettings = z.infer<typeof WeatherSettingsSchema>;
 export type CryptoSettings = z.infer<typeof CryptoSettingsSchema>;
+export type ClockSettings = z.infer<typeof ClockSettingsSchema>;
+export type SingleCoinSettings = z.infer<typeof SingleCoinSettingsSchema>;
+export type CalendarSettings = z.infer<typeof CalendarSettingsSchema>;
 export type DashboardTab = z.infer<typeof DashboardTabSchema>;
 export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 

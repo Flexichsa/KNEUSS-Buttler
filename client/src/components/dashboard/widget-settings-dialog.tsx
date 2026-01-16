@@ -3,8 +3,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import type { WeatherSettings, CryptoSettings } from "@shared/schema";
+import type { WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings } from "@shared/schema";
 
 interface WidgetSettingsDialogProps {
   widgetId: string;
@@ -21,6 +22,13 @@ const AVAILABLE_COINS = [
   { id: "dogecoin", name: "Dogecoin", symbol: "DOGE" },
   { id: "cardano", name: "Cardano", symbol: "ADA" },
   { id: "ripple", name: "Ripple", symbol: "XRP" },
+  { id: "litecoin", name: "Litecoin", symbol: "LTC" },
+  { id: "polkadot", name: "Polkadot", symbol: "DOT" },
+  { id: "chainlink", name: "Chainlink", symbol: "LINK" },
+  { id: "stellar", name: "Stellar", symbol: "XLM" },
+  { id: "monero", name: "Monero", symbol: "XMR" },
+  { id: "tron", name: "TRON", symbol: "TRX" },
+  { id: "binancecoin", name: "Binance Coin", symbol: "BNB" },
 ];
 
 function WeatherSettingsForm({ settings, onSettingsChange }: { settings: WeatherSettings; onSettingsChange: (s: WeatherSettings) => void }) {
@@ -92,7 +100,7 @@ function WeatherSettingsForm({ settings, onSettingsChange }: { settings: Weather
 }
 
 function CryptoSettingsForm({ settings, onSettingsChange }: { settings: CryptoSettings; onSettingsChange: (s: CryptoSettings) => void }) {
-  const coins = settings.coins || AVAILABLE_COINS.map(c => c.id);
+  const coins = settings.coins || AVAILABLE_COINS.slice(0, 6).map(c => c.id);
   
   const toggleCoin = (coinId: string) => {
     if (coins.includes(coinId)) {
@@ -166,18 +174,201 @@ function CryptoSettingsForm({ settings, onSettingsChange }: { settings: CryptoSe
   );
 }
 
+function ClockSettingsForm({ settings, onSettingsChange }: { settings: ClockSettings; onSettingsChange: (s: ClockSettings) => void }) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Anzeigemodus</Label>
+        <Select
+          value={settings.mode || "digital"}
+          onValueChange={(value) => onSettingsChange({ ...settings, mode: value as "digital" | "analog" })}
+        >
+          <SelectTrigger data-testid="select-clock-mode">
+            <SelectValue placeholder="Modus wählen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="digital">Digital</SelectItem>
+            <SelectItem value="analog">Analog</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-3 pt-2">
+        <h4 className="text-sm font-medium text-muted-foreground">Optionen</h4>
+        
+        <div className="flex items-center justify-between">
+          <Label htmlFor="showSeconds">Sekunden anzeigen</Label>
+          <Switch
+            id="showSeconds"
+            checked={settings.showSeconds !== false}
+            onCheckedChange={(checked) => onSettingsChange({ ...settings, showSeconds: checked })}
+            data-testid="switch-show-seconds"
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <Label htmlFor="showDate">Datum anzeigen</Label>
+          <Switch
+            id="showDate"
+            checked={settings.showDate !== false}
+            onCheckedChange={(checked) => onSettingsChange({ ...settings, showDate: checked })}
+            data-testid="switch-show-date"
+          />
+        </div>
+        
+        {(settings.mode || "digital") === "digital" && (
+          <div className="flex items-center justify-between">
+            <Label htmlFor="use24Hour">24-Stunden Format</Label>
+            <Switch
+              id="use24Hour"
+              checked={settings.use24Hour !== false}
+              onCheckedChange={(checked) => onSettingsChange({ ...settings, use24Hour: checked })}
+              data-testid="switch-24hour"
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SingleCoinSettingsForm({ settings, onSettingsChange }: { settings: SingleCoinSettings; onSettingsChange: (s: SingleCoinSettings) => void }) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Kryptowährung</Label>
+        <Select
+          value={settings.coinId || "bitcoin"}
+          onValueChange={(value) => onSettingsChange({ ...settings, coinId: value })}
+        >
+          <SelectTrigger data-testid="select-single-coin">
+            <SelectValue placeholder="Coin wählen" />
+          </SelectTrigger>
+          <SelectContent>
+            {AVAILABLE_COINS.map((coin) => (
+              <SelectItem key={coin.id} value={coin.id}>
+                {coin.name} ({coin.symbol})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-2">
+        <Label>Darstellung</Label>
+        <Select
+          value={settings.variant || "detailed"}
+          onValueChange={(value) => onSettingsChange({ ...settings, variant: value as "compact" | "detailed" | "chart" })}
+        >
+          <SelectTrigger data-testid="select-coin-variant">
+            <SelectValue placeholder="Stil wählen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="compact">Kompakt</SelectItem>
+            <SelectItem value="detailed">Detailliert</SelectItem>
+            <SelectItem value="chart">Mit Chart</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-3 pt-2">
+        <h4 className="text-sm font-medium text-muted-foreground">Optionen</h4>
+        
+        <div className="flex items-center justify-between">
+          <Label htmlFor="showChart">Chart anzeigen</Label>
+          <Switch
+            id="showChart"
+            checked={settings.showChart !== false}
+            onCheckedChange={(checked) => onSettingsChange({ ...settings, showChart: checked })}
+            data-testid="switch-coin-show-chart"
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <Label htmlFor="showChange">Änderung anzeigen</Label>
+          <Switch
+            id="showChange"
+            checked={settings.showChange !== false}
+            onCheckedChange={(checked) => onSettingsChange({ ...settings, showChange: checked })}
+            data-testid="switch-coin-show-change"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarSettingsForm({ settings, onSettingsChange }: { settings: CalendarSettings; onSettingsChange: (s: CalendarSettings) => void }) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Ansicht</Label>
+        <Select
+          value={settings.viewMode || "list"}
+          onValueChange={(value) => onSettingsChange({ ...settings, viewMode: value as "day" | "week" | "month" | "list" })}
+        >
+          <SelectTrigger data-testid="select-calendar-view">
+            <SelectValue placeholder="Ansicht wählen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="list">Liste</SelectItem>
+            <SelectItem value="day">Tagesansicht</SelectItem>
+            <SelectItem value="week">Wochenansicht</SelectItem>
+            <SelectItem value="month">Monatsansicht</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="space-y-3 pt-2">
+        <h4 className="text-sm font-medium text-muted-foreground">Optionen</h4>
+        
+        <div className="flex items-center justify-between">
+          <Label htmlFor="showTime">Uhrzeit anzeigen</Label>
+          <Switch
+            id="showTime"
+            checked={settings.showTime !== false}
+            onCheckedChange={(checked) => onSettingsChange({ ...settings, showTime: checked })}
+            data-testid="switch-calendar-show-time"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="maxEvents">Max. Termine</Label>
+          <Select
+            value={String(settings.maxEvents || 10)}
+            onValueChange={(value) => onSettingsChange({ ...settings, maxEvents: parseInt(value) })}
+          >
+            <SelectTrigger data-testid="select-max-events">
+              <SelectValue placeholder="Anzahl wählen" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5 Termine</SelectItem>
+              <SelectItem value="10">10 Termine</SelectItem>
+              <SelectItem value="15">15 Termine</SelectItem>
+              <SelectItem value="20">20 Termine</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function WidgetSettingsDialog({ widgetId, widgetType, settings, onSettingsChange, onClose }: WidgetSettingsDialogProps) {
   const getTitle = () => {
     switch (widgetType) {
       case "weather": return "Wetter-Widget Einstellungen";
       case "btc": return "Krypto-Widget Einstellungen";
+      case "clock": return "Uhr-Widget Einstellungen";
+      case "singlecoin": return "Coin-Widget Einstellungen";
+      case "calendar": return "Kalender-Widget Einstellungen";
       default: return "Widget Einstellungen";
     }
   };
   
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{getTitle()}</DialogTitle>
           <DialogDescription>
@@ -191,6 +382,15 @@ export function WidgetSettingsDialog({ widgetId, widgetType, settings, onSetting
           )}
           {widgetType === "btc" && (
             <CryptoSettingsForm settings={settings} onSettingsChange={onSettingsChange} />
+          )}
+          {widgetType === "clock" && (
+            <ClockSettingsForm settings={settings} onSettingsChange={onSettingsChange} />
+          )}
+          {widgetType === "singlecoin" && (
+            <SingleCoinSettingsForm settings={settings} onSettingsChange={onSettingsChange} />
+          )}
+          {widgetType === "calendar" && (
+            <CalendarSettingsForm settings={settings} onSettingsChange={onSettingsChange} />
           )}
         </div>
       </DialogContent>
