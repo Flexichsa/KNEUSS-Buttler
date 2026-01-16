@@ -1,14 +1,25 @@
-import { Cloud, Sun, CloudRain, Snowflake, Wind, Droplets, Loader2, AlertCircle, Settings2, CloudSun, CloudFog, CloudLightning, Gauge, ChevronLeft, ChevronRight } from "lucide-react";
+import { Cloud, Sun, CloudRain, Snowflake, Wind, Loader2, AlertCircle, Settings2, CloudSun, CloudFog, CloudLightning, MapPin, Sunrise, Sunset } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 interface HourlyForecast {
   time: string;
   hour: number;
   temp: number;
+  weatherCode: number;
+  icon: string;
+}
+
+interface DailyForecast {
+  date: string;
+  dayName: string;
+  tempMax: number;
+  tempMin: number;
   weatherCode: number;
   icon: string;
 }
@@ -20,19 +31,28 @@ interface WeatherData {
   feels_like: number;
   description: string;
   icon: string;
+  weatherCode: number;
   humidity: number;
   wind: string | number;
   pressure?: number;
   hourlyForecast?: HourlyForecast[];
+  dailyForecast?: DailyForecast[];
+  sunrise?: string;
+  sunset?: string;
   configured?: boolean;
   error?: string;
 }
 
-const getWeatherIcon = (icon: string, size: "lg" | "sm" = "lg") => {
-  const baseClass = size === "lg" ? "h-12 w-12" : "h-5 w-5";
-  const colorClass = "text-yellow-300 drop-shadow-lg";
+const getWeatherIcon = (icon: string, size: "xl" | "lg" | "md" | "sm" = "lg") => {
+  const sizeClasses = {
+    xl: "h-16 w-16",
+    lg: "h-12 w-12",
+    md: "h-8 w-8",
+    sm: "h-5 w-5"
+  };
+  const baseClass = sizeClasses[size];
   
-  if (icon.includes("01")) return <Sun className={`${baseClass} ${colorClass}`} />;
+  if (icon.includes("01")) return <Sun className={`${baseClass} text-yellow-300 drop-shadow-lg`} />;
   if (icon.includes("02")) return <CloudSun className={`${baseClass} text-white drop-shadow-lg`} />;
   if (icon.includes("03") || icon.includes("04")) return <Cloud className={`${baseClass} text-white/80 drop-shadow-lg`} />;
   if (icon.includes("09") || icon.includes("10")) return <CloudRain className={`${baseClass} text-white drop-shadow-lg`} />;
@@ -42,12 +62,24 @@ const getWeatherIcon = (icon: string, size: "lg" | "sm" = "lg") => {
   return <Cloud className={`${baseClass} text-white/80 drop-shadow-lg`} />;
 };
 
+const getWeatherGradient = (weatherCode: number): string => {
+  if (weatherCode === 0) return "from-sky-400 via-blue-400 to-blue-500";
+  if (weatherCode <= 2) return "from-sky-400 via-blue-500 to-blue-600";
+  if (weatherCode === 3) return "from-slate-400 via-slate-500 to-slate-600";
+  if (weatherCode >= 45 && weatherCode <= 48) return "from-slate-500 via-gray-500 to-gray-600";
+  if (weatherCode >= 51 && weatherCode <= 65) return "from-slate-500 via-slate-600 to-slate-700";
+  if (weatherCode >= 71 && weatherCode <= 86) return "from-slate-300 via-blue-200 to-slate-400";
+  if (weatherCode >= 95) return "from-slate-700 via-purple-900 to-slate-800";
+  return "from-sky-400 via-blue-500 to-blue-600";
+};
+
 interface WeatherSettings {
   city?: string;
   showWind?: boolean;
   showHumidity?: boolean;
   showPressure?: boolean;
   showHourlyForecast?: boolean;
+  showDailyForecast?: boolean;
 }
 
 interface WeatherWidgetProps {
@@ -58,21 +90,24 @@ interface WeatherWidgetProps {
 }
 
 export function WeatherWidget({ widgetId = "weather-1", city, settings, onCityChange }: WeatherWidgetProps) {
-  // Use city from settings if available, otherwise fall back to prop or default
   const effectiveCity = settings?.city || city || "Berlin";
-  const showWind = settings?.showWind !== false;
-  const showHumidity = settings?.showHumidity !== false;
-  const showPressure = settings?.showPressure !== false;
-  const showHourlyForecast = settings?.showHourlyForecast !== false;
+  const showDailyForecast = settings?.showDailyForecast !== false;
   const [editMode, setEditMode] = useState(false);
   const [cityInput, setCityInput] = useState(effectiveCity);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Sync cityInput when settings change
   useEffect(() => {
     setCityInput(effectiveCity);
   }, [effectiveCity]);
 
-  const { data, isLoading, error, refetch } = useQuery<WeatherData>({
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const { data, isLoading, error } = useQuery<WeatherData>({
     queryKey: ["weather", widgetId, effectiveCity],
     queryFn: async () => {
       const res = await fetch(`/api/weather?city=${encodeURIComponent(effectiveCity)}`);
@@ -92,59 +127,14 @@ export function WeatherWidget({ widgetId = "weather-1", city, settings, onCityCh
     setEditMode(false);
   };
 
-  const formatHour = (hour: number) => {
-    return `${hour.toString().padStart(2, '0')}:00`;
-  };
+  const gradient = data ? getWeatherGradient(data.weatherCode) : "from-sky-400 via-blue-500 to-blue-600";
 
   return (
-    <div className="h-full bg-gradient-to-br from-sky-400 via-blue-500 to-blue-600 rounded-2xl overflow-hidden flex flex-col relative" data-testid="weather-widget">
-      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-yellow-300/30 to-transparent rounded-full -translate-y-1/4 translate-x-1/4" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+    <div className={`h-full bg-gradient-to-br ${gradient} rounded-2xl overflow-hidden flex flex-col relative`} data-testid="weather-widget">
+      <div className="absolute inset-0 bg-black/10" />
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/20 to-transparent" />
       
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between relative z-10">
-        <div>
-          <span className="text-[10px] uppercase tracking-wider font-bold text-white/70">Wetter</span>
-          {editMode ? (
-            <div className="flex items-center gap-2 mt-1">
-              <Input
-                value={cityInput}
-                onChange={(e) => setCityInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCitySubmit()}
-                className="h-7 w-28 text-sm bg-white/20 border-white/30 text-white placeholder:text-white/50"
-                placeholder="Stadt"
-                autoFocus
-                data-testid="input-city"
-              />
-              <Button size="sm" variant="ghost" onClick={handleCitySubmit} className="h-7 px-2 text-white hover:bg-white/20" data-testid="button-city-submit">
-                OK
-              </Button>
-            </div>
-          ) : (
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              {data?.city || city}
-              {onCityChange && (
-                <button
-                  onClick={() => setEditMode(true)}
-                  className="hover:text-white/80 transition-colors"
-                  data-testid="button-edit-city"
-                >
-                  <Settings2 className="h-4 w-4" />
-                </button>
-              )}
-            </h3>
-          )}
-        </div>
-        {data && !isLoading && !error && (
-          <motion.div
-            animate={{ y: [0, -3, 0] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-          >
-            {getWeatherIcon(data.icon, "lg")}
-          </motion.div>
-        )}
-      </div>
-
-      <div className="flex-1 flex flex-col px-4 pb-3 relative z-10">
+      <div className="relative z-10 flex-1 flex flex-col p-4">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-white/70" />
@@ -153,72 +143,118 @@ export function WeatherWidget({ widgetId = "weather-1", city, settings, onCityCh
           <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
             <AlertCircle className="h-10 w-10 text-white/70 mb-2" />
             <p className="text-sm font-medium text-white/90">
-              {data?.configured === false 
-                ? "API nicht konfiguriert" 
-                : "Nicht verfügbar"}
+              {data?.configured === false ? "API nicht konfiguriert" : "Nicht verfügbar"}
             </p>
           </div>
         ) : data ? (
           <motion.div 
             className="flex-1 flex flex-col"
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
           >
             <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="text-5xl font-black text-white drop-shadow-lg leading-none">
-                  +{data.temp}°C
+              <div className="flex-1">
+                {editMode ? (
+                  <div className="flex items-center gap-2 mb-2">
+                    <Input
+                      value={cityInput}
+                      onChange={(e) => setCityInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleCitySubmit()}
+                      className="h-7 w-32 text-sm bg-white/20 border-white/30 text-white placeholder:text-white/50"
+                      placeholder="Stadt"
+                      autoFocus
+                      data-testid="input-city"
+                    />
+                    <Button size="sm" variant="ghost" onClick={handleCitySubmit} className="h-7 px-2 text-white hover:bg-white/20" data-testid="button-city-submit">
+                      OK
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 text-white/90 mb-1">
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span className="text-sm font-medium">{data.city}</span>
+                    {onCityChange && (
+                      <button
+                        onClick={() => setEditMode(true)}
+                        className="ml-1 hover:text-white transition-colors"
+                        data-testid="button-edit-city"
+                      >
+                        <Settings2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                
+                <div className="text-white/70 text-xs mb-2">
+                  {format(currentTime, "EEEE - d. MMMM", { locale: de })}
                 </div>
-                <div className="text-sm text-white/80 capitalize font-medium mt-1">
-                  {data.description}
+                
+                <div className="text-5xl font-light text-white tracking-tight leading-none">
+                  {format(currentTime, "H:mm")}
+                  <span className="text-lg ml-1 align-top">{format(currentTime, "a").toUpperCase()}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-white/80 mb-3">
-              {showWind && (
-                <span className="flex items-center gap-1">
-                  <Wind className="h-3.5 w-3.5" /> {data.wind} m/s
-                </span>
-              )}
-              {showHumidity && (
-                <span className="flex items-center gap-1">
-                  <Droplets className="h-3.5 w-3.5" /> {data.humidity}%
-                </span>
-              )}
-              {showPressure && data.pressure && (
-                <span className="flex items-center gap-1">
-                  <Gauge className="h-3.5 w-3.5" /> {data.pressure} hPa
-                </span>
-              )}
+            <div className="flex items-center justify-between my-3">
+              <div className="flex flex-col text-white/80 text-xs space-y-1">
+                <div className="flex items-center gap-1">
+                  <span>Gefühlt:</span>
+                  <span className="font-medium">{data.feels_like}°</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Wind className="h-3 w-3" />
+                  <span>{data.wind} m/s</span>
+                </div>
+                {data.sunrise && (
+                  <div className="flex items-center gap-1">
+                    <Sunrise className="h-3 w-3" />
+                    <span>{data.sunrise}</span>
+                  </div>
+                )}
+                {data.sunset && (
+                  <div className="flex items-center gap-1">
+                    <Sunset className="h-3 w-3" />
+                    <span>{data.sunset}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-4xl font-bold text-white">
+                    {data.temp}<span className="text-2xl">°</span>
+                  </div>
+                  <div className="text-xs text-white/70 capitalize">{data.description}</div>
+                </div>
+                <motion.div
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                >
+                  {getWeatherIcon(data.icon, "xl")}
+                </motion.div>
+              </div>
             </div>
 
-            {showHourlyForecast && data.hourlyForecast && data.hourlyForecast.length > 0 && (
-              <div className="mt-auto">
-                <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 scrollbar-hide">
-                  <button className="text-white/50 hover:text-white/80 flex-shrink-0">
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <div className="flex gap-2 overflow-x-auto flex-1 justify-center">
-                    {data.hourlyForecast.slice(0, 7).map((hour, index) => (
-                      <div 
-                        key={index} 
-                        className="flex flex-col items-center min-w-[40px] text-white/90"
-                        data-testid={`hourly-forecast-${index}`}
-                      >
-                        <span className="text-[10px] text-white/60 mb-1">
-                          {formatHour(hour.hour)}
-                        </span>
-                        {getWeatherIcon(hour.icon, "sm")}
-                        <span className="text-xs font-semibold mt-1">
-                          +{hour.temp}°
-                        </span>
+            {showDailyForecast && data.dailyForecast && data.dailyForecast.length > 0 && (
+              <div className="mt-auto pt-3 border-t border-white/20">
+                <div className="flex items-center justify-between gap-1">
+                  {data.dailyForecast.slice(0, 5).map((day, index) => (
+                    <div 
+                      key={index} 
+                      className="flex flex-col items-center flex-1 text-white/90"
+                      data-testid={`daily-forecast-${index}`}
+                    >
+                      <span className="text-[10px] text-white/60 mb-1 font-medium">
+                        {day.dayName}
+                      </span>
+                      {getWeatherIcon(day.icon, "sm")}
+                      <div className="text-[10px] mt-1">
+                        <span className="text-white font-medium">{day.tempMax}°</span>
+                        <span className="text-white/50">/{day.tempMin}°</span>
                       </div>
-                    ))}
-                  </div>
-                  <button className="text-white/50 hover:text-white/80 flex-shrink-0">
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

@@ -498,9 +498,9 @@ export async function registerRoutes(
       const location = geoData.results[0];
       const { latitude, longitude, name, country } = location;
       
-      // Fetch weather data with hourly forecast
+      // Fetch weather data with hourly forecast, daily forecast and sunrise/sunset
       const weatherResponse = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1`
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code,sunrise,sunset&timezone=auto&forecast_days=7`
       );
       
       if (!weatherResponse.ok) throw new Error("Weather API error");
@@ -581,6 +581,24 @@ export async function registerRoutes(
         }
       }
       
+      // Create daily forecast (5 days)
+      const daily = weatherData.daily;
+      const dailyForecast = [];
+      for (let i = 0; i < Math.min(5, daily.time.length); i++) {
+        dailyForecast.push({
+          date: daily.time[i],
+          dayName: new Date(daily.time[i]).toLocaleDateString('de-DE', { weekday: 'short' }).toUpperCase(),
+          tempMax: Math.round(daily.temperature_2m_max[i]),
+          tempMin: Math.round(daily.temperature_2m_min[i]),
+          weatherCode: daily.weather_code[i],
+          icon: getIconCode(daily.weather_code[i])
+        });
+      }
+      
+      // Get today's sunrise and sunset
+      const sunrise = daily.sunrise?.[0] ? new Date(daily.sunrise[0]).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null;
+      const sunset = daily.sunset?.[0] ? new Date(daily.sunset[0]).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null;
+      
       const weather = {
         city: name,
         country: country || "",
@@ -588,10 +606,14 @@ export async function registerRoutes(
         feels_like: Math.round(current.apparent_temperature),
         description: getWeatherDescription(current.weather_code),
         icon: getIconCode(current.weather_code),
+        weatherCode: current.weather_code,
         humidity: current.relative_humidity_2m,
         wind: (current.wind_speed_10m / 3.6).toFixed(1), // km/h to m/s
         pressure: Math.round(current.surface_pressure),
         hourlyForecast,
+        dailyForecast,
+        sunrise,
+        sunset,
         configured: true
       };
       
