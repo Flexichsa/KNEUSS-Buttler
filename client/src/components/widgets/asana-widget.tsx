@@ -182,18 +182,19 @@ export function AsanaWidget() {
     const projectColor = selectedProject.color ? (PROJECT_COLORS[selectedProject.color] || "bg-gray-400") : "bg-gray-400";
     return (
       <div className="h-full flex flex-col" data-testid="asana-widget">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div className="flex items-center justify-between px-3 py-3 border-b border-gray-100 relative z-10 bg-white">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedProject(null)}
-              className="p-1 -ml-1 hover:bg-gray-100 rounded transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
               data-testid="btn-back-projects"
+              title="Zurück zu Projekten"
             >
-              <ChevronLeft className="h-5 w-5 text-gray-500" />
+              <ChevronLeft className="h-5 w-5 text-gray-600" />
             </button>
-            <span className={cn("w-3 h-3 rounded-full", projectColor)} />
-            <div>
-              <h2 className="font-semibold text-gray-900 text-sm">{selectedProject.name}</h2>
+            <span className={cn("w-3 h-3 rounded-full flex-shrink-0", projectColor)} />
+            <div className="min-w-0">
+              <h2 className="font-semibold text-gray-900 text-sm truncate">{selectedProject.name}</h2>
               <p className="text-xs text-gray-500">
                 {filteredTasks ? `${filteredTasks.length} Aufgaben` : "Wird geladen..."}
               </p>
@@ -203,7 +204,7 @@ export function AsanaWidget() {
             href={`https://app.asana.com/0/${selectedProject.gid}`}
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             data-testid="link-open-project"
             title="Projekt in Asana öffnen"
           >
