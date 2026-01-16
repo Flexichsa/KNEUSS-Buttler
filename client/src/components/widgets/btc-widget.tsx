@@ -73,7 +73,7 @@ function CoinCard({ coin, onRefresh }: { coin: CoinData; onRefresh: () => void }
 
   return (
     <div 
-      className="h-full bg-white rounded-2xl p-4 flex flex-col"
+      className="h-full bg-white rounded-2xl p-4 pr-12 flex flex-col"
       data-testid={`crypto-card-${coin.id}`}
     >
       <div className="flex items-center justify-between mb-3">

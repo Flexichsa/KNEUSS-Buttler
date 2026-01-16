@@ -133,7 +133,7 @@ export function OneDriveWidget() {
         href="https://onedrive.live.com" 
         target="_blank" 
         rel="noopener noreferrer"
-        className="flex items-center justify-between px-4 py-3 border-b hover:bg-muted/50 transition-colors cursor-pointer group"
+        className="flex items-center justify-between px-4 pr-14 py-3 border-b hover:bg-muted/50 transition-colors cursor-pointer group"
         data-testid="onedrive-widget-header"
       >
         <div className="flex items-center gap-2">

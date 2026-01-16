@@ -76,7 +76,7 @@ export function CalendarWidget({ settings }: CalendarWidgetProps) {
     return (
       <div className="h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl overflow-hidden flex flex-col relative">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="px-5 py-4 flex items-center justify-between relative z-10">
+        <div className="px-5 pr-14 py-4 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
             <motion.div 
               className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
@@ -163,7 +163,7 @@ export function CalendarWidget({ settings }: CalendarWidgetProps) {
     return (
       <div className="h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl overflow-hidden flex flex-col relative">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="px-4 py-3 flex items-center justify-between relative z-10 border-b border-white/10">
+        <div className="px-4 pr-14 py-3 flex items-center justify-between relative z-10 border-b border-white/10">
           <button onClick={goPrev} className="p-1 rounded-lg hover:bg-white/20 text-white" data-testid="button-calendar-prev">
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -204,7 +204,7 @@ export function CalendarWidget({ settings }: CalendarWidgetProps) {
     return (
       <div className="h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl overflow-hidden flex flex-col relative">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="px-4 py-3 flex items-center justify-between relative z-10 border-b border-white/10">
+        <div className="px-4 pr-14 py-3 flex items-center justify-between relative z-10 border-b border-white/10">
           <button onClick={goPrev} className="p-1 rounded-lg hover:bg-white/20 text-white">
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -248,7 +248,7 @@ export function CalendarWidget({ settings }: CalendarWidgetProps) {
     return (
       <div className="h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl overflow-hidden flex flex-col relative">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="px-4 py-3 flex items-center justify-between relative z-10 border-b border-white/10">
+        <div className="px-4 pr-14 py-3 flex items-center justify-between relative z-10 border-b border-white/10">
           <button onClick={goPrev} className="p-1 rounded-lg hover:bg-white/20 text-white">
             <ChevronLeft className="h-5 w-5" />
           </button>
