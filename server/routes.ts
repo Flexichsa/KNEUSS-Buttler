@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema } from "@shared/schema";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
@@ -864,6 +864,109 @@ export async function registerRoutes(
       res.json(tasks);
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to fetch tasks" });
+    }
+  });
+
+  // Contacts CRUD
+  app.get("/api/contacts", async (req, res) => {
+    try {
+      const contacts = await storage.getContacts();
+      res.json(contacts);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch contacts" });
+    }
+  });
+
+  app.get("/api/contacts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const contact = await storage.getContact(id);
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      res.json(contact);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch contact" });
+    }
+  });
+
+  app.post("/api/contacts", async (req, res) => {
+    try {
+      const validatedData = insertContactSchema.parse(req.body);
+      const contact = await storage.createContact(validatedData);
+      res.status(201).json(contact);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to create contact" });
+    }
+  });
+
+  app.patch("/api/contacts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertContactSchema.partial().parse(req.body);
+      const contact = await storage.updateContact(id, validatedData);
+      if (!contact) {
+        return res.status(404).json({ error: "Contact not found" });
+      }
+      res.json(contact);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update contact" });
+    }
+  });
+
+  app.delete("/api/contacts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteContact(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete contact" });
+    }
+  });
+
+  // Contact Persons CRUD
+  app.get("/api/contacts/:contactId/persons", async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const persons = await storage.getContactPersons(contactId);
+      res.json(persons);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch contact persons" });
+    }
+  });
+
+  app.post("/api/contacts/:contactId/persons", async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const validatedData = insertContactPersonSchema.omit({ contactId: true }).parse(req.body);
+      const person = await storage.createContactPerson({ ...validatedData, contactId });
+      res.status(201).json(person);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to create contact person" });
+    }
+  });
+
+  app.patch("/api/contact-persons/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertContactPersonSchema.omit({ contactId: true }).partial().parse(req.body);
+      const person = await storage.updateContactPerson(id, validatedData);
+      if (!person) {
+        return res.status(404).json({ error: "Contact person not found" });
+      }
+      res.json(person);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update contact person" });
+    }
+  });
+
+  app.delete("/api/contact-persons/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteContactPerson(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete contact person" });
     }
   });
 

@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons } from "@shared/schema";
 import { eq, and, lt, desc } from "drizzle-orm";
 
 export interface IStorage {
@@ -41,6 +41,19 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<void>;
+  
+  // Contacts
+  getContacts(): Promise<ContactWithPersons[]>;
+  getContact(id: number): Promise<ContactWithPersons | undefined>;
+  createContact(contact: InsertContact): Promise<Contact>;
+  updateContact(id: number, contact: Partial<InsertContact>): Promise<Contact | undefined>;
+  deleteContact(id: number): Promise<void>;
+  
+  // Contact Persons
+  getContactPersons(contactId: number): Promise<ContactPerson[]>;
+  createContactPerson(person: InsertContactPerson): Promise<ContactPerson>;
+  updateContactPerson(id: number, person: Partial<InsertContactPerson>): Promise<ContactPerson | undefined>;
+  deleteContactPerson(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -205,6 +218,66 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProject(id: number): Promise<void> {
     await db.delete(projects).where(eq(projects.id, id));
+  }
+
+  // Contacts
+  async getContacts(): Promise<ContactWithPersons[]> {
+    const allContacts = await db.select().from(contacts).orderBy(desc(contacts.updatedAt));
+    const allPersons = await db.select().from(contactPersons);
+    
+    return allContacts.map(contact => ({
+      ...contact,
+      persons: allPersons.filter(p => p.contactId === contact.id)
+    }));
+  }
+
+  async getContact(id: number): Promise<ContactWithPersons | undefined> {
+    const [contact] = await db.select().from(contacts).where(eq(contacts.id, id));
+    if (!contact) return undefined;
+    
+    const persons = await db.select().from(contactPersons).where(eq(contactPersons.contactId, id));
+    return { ...contact, persons };
+  }
+
+  async createContact(contact: InsertContact): Promise<Contact> {
+    const [newContact] = await db.insert(contacts).values(contact).returning();
+    return newContact;
+  }
+
+  async updateContact(id: number, contactUpdate: Partial<InsertContact>): Promise<Contact | undefined> {
+    const [updated] = await db
+      .update(contacts)
+      .set({ ...contactUpdate, updatedAt: new Date() })
+      .where(eq(contacts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteContact(id: number): Promise<void> {
+    await db.delete(contacts).where(eq(contacts.id, id));
+  }
+
+  // Contact Persons
+  async getContactPersons(contactId: number): Promise<ContactPerson[]> {
+    return db.select().from(contactPersons).where(eq(contactPersons.contactId, contactId));
+  }
+
+  async createContactPerson(person: InsertContactPerson): Promise<ContactPerson> {
+    const [newPerson] = await db.insert(contactPersons).values(person).returning();
+    return newPerson;
+  }
+
+  async updateContactPerson(id: number, personUpdate: Partial<InsertContactPerson>): Promise<ContactPerson | undefined> {
+    const [updated] = await db
+      .update(contactPersons)
+      .set(personUpdate)
+      .where(eq(contactPersons.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteContactPerson(id: number): Promise<void> {
+    await db.delete(contactPersons).where(eq(contactPersons.id, id));
   }
 }
 

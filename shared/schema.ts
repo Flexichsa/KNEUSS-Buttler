@@ -217,3 +217,44 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
+
+export const contacts = pgTable("contacts", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull().default("company"),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const contactPersons = pgTable("contact_persons", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id").notNull().references(() => contacts.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  role: text("role"),
+  email: text("email"),
+  phone: text("phone"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertContactSchema = createInsertSchema(contacts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertContactPersonSchema = createInsertSchema(contactPersons).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertContact = z.infer<typeof insertContactSchema>;
+export type Contact = typeof contacts.$inferSelect;
+
+export type InsertContactPerson = z.infer<typeof insertContactPersonSchema>;
+export type ContactPerson = typeof contactPersons.$inferSelect;
+
+export type ContactWithPersons = Contact & { persons: ContactPerson[] };
