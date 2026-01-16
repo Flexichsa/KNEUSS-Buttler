@@ -257,9 +257,8 @@ export function BtcWidget({ settings }: BtcWidgetProps) {
       <div className="grid grid-cols-3 gap-4 px-4 py-3 border-b border-white/10">
         <div className="text-center">
           <div className="text-white/50 text-xs mb-1">Rang</div>
-          <div className="text-white font-semibold flex items-center justify-center gap-1">
-            <ArrowDown className="h-3 w-3 text-rose-400" />
-            {coin.rank}
+          <div className="text-white font-semibold">
+            #{coin.rank}
           </div>
         </div>
         <div className="text-center">
