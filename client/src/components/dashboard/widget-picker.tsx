@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -318,6 +318,35 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
         <div className="flex items-center gap-2 text-white/90 text-xs">
           <FileText className="h-4 w-4 text-emerald-300" />
           <span>2026-01-15_Firma_Rechnung</span>
+        </div>
+      </div>
+    )
+  },
+  { 
+    id: "statusreport", 
+    name: "Status-Bericht", 
+    description: "Projektstatus für den Chef",
+    icon: <ClipboardList className="h-5 w-5" />, 
+    defaultSize: { w: 6, h: 5 }, 
+    minSize: { w: 3, h: 3 },
+    previewGradient: "from-indigo-500 via-purple-500 to-pink-500",
+    category: "productivity",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <span className="w-2 h-2 rounded-full bg-red-400" />
+          <span className="flex-1">Projekt Alpha</span>
+          <span className="text-[10px] text-white/60">75%</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <span className="w-2 h-2 rounded-full bg-green-400" />
+          <span className="flex-1">Projekt Beta</span>
+          <span className="text-[10px] text-white/60">100%</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <span className="w-2 h-2 rounded-full bg-yellow-400" />
+          <span className="flex-1">Projekt Gamma</span>
+          <span className="text-[10px] text-white/60">30%</span>
         </div>
       </div>
     )

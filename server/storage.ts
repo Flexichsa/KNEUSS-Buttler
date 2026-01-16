@@ -1,6 +1,6 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout } from "@shared/schema";
-import { eq, and, lt } from "drizzle-orm";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject } from "@shared/schema";
+import { eq, and, lt, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -34,6 +34,13 @@ export interface IStorage {
   // Dashboard Layouts
   getDashboardLayout(sessionId: string): Promise<DashboardConfig | undefined>;
   saveDashboardLayout(sessionId: string, config: DashboardConfig): Promise<void>;
+  
+  // Projects
+  getProjects(): Promise<Project[]>;
+  getProject(id: number): Promise<Project | undefined>;
+  createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
+  deleteProject(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -170,6 +177,34 @@ export class DatabaseStorage implements IStorage {
     } else {
       await db.insert(dashboardLayouts).values({ sessionId, config });
     }
+  }
+
+  // Projects
+  async getProjects(): Promise<Project[]> {
+    return db.select().from(projects).orderBy(desc(projects.updatedAt));
+  }
+
+  async getProject(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project;
+  }
+
+  async createProject(project: InsertProject): Promise<Project> {
+    const [newProject] = await db.insert(projects).values(project).returning();
+    return newProject;
+  }
+
+  async updateProject(id: number, projectUpdate: Partial<InsertProject>): Promise<Project | undefined> {
+    const [updated] = await db
+      .update(projects)
+      .set({ ...projectUpdate, updatedAt: new Date() })
+      .where(eq(projects.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteProject(id: number): Promise<void> {
+    await db.delete(projects).where(eq(projects.id, id));
   }
 }
 

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, insertNoteSchema, DashboardConfigSchema } from "@shared/schema";
+import { insertTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema } from "@shared/schema";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
@@ -372,6 +372,95 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to delete note" });
+    }
+  });
+
+  // Projects (Status Reports)
+  app.get("/api/projects", async (req, res) => {
+    try {
+      const projects = await storage.getProjects();
+      res.json(projects);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch projects" });
+    }
+  });
+
+  app.get("/api/projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const project = await storage.getProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json(project);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to fetch project" });
+    }
+  });
+
+  app.post("/api/projects", async (req, res) => {
+    try {
+      const validatedData = insertProjectSchema.parse(req.body);
+      const project = await storage.createProject(validatedData);
+      res.status(201).json(project);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Invalid project data" });
+    }
+  });
+
+  app.patch("/api/projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertProjectSchema.partial().parse(req.body);
+      const project = await storage.updateProject(id, validatedData);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json(project);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update project" });
+    }
+  });
+
+  app.delete("/api/projects/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteProject(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete project" });
+    }
+  });
+
+  app.get("/api/projects/export/csv", async (req, res) => {
+    try {
+      const projects = await storage.getProjects();
+      
+      const priorityLabels: Record<string, string> = {
+        high: "Hoch",
+        medium: "Mittel",
+        low: "Niedrig"
+      };
+      
+      const statusLabels: Record<string, string> = {
+        in_progress: "In Bearbeitung",
+        completed: "Abgeschlossen",
+        blocked: "Blockiert",
+        planned: "Geplant"
+      };
+      
+      const csvHeader = "Projekt;Beschreibung;Priorität;Status;Verantwortlich;Fortschritt;Fällig am;Erstellt am\n";
+      const csvRows = projects.map(p => {
+        const dueDate = p.dueDate ? new Date(p.dueDate).toLocaleDateString('de-DE') : "-";
+        const createdAt = new Date(p.createdAt).toLocaleDateString('de-DE');
+        return `"${p.name}";"${p.description || ''}";"${priorityLabels[p.priority] || p.priority}";"${statusLabels[p.status] || p.status}";"${p.assignee || '-'}";"${p.progress}%";"${dueDate}";"${createdAt}"`;
+      }).join("\n");
+      
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", "attachment; filename=status-bericht.csv");
+      res.send("\uFEFF" + csvHeader + csvRows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to export projects" });
     }
   });
 
