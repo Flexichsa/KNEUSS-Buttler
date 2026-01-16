@@ -132,6 +132,14 @@ function TaskItem({ task }: { task: AsanaTask }) {
   );
 }
 
+interface AsanaProject {
+  gid: string;
+  name: string;
+  color?: string;
+  notes?: string;
+  due_on?: string;
+}
+
 export function AsanaWidget() {
   const { data: statusData } = useQuery({
     queryKey: ["asana-status"],
@@ -141,7 +149,19 @@ export function AsanaWidget() {
     },
   });
 
-  const { data: tasks, isLoading, error } = useQuery<AsanaTask[]>({
+  const { data: projects, isLoading: projectsLoading } = useQuery<AsanaProject[]>({
+    queryKey: ["asana-projects"],
+    queryFn: async () => {
+      const res = await fetch("/api/asana/projects");
+      if (!res.ok) throw new Error("Failed to fetch projects");
+      return res.json();
+    },
+    enabled: statusData?.connected,
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+
+  const { data: tasks, isLoading: tasksLoading, error } = useQuery<AsanaTask[]>({
     queryKey: ["asana-tasks"],
     queryFn: async () => {
       const res = await fetch("/api/asana/tasks");
@@ -153,16 +173,9 @@ export function AsanaWidget() {
     staleTime: 30000,
   });
 
-  
-  const projects = tasks ? Array.from(
-    new Map(
-      tasks
-        .filter(t => t.project)
-        .map(t => [t.project!.gid, t.project!])
-    ).values()
-  ) : [];
+  const isLoading = projectsLoading || tasksLoading;
 
-  const [selectedProject, setSelectedProject] = useState<{ gid: string; name: string; color?: string } | null>(null);
+  const [selectedProject, setSelectedProject] = useState<AsanaProject | null>(null);
 
   const filteredTasks = selectedProject 
     ? tasks?.filter(t => t.project?.gid === selectedProject.gid) 
