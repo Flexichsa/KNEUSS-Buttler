@@ -84,12 +84,20 @@ export interface DocumentAnalysis {
 export async function analyzeDocument(textContent: string, originalFileName: string): Promise<DocumentAnalysis> {
   const today = new Date().toISOString().split('T')[0];
   
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `You are a document analysis assistant. Analyze the document content and extract:
+  const fallbackResult = {
+    companyName: 'Unbekannt',
+    documentType: 'Dokument',
+    date: today,
+    suggestedName: `${today}_Unbekannt_Dokument`,
+  };
+  
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a document analysis assistant. Analyze the document content and extract:
 1. Company/Organization name (the sender or issuer of the document)
 2. Document type (e.g., Rechnung, Vertrag, Angebot, Lieferschein, Brief, Bericht, etc.)
 3. Document date (if found in content, otherwise use today's date)
@@ -108,19 +116,18 @@ Rules:
 - If no date in content, use today's date: ${today}
 - Keep company names short and clean (no "GmbH", "AG", etc.)
 - German document types preferred`
-      },
-      {
-        role: 'user',
-        content: `Original filename: ${originalFileName}\n\nDocument content:\n${textContent.slice(0, 4000)}`
-      }
-    ],
-    temperature: 0.3,
-    max_tokens: 200,
-  });
+        },
+        {
+          role: 'user',
+          content: `Original filename: ${originalFileName}\n\nDocument content:\n${textContent.slice(0, 4000)}`
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 200,
+    });
 
-  const content = response.choices[0]?.message?.content || '{}';
-  
-  try {
+    const content = response.choices[0]?.message?.content || '{}';
+    
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -137,14 +144,11 @@ Rules:
         suggestedName,
       };
     }
-  } catch (e) {
-    console.error('[OpenAI] Failed to parse document analysis:', e);
+    
+    console.warn('[OpenAI] Could not parse response, using fallback');
+    return fallbackResult;
+  } catch (error: any) {
+    console.error('[OpenAI] Document analysis failed:', error?.message || error);
+    return fallbackResult;
   }
-
-  return {
-    companyName: 'Unbekannt',
-    documentType: 'Dokument',
-    date: today,
-    suggestedName: `${today}_Unbekannt_Dokument`,
-  };
 }

@@ -668,7 +668,10 @@ export async function registerRoutes(
       });
     } catch (error: any) {
       console.error("[Documents] Analysis error:", error);
-      res.status(500).json({ error: error.message || "Analyse fehlgeschlagen" });
+      const errorMessage = typeof error?.message === 'string' && error.message.length < 200
+        ? error.message
+        : "Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.";
+      res.status(500).json({ error: errorMessage });
     }
   });
   
