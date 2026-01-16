@@ -209,11 +209,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async reorderProjects(orderings: { id: number; orderIndex: number; parentProjectId: number | null }[]): Promise<void> {
-    for (const item of orderings) {
-      await db.update(projects)
-        .set({ orderIndex: item.orderIndex, parentProjectId: item.parentProjectId, updatedAt: new Date() })
-        .where(eq(projects.id, item.id));
-    }
+    await db.transaction(async (tx) => {
+      for (const item of orderings) {
+        await tx.update(projects)
+          .set({ orderIndex: item.orderIndex, parentProjectId: item.parentProjectId, updatedAt: new Date() })
+          .where(eq(projects.id, item.id));
+      }
+    });
   }
 
   async getProject(id: number): Promise<Project | undefined> {
