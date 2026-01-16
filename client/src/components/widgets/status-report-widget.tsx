@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Plus, Trash2, Download, Loader2, AlertCircle, ChevronDown, Pencil, Check, X } from "lucide-react";
+import { ClipboardList, Plus, Trash2, Download, Loader2, AlertCircle, Pencil, X, Table, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { Project } from "@shared/schema";
@@ -22,10 +24,21 @@ const STATUSES = [
   { value: "planned", label: "Geplant", color: "text-gray-400" },
 ];
 
+const PHASES = [
+  { value: "planning", label: "Planung" },
+  { value: "development", label: "Entwicklung" },
+  { value: "testing", label: "Testing" },
+  { value: "review", label: "Review" },
+  { value: "deployment", label: "Deployment" },
+  { value: "maintenance", label: "Wartung" },
+];
+
 export function StatusReportWidget() {
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [editingProject, setEditingProject] = useState<Partial<Project> | null>(null);
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -33,6 +46,9 @@ export function StatusReportWidget() {
     status: "in_progress",
     assignee: "",
     progress: 0,
+    phase: "",
+    costs: "",
+    nextSteps: "",
   });
 
   const { data: projects = [], isLoading, error } = useQuery<Project[]>({
@@ -64,6 +80,9 @@ export function StatusReportWidget() {
         status: "in_progress",
         assignee: "",
         progress: 0,
+        phase: "",
+        costs: "",
+        nextSteps: "",
       });
     },
   });
@@ -80,7 +99,8 @@ export function StatusReportWidget() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      setEditingId(null);
+      setSelectedProject(null);
+      setEditingProject(null);
     },
   });
 
@@ -91,11 +111,16 @@ export function StatusReportWidget() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      setSelectedProject(null);
     },
   });
 
   const handleExport = () => {
     window.open("/api/projects/export/csv", "_blank");
+  };
+
+  const stopPropagation = (e: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
+    e.stopPropagation();
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -114,6 +139,24 @@ export function StatusReportWidget() {
     );
   };
 
+  const getPhaseLabel = (phase: string | null) => {
+    if (!phase) return "-";
+    const p = PHASES.find((ph) => ph.value === phase);
+    return p?.label || phase;
+  };
+
+  const openProjectModal = (project: Project) => {
+    setSelectedProject(project);
+    setEditingProject({ ...project });
+  };
+
+  const handleSaveProject = () => {
+    if (selectedProject && editingProject) {
+      const { id, createdAt, updatedAt, ...editableFields } = editingProject as Project;
+      updateMutation.mutate({ id: selectedProject.id, data: editableFields });
+    }
+  };
+
   return (
     <div className="h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl overflow-hidden flex flex-col relative" data-testid="status-report-widget">
       <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -129,6 +172,16 @@ export function StatusReportWidget() {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setViewMode(viewMode === "cards" ? "table" : "cards")}
+            className="h-7 w-7 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+            title={viewMode === "cards" ? "Tabellenansicht" : "Kartenansicht"}
+            data-testid="button-toggle-view"
+          >
+            {viewMode === "cards" ? <Table className="h-3.5 w-3.5" /> : <LayoutGrid className="h-3.5 w-3.5" />}
+          </Button>
           <Button
             size="icon"
             variant="ghost"
@@ -151,7 +204,7 @@ export function StatusReportWidget() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto relative z-10">
+      <div className="flex-1 overflow-auto relative z-10" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-white/70" />
@@ -170,11 +223,15 @@ export function StatusReportWidget() {
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   className="bg-white/10 rounded-xl p-3 space-y-2"
+                  onMouseDown={stopPropagation}
+                  onTouchStart={stopPropagation}
                 >
                   <Input
                     placeholder="Projektname"
                     value={newProject.name}
                     onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                    onMouseDown={stopPropagation}
+                    onTouchStart={stopPropagation}
                     className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
                     data-testid="input-project-name"
                   />
@@ -182,63 +239,76 @@ export function StatusReportWidget() {
                     placeholder="Beschreibung"
                     value={newProject.description}
                     onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                    onMouseDown={stopPropagation}
+                    onTouchStart={stopPropagation}
                     className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
                     data-testid="input-project-description"
                   />
                   <div className="grid grid-cols-2 gap-2">
-                    <Select
-                      value={newProject.priority}
-                      onValueChange={(v) => setNewProject({ ...newProject, priority: v })}
-                    >
-                      <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="select-priority">
-                        <SelectValue placeholder="Priorität" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRIORITIES.map((p) => (
-                          <SelectItem key={p.value} value={p.value}>
-                            <div className="flex items-center gap-2">
-                              <span className={cn("w-2 h-2 rounded-full", p.color)} />
+                    <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+                      <Select
+                        value={newProject.phase}
+                        onValueChange={(v) => setNewProject({ ...newProject, phase: v })}
+                      >
+                        <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="select-phase">
+                          <SelectValue placeholder="Phase" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PHASES.map((p) => (
+                            <SelectItem key={p.value} value={p.value}>
                               {p.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={newProject.status}
-                      onValueChange={(v) => setNewProject({ ...newProject, status: v })}
-                    >
-                      <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="select-status">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUSES.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>
-                            {s.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+                      <Select
+                        value={newProject.status}
+                        onValueChange={(v) => setNewProject({ ...newProject, status: v })}
+                      >
+                        <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="select-status">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUSES.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>
+                              {s.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      placeholder="Kosten (CHF)"
+                      value={newProject.costs}
+                      onChange={(e) => setNewProject({ ...newProject, costs: e.target.value })}
+                      onMouseDown={stopPropagation}
+                      onTouchStart={stopPropagation}
+                      className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
+                      data-testid="input-costs"
+                    />
                     <Input
                       placeholder="Verantwortlich"
                       value={newProject.assignee}
                       onChange={(e) => setNewProject({ ...newProject, assignee: e.target.value })}
+                      onMouseDown={stopPropagation}
+                      onTouchStart={stopPropagation}
                       className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
                       data-testid="input-assignee"
                     />
-                    <Input
-                      type="number"
-                      placeholder="Fortschritt %"
-                      min={0}
-                      max={100}
-                      value={newProject.progress}
-                      onChange={(e) => setNewProject({ ...newProject, progress: parseInt(e.target.value) || 0 })}
-                      className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
-                      data-testid="input-progress"
-                    />
                   </div>
+                  <Textarea
+                    placeholder="Nächste Schritte"
+                    value={newProject.nextSteps}
+                    onChange={(e) => setNewProject({ ...newProject, nextSteps: e.target.value })}
+                    onMouseDown={stopPropagation}
+                    onTouchStart={stopPropagation}
+                    className="min-h-[60px] text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50 resize-none"
+                    data-testid="input-next-steps"
+                  />
                   <div className="flex gap-2">
                     <Button
                       size="sm"
@@ -268,6 +338,41 @@ export function StatusReportWidget() {
                 <p className="text-sm text-white/50">Keine Projekte vorhanden</p>
                 <p className="text-xs text-white/30">Klicke + um ein Projekt hinzuzufügen</p>
               </div>
+            ) : viewMode === "table" ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-white">
+                  <thead>
+                    <tr className="border-b border-white/20">
+                      <th className="text-left py-2 px-2 font-semibold text-white/80">Phase</th>
+                      <th className="text-left py-2 px-2 font-semibold text-white/80">Beschreibung</th>
+                      <th className="text-left py-2 px-2 font-semibold text-white/80">Status</th>
+                      <th className="text-left py-2 px-2 font-semibold text-white/80">Kosten (CHF)</th>
+                      <th className="text-left py-2 px-2 font-semibold text-white/80">Nächste Schritte</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects.map((project) => (
+                      <tr
+                        key={project.id}
+                        onClick={() => openProjectModal(project)}
+                        className="border-b border-white/10 hover:bg-white/10 cursor-pointer transition-colors"
+                        data-testid={`row-project-${project.id}`}
+                      >
+                        <td className="py-2 px-2">{getPhaseLabel(project.phase)}</td>
+                        <td className="py-2 px-2 max-w-[150px] truncate" title={project.description || ""}>
+                          <div className="font-medium">{project.name}</div>
+                          {project.description && <div className="text-white/60 truncate">{project.description}</div>}
+                        </td>
+                        <td className="py-2 px-2">{getStatusLabel(project.status)}</td>
+                        <td className="py-2 px-2">{project.costs || "-"}</td>
+                        <td className="py-2 px-2 max-w-[150px] truncate" title={project.nextSteps || ""}>
+                          {project.nextSteps || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               projects.map((project) => (
                 <motion.div
@@ -275,22 +380,14 @@ export function StatusReportWidget() {
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/10 rounded-xl p-3 hover:bg-white/15 transition-colors"
+                  onClick={() => openProjectModal(project)}
+                  className="bg-white/10 rounded-xl p-3 hover:bg-white/15 transition-colors cursor-pointer"
                   data-testid={`card-project-${project.id}`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       {getPriorityBadge(project.priority)}
                       <h4 className="text-sm font-semibold text-white truncate">{project.name}</h4>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => deleteMutation.mutate(project.id)}
-                        className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-red-400"
-                        data-testid={`button-delete-project-${project.id}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
                     </div>
                   </div>
                   
@@ -300,8 +397,10 @@ export function StatusReportWidget() {
                   
                   <div className="flex items-center justify-between gap-2 mb-2">
                     {getStatusLabel(project.status)}
-                    {project.assignee && (
-                      <span className="text-[10px] text-white/50">{project.assignee}</span>
+                    {project.phase && (
+                      <span className="text-[10px] text-white/50 bg-white/10 px-1.5 py-0.5 rounded">
+                        {getPhaseLabel(project.phase)}
+                      </span>
                     )}
                   </div>
                   
@@ -309,48 +408,191 @@ export function StatusReportWidget() {
                     <Progress value={project.progress} className="h-1.5 flex-1 bg-white/20" />
                     <span className="text-[10px] text-white/70 font-medium w-8 text-right">{project.progress}%</span>
                   </div>
-                  
-                  <div className="flex items-center gap-2 mt-2">
-                    <Select
-                      value={project.status}
-                      onValueChange={(v) => updateMutation.mutate({ id: project.id, data: { status: v } })}
-                    >
-                      <SelectTrigger className="h-6 text-[10px] bg-white/5 border-white/10 text-white/70 flex-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUSES.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>
-                            {s.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={project.priority}
-                      onValueChange={(v) => updateMutation.mutate({ id: project.id, data: { priority: v } })}
-                    >
-                      <SelectTrigger className="h-6 text-[10px] bg-white/5 border-white/10 text-white/70 flex-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRIORITIES.map((p) => (
-                          <SelectItem key={p.value} value={p.value}>
-                            <div className="flex items-center gap-2">
-                              <span className={cn("w-2 h-2 rounded-full", p.color)} />
-                              {p.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </motion.div>
               ))
             )}
           </div>
         )}
       </div>
+
+      <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
+        <DialogContent className="max-w-lg bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 border-white/20 text-white" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Projekt bearbeiten
+            </DialogTitle>
+          </DialogHeader>
+          
+          {editingProject && (
+            <div className="space-y-4" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+              <div>
+                <label className="text-xs text-white/70 mb-1 block">Projektname</label>
+                <Input
+                  value={editingProject.name || ""}
+                  onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
+                  onMouseDown={stopPropagation}
+                  onTouchStart={stopPropagation}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                  data-testid="modal-input-name"
+                />
+              </div>
+              
+              <div>
+                <label className="text-xs text-white/70 mb-1 block">Beschreibung</label>
+                <Textarea
+                  value={editingProject.description || ""}
+                  onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
+                  onMouseDown={stopPropagation}
+                  onTouchStart={stopPropagation}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 min-h-[80px] resize-none"
+                  data-testid="modal-input-description"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+                  <label className="text-xs text-white/70 mb-1 block">Phase</label>
+                  <Select
+                    value={editingProject.phase || ""}
+                    onValueChange={(v) => setEditingProject({ ...editingProject, phase: v })}
+                  >
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white" data-testid="modal-select-phase">
+                      <SelectValue placeholder="Phase wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PHASES.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+                  <label className="text-xs text-white/70 mb-1 block">Status</label>
+                  <Select
+                    value={editingProject.status || ""}
+                    onValueChange={(v) => setEditingProject({ ...editingProject, status: v })}
+                  >
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white" data-testid="modal-select-status">
+                      <SelectValue placeholder="Status wählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUSES.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-white/70 mb-1 block">Kosten (CHF)</label>
+                  <Input
+                    value={editingProject.costs || ""}
+                    onChange={(e) => setEditingProject({ ...editingProject, costs: e.target.value })}
+                    onMouseDown={stopPropagation}
+                    onTouchStart={stopPropagation}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                    placeholder="z.B. 5'000"
+                    data-testid="modal-input-costs"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-xs text-white/70 mb-1 block">Verantwortlich</label>
+                  <Input
+                    value={editingProject.assignee || ""}
+                    onChange={(e) => setEditingProject({ ...editingProject, assignee: e.target.value })}
+                    onMouseDown={stopPropagation}
+                    onTouchStart={stopPropagation}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                    data-testid="modal-input-assignee"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+                  <label className="text-xs text-white/70 mb-1 block">Priorität</label>
+                  <Select
+                    value={editingProject.priority || "medium"}
+                    onValueChange={(v) => setEditingProject({ ...editingProject, priority: v })}
+                  >
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white" data-testid="modal-select-priority">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORITIES.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                          <div className="flex items-center gap-2">
+                            <span className={cn("w-2 h-2 rounded-full", p.color)} />
+                            {p.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-white/70 mb-1 block">Fortschritt (%)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={editingProject.progress || 0}
+                    onChange={(e) => setEditingProject({ ...editingProject, progress: parseInt(e.target.value) || 0 })}
+                    onMouseDown={stopPropagation}
+                    onTouchStart={stopPropagation}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                    data-testid="modal-input-progress"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-white/70 mb-1 block">Nächste Schritte</label>
+                <Textarea
+                  value={editingProject.nextSteps || ""}
+                  onChange={(e) => setEditingProject({ ...editingProject, nextSteps: e.target.value })}
+                  onMouseDown={stopPropagation}
+                  onTouchStart={stopPropagation}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 min-h-[80px] resize-none"
+                  placeholder="Was sind die nächsten Schritte?"
+                  data-testid="modal-input-next-steps"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handleSaveProject}
+                  disabled={updateMutation.isPending}
+                  className="flex-1 bg-white/20 hover:bg-white/30 text-white"
+                  data-testid="modal-button-save"
+                >
+                  {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Speichern
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => selectedProject && deleteMutation.mutate(selectedProject.id)}
+                  disabled={deleteMutation.isPending}
+                  className="bg-red-500/50 hover:bg-red-500/70"
+                  data-testid="modal-button-delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
