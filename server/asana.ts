@@ -89,7 +89,7 @@ export async function getProjects(workspaceGid?: string): Promise<any[]> {
   }
   
   const result = await projectsApi.getProjectsForWorkspace(wsGid, {
-    opt_fields: 'name,color,archived,notes,due_date,due_on,completed,owner,members,public'
+    opt_fields: 'name,color,archived,notes,due_date,due_on'
   });
   
   return (result.data || []).filter((p: any) => !p.archived);
@@ -140,7 +140,7 @@ export async function getAllTasks(workspaceGid?: string, includeCompleted: boole
       const tasks = await getTasksForProject(project.gid);
       const tasksWithProject = tasks.map(t => ({
         ...t,
-        project: { gid: project.gid, name: project.name }
+        project: { gid: project.gid, name: project.name, color: (project as any).color }
       }));
       
       if (includeCompleted) {

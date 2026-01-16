@@ -9,15 +9,10 @@ interface AsanaTask {
   due_on?: string;
   due_at?: string;
   assignee?: { name: string };
-  project?: { gid: string; name: string };
+  project?: { gid: string; name: string; color?: string };
   notes?: string;
 }
 
-interface AsanaProject {
-  gid: string;
-  name: string;
-  color?: string;
-}
 
 const PROJECT_COLORS: Record<string, string> = {
   "dark-pink": "bg-pink-500",
@@ -65,7 +60,7 @@ function formatDueDate(date?: string): { text: string; isOverdue: boolean; isTod
 
 function TaskItem({ task }: { task: AsanaTask }) {
   const dueInfo = formatDueDate(task.due_on || task.due_at);
-  const projectColor = task.project ? (PROJECT_COLORS[(task.project as any).color] || "bg-gray-400") : null;
+  const projectColor = task.project?.color ? (PROJECT_COLORS[task.project.color] || "bg-gray-400") : "bg-gray-400";
 
   return (
     <div 
@@ -139,16 +134,7 @@ export function AsanaWidget() {
     staleTime: 30000,
   });
 
-  const { data: projects } = useQuery<AsanaProject[]>({
-    queryKey: ["asana-projects"],
-    queryFn: async () => {
-      const res = await fetch("/api/asana/projects");
-      if (!res.ok) throw new Error("Failed to fetch projects");
-      return res.json();
-    },
-    enabled: statusData?.connected,
-  });
-
+  
   if (!statusData?.connected) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center" data-testid="asana-widget">
