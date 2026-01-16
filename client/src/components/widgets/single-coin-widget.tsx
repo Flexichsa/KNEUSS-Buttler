@@ -43,15 +43,6 @@ const COIN_ICONS: Record<string, string> = {
   binancecoin: "◆",
 };
 
-const COIN_COLORS: Record<string, { bg: string; icon: string }> = {
-  bitcoin: { bg: "from-orange-600 to-amber-500", icon: "bg-gradient-to-br from-orange-500 to-yellow-500" },
-  ethereum: { bg: "from-indigo-600 to-purple-500", icon: "bg-gradient-to-br from-indigo-500 to-purple-500" },
-  solana: { bg: "from-purple-600 to-fuchsia-500", icon: "bg-gradient-to-br from-purple-500 to-fuchsia-500" },
-  dogecoin: { bg: "from-yellow-500 to-amber-400", icon: "bg-gradient-to-br from-yellow-500 to-amber-400" },
-  cardano: { bg: "from-blue-600 to-cyan-500", icon: "bg-gradient-to-br from-blue-500 to-cyan-500" },
-  ripple: { bg: "from-slate-500 to-slate-400", icon: "bg-gradient-to-br from-slate-500 to-slate-400" },
-  vechain: { bg: "from-blue-600 to-blue-400", icon: "bg-gradient-to-br from-blue-500 to-blue-400" },
-};
 
 function MiniSparkline({ data, isPositive }: { data: number[]; isPositive: boolean }) {
   if (!data || data.length < 2) return null;
@@ -120,15 +111,11 @@ export function SingleCoinWidget({ settings }: SingleCoinWidgetProps) {
   }, [data, coinId]);
 
   const coinIcon = COIN_ICONS[coinId] || "?";
-  const colors = COIN_COLORS[coinId] || { bg: "from-slate-600 to-slate-500", icon: "bg-gradient-to-br from-slate-500 to-slate-400" };
 
   if (isLoading) {
     return (
       <div 
-        className={cn(
-          "h-full rounded-2xl flex items-center justify-center bg-gradient-to-br",
-          colors.bg
-        )}
+        className="h-full rounded-2xl flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-white/10"
         data-testid={`single-coin-widget-${coinId}`}
       >
         <Loader2 className="h-6 w-6 animate-spin text-white/50" />
@@ -139,10 +126,7 @@ export function SingleCoinWidget({ settings }: SingleCoinWidgetProps) {
   if (error || !coin) {
     return (
       <div 
-        className={cn(
-          "h-full rounded-2xl flex items-center justify-center bg-gradient-to-br",
-          colors.bg
-        )}
+        className="h-full rounded-2xl flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-white/10"
         data-testid={`single-coin-widget-${coinId}`}
       >
         <div className="text-white/60 text-sm">N/A</div>
@@ -155,21 +139,22 @@ export function SingleCoinWidget({ settings }: SingleCoinWidgetProps) {
 
   return (
     <div 
-      className={cn(
-        "h-full rounded-2xl overflow-hidden flex flex-col relative bg-gradient-to-br",
-        colors.bg
-      )}
+      className="h-full rounded-2xl overflow-hidden flex flex-col relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-white/10"
       data-testid={`single-coin-widget-${coinId}`}
     >
-      <div className="absolute inset-0 opacity-40 pointer-events-none">
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
         <MiniSparkline data={coin.sparkline.slice(-24)} isPositive={isPositive} />
       </div>
 
       <div className="relative z-10 p-3 flex flex-col h-full">
         <div className="flex items-center gap-2">
-          <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg", colors.icon)}>
-            {coinIcon}
-          </div>
+          {coin.image ? (
+            <img src={coin.image} alt={coin.name} className="w-7 h-7 rounded-full shadow-lg" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+              {coinIcon}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center">
@@ -178,7 +163,7 @@ export function SingleCoinWidget({ settings }: SingleCoinWidgetProps) {
           </div>
           <div className={cn(
             "flex items-center gap-0.5 mt-1",
-            isPositive ? "text-white" : "text-white/90"
+            isPositive ? "text-emerald-400" : "text-rose-400"
           )}>
             <Icon className="h-3 w-3" />
             <span className="text-sm font-bold">
