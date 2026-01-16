@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 // @ts-ignore
 import ReactGridLayout from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
@@ -79,6 +79,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const [containerWidth, setContainerWidth] = useState(1200);
   const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
   const [expandedIconWidgetId, setExpandedIconWidgetId] = useState<string | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: todos = [] } = useTodos();
   const { data: emails = [] } = useOutlookEmails(50);
@@ -143,9 +145,19 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     });
   }, [config.layouts]);
 
+  const handleDragStart = useCallback(() => {
+    isDraggingRef.current = true;
+    if (dragTimeoutRef.current) {
+      clearTimeout(dragTimeoutRef.current);
+    }
+  }, []);
+
   const handleDragStop = useCallback(
     (layout: any[]) => {
       onLayoutChange(convertLayout(layout));
+      dragTimeoutRef.current = setTimeout(() => {
+        isDraggingRef.current = false;
+      }, 100);
     },
     [onLayoutChange, convertLayout]
   );
@@ -250,6 +262,12 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     return ["weather", "btc", "clock", "singlecoin", "calendar"].includes(widgetType);
   };
 
+  const handleIconWidgetClick = useCallback((widgetId: string) => {
+    if (!isDraggingRef.current) {
+      setExpandedIconWidgetId(widgetId);
+    }
+  }, []);
+
   const renderIconWidget = (widgetId: string) => {
     const widgetInfo = getWidgetInfo(widgetId);
     if (!widgetInfo) return null;
@@ -258,7 +276,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     
     return (
       <button
-        onClick={() => setExpandedIconWidgetId(widgetId)}
+        onClick={() => handleIconWidgetClick(widgetId)}
         className={cn(
           "w-full h-full flex items-center justify-center cursor-pointer relative",
           "bg-gradient-to-br text-white rounded-2xl transition-all hover:scale-105",
@@ -298,6 +316,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         cols={COLS}
         rowHeight={ROW_HEIGHT}
         width={containerWidth}
+        onDragStart={handleDragStart as any}
         onDragStop={handleDragStop as any}
         onResizeStop={handleResizeStop as any}
         draggableHandle=".widget-drag-handle"
