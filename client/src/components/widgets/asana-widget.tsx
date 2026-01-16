@@ -1,6 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, AlertCircle, Circle, CheckCircle2, Calendar, User, ExternalLink, FolderKanban } from "lucide-react";
+import { useState } from "react";
+import { Loader2, AlertCircle, Circle, CheckCircle2, Calendar, User, ExternalLink, ChevronLeft, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function AsanaLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none">
+      <circle cx="12" cy="6" r="4.5" fill="#F06A6A" />
+      <circle cx="5" cy="16" r="4.5" fill="#F06A6A" />
+      <circle cx="19" cy="16" r="4.5" fill="#F06A6A" />
+    </svg>
+  );
+}
 
 interface AsanaTask {
   gid: string;
@@ -61,10 +72,14 @@ function formatDueDate(date?: string): { text: string; isOverdue: boolean; isTod
 function TaskItem({ task }: { task: AsanaTask }) {
   const dueInfo = formatDueDate(task.due_on || task.due_at);
   const projectColor = task.project?.color ? (PROJECT_COLORS[task.project.color] || "bg-gray-400") : "bg-gray-400";
+  const taskUrl = `https://app.asana.com/0/${task.project?.gid || '0'}/${task.gid}`;
 
   return (
-    <div 
-      className="flex items-start gap-3 px-4 py-3 hover:bg-black/5 transition-colors border-b border-white/10 last:border-b-0"
+    <a 
+      href={taskUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 group cursor-pointer"
       data-testid={`asana-task-${task.gid}`}
     >
       <div className="pt-0.5">
@@ -77,7 +92,7 @@ function TaskItem({ task }: { task: AsanaTask }) {
       
       <div className="flex-1 min-w-0">
         <div className={cn(
-          "text-sm font-medium truncate",
+          "text-sm font-medium truncate group-hover:text-pink-600 transition-colors",
           task.completed ? "text-gray-400 line-through" : "text-gray-900"
         )}>
           {task.name}
@@ -109,7 +124,11 @@ function TaskItem({ task }: { task: AsanaTask }) {
           )}
         </div>
       </div>
-    </div>
+      
+      <div className="pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
+      </div>
+    </a>
   );
 }
 
@@ -135,14 +154,78 @@ export function AsanaWidget() {
   });
 
   
+  const projects = tasks ? Array.from(
+    new Map(
+      tasks
+        .filter(t => t.project)
+        .map(t => [t.project!.gid, t.project!])
+    ).values()
+  ) : [];
+
+  const [selectedProject, setSelectedProject] = useState<{ gid: string; name: string; color?: string } | null>(null);
+
+  const filteredTasks = selectedProject 
+    ? tasks?.filter(t => t.project?.gid === selectedProject.gid) 
+    : null;
+
   if (!statusData?.connected) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center" data-testid="asana-widget">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center mb-4">
-          <FolderKanban className="h-6 w-6 text-white" />
-        </div>
+        <AsanaLogo className="w-12 h-12 mb-4" />
         <h3 className="font-semibold text-gray-900 mb-2">Asana nicht verbunden</h3>
         <p className="text-sm text-gray-500 mb-4">Verbinde deinen Asana-Account in den Einstellungen</p>
+      </div>
+    );
+  }
+
+  if (selectedProject) {
+    const projectColor = selectedProject.color ? (PROJECT_COLORS[selectedProject.color] || "bg-gray-400") : "bg-gray-400";
+    return (
+      <div className="h-full flex flex-col" data-testid="asana-widget">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedProject(null)}
+              className="p-1 -ml-1 hover:bg-gray-100 rounded transition-colors"
+              data-testid="btn-back-projects"
+            >
+              <ChevronLeft className="h-5 w-5 text-gray-500" />
+            </button>
+            <span className={cn("w-3 h-3 rounded-full", projectColor)} />
+            <div>
+              <h2 className="font-semibold text-gray-900 text-sm">{selectedProject.name}</h2>
+              <p className="text-xs text-gray-500">
+                {filteredTasks ? `${filteredTasks.length} Aufgaben` : "Wird geladen..."}
+              </p>
+            </div>
+          </div>
+          <a 
+            href={`https://app.asana.com/0/${selectedProject.gid}`}
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            data-testid="link-open-project"
+            title="Projekt in Asana öffnen"
+          >
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        </div>
+
+        {isLoading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : filteredTasks && filteredTasks.length > 0 ? (
+          <div className="flex-1 overflow-y-auto">
+            {filteredTasks.map((task) => (
+              <TaskItem key={task.gid} task={task} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+            Keine Aufgaben in diesem Projekt
+          </div>
+        )}
       </div>
     );
   }
@@ -151,13 +234,11 @@ export function AsanaWidget() {
     <div className="h-full flex flex-col" data-testid="asana-widget">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center">
-            <FolderKanban className="h-4 w-4 text-white" />
-          </div>
+          <AsanaLogo className="w-8 h-8" />
           <div>
             <h2 className="font-semibold text-gray-900 text-sm">Asana</h2>
             <p className="text-xs text-gray-500">
-              {tasks ? `${tasks.length} Aufgaben` : "Wird geladen..."}
+              {projects.length} Projekte
             </p>
           </div>
         </div>
@@ -181,20 +262,37 @@ export function AsanaWidget() {
           <AlertCircle className="h-8 w-8 text-gray-400 mb-2" />
           <p className="text-sm text-gray-500">Fehler beim Laden</p>
         </div>
-      ) : tasks && tasks.length > 0 ? (
+      ) : projects.length > 0 ? (
         <div className="flex-1 overflow-y-auto">
-          {tasks.slice(0, 10).map((task) => (
-            <TaskItem key={task.gid} task={task} />
-          ))}
-          {tasks.length > 10 && (
-            <div className="px-4 py-2 text-xs text-gray-500 text-center">
-              +{tasks.length - 10} weitere Aufgaben
-            </div>
-          )}
+          {projects.map(project => {
+            const projectColor = project.color ? (PROJECT_COLORS[project.color] || "bg-gray-400") : "bg-gray-400";
+            const taskCount = tasks?.filter(t => t.project?.gid === project.gid).length || 0;
+            return (
+              <button
+                key={project.gid}
+                onClick={() => setSelectedProject(project)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 text-left group"
+                data-testid={`btn-project-${project.gid}`}
+              >
+                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", projectColor)}>
+                  <FolderOpen className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate group-hover:text-pink-600 transition-colors">
+                    {project.name}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {taskCount} Aufgaben
+                  </div>
+                </div>
+                <ChevronLeft className="h-4 w-4 text-gray-300 rotate-180" />
+              </button>
+            );
+          })}
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-          Keine offenen Aufgaben
+          Keine Projekte gefunden
         </div>
       )}
     </div>
