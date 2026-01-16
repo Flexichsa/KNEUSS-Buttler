@@ -60,6 +60,12 @@ export const CalendarSettingsSchema = z.object({
   maxEvents: z.number().default(10),
 });
 
+export const WeblinkSettingsSchema = z.object({
+  url: z.string().default(""),
+  title: z.string().optional(),
+  backgroundColor: z.string().default("#3b82f6"),
+});
+
 export const DashboardTabSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -86,6 +92,7 @@ export type CryptoSettings = z.infer<typeof CryptoSettingsSchema>;
 export type ClockSettings = z.infer<typeof ClockSettingsSchema>;
 export type SingleCoinSettings = z.infer<typeof SingleCoinSettingsSchema>;
 export type CalendarSettings = z.infer<typeof CalendarSettingsSchema>;
+export type WeblinkSettings = z.infer<typeof WeblinkSettingsSchema>;
 export type DashboardTab = z.infer<typeof DashboardTabSchema>;
 export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 
