@@ -175,14 +175,14 @@ export function StatusReportWidget() {
                     placeholder="Projektname"
                     value={newProject.name}
                     onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                    className="h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                    className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
                     data-testid="input-project-name"
                   />
                   <Input
                     placeholder="Beschreibung"
                     value={newProject.description}
                     onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                    className="h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                    className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
                     data-testid="input-project-description"
                   />
                   <div className="grid grid-cols-2 gap-2">
@@ -225,7 +225,7 @@ export function StatusReportWidget() {
                       placeholder="Verantwortlich"
                       value={newProject.assignee}
                       onChange={(e) => setNewProject({ ...newProject, assignee: e.target.value })}
-                      className="h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                      className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
                       data-testid="input-assignee"
                     />
                     <Input
@@ -235,7 +235,7 @@ export function StatusReportWidget() {
                       max={100}
                       value={newProject.progress}
                       onChange={(e) => setNewProject({ ...newProject, progress: parseInt(e.target.value) || 0 })}
-                      className="h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                      className="h-9 text-sm bg-white border-white/30 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-white/50"
                       data-testid="input-progress"
                     />
                   </div>

@@ -252,7 +252,7 @@ export function AsanaWidget() {
           <div>
             <h2 className="font-semibold text-gray-900 text-sm">Asana</h2>
             <p className="text-xs text-gray-500">
-              {projects.length} Projekte
+              {projects?.length || 0} Projekte
             </p>
           </div>
         </div>
@@ -276,7 +276,7 @@ export function AsanaWidget() {
           <AlertCircle className="h-8 w-8 text-gray-400 mb-2" />
           <p className="text-sm text-gray-500">Fehler beim Laden</p>
         </div>
-      ) : projects.length > 0 ? (
+      ) : projects && projects.length > 0 ? (
         <div className="flex-1 overflow-y-auto">
           {projects.map(project => {
             const projectColor = project.color ? (PROJECT_COLORS[project.color] || "bg-gray-400") : "bg-gray-400";
