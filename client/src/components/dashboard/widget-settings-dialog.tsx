@@ -488,7 +488,7 @@ export function WidgetSettingsDialog({ widgetId, widgetType, settings, onSetting
             <CalendarSettingsForm settings={settings} onSettingsChange={onSettingsChange} />
           )}
           {widgetType === "weblink" && (
-            <WeblinkSettingsForm settings={settings} onSettingsChange={onSettingsChange} />
+            <WeblinkSettingsForm settings={settings} onSettingsChange={onSettingsChange} onClose={onClose} />
           )}
         </div>
       </DialogContent>
