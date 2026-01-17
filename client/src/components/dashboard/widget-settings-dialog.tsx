@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { Check } from "lucide-react";
 import type { WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WeblinkSettings } from "@shared/schema";
 
 interface WidgetSettingsDialogProps {
@@ -366,12 +368,25 @@ const BACKGROUND_COLORS = [
   { id: "#64748b", name: "Grau" },
 ];
 
-function WeblinkSettingsForm({ settings, onSettingsChange }: { settings: WeblinkSettings; onSettingsChange: (s: WeblinkSettings) => void }) {
+function WeblinkSettingsForm({ settings, onSettingsChange, onClose }: { settings: WeblinkSettings; onSettingsChange: (s: WeblinkSettings) => void; onClose: () => void }) {
   const [url, setUrl] = useState(settings.url || "");
   const [title, setTitle] = useState(settings.title || "");
+  const [selectedColor, setSelectedColor] = useState(settings.backgroundColor || "#3b82f6");
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
   
   const handleSave = () => {
-    onSettingsChange({ ...settings, url, title: title || undefined });
+    setIsSaving(true);
+    onSettingsChange({ ...settings, url, title: title || undefined, backgroundColor: selectedColor });
+    
+    toast({
+      title: "Gespeichert",
+      description: "Webseiten-Link wurde erfolgreich aktualisiert.",
+    });
+    
+    setTimeout(() => {
+      onClose();
+    }, 300);
   };
   
   return (
@@ -382,7 +397,7 @@ function WeblinkSettingsForm({ settings, onSettingsChange }: { settings: Weblink
           id="weblink-url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="z.B. https://google.com"
+          placeholder="https://www.google.com/"
           data-testid="input-weblink-url"
         />
       </div>
@@ -405,12 +420,12 @@ function WeblinkSettingsForm({ settings, onSettingsChange }: { settings: Weblink
           {BACKGROUND_COLORS.map((color) => (
             <button
               key={color.id}
-              onClick={() => onSettingsChange({ ...settings, backgroundColor: color.id })}
+              onClick={() => setSelectedColor(color.id)}
               className="w-8 h-8 rounded-lg border-2 transition-all"
               style={{ 
                 backgroundColor: color.id,
-                borderColor: settings.backgroundColor === color.id ? "white" : "transparent",
-                boxShadow: settings.backgroundColor === color.id ? "0 0 0 2px black" : "none"
+                borderColor: selectedColor === color.id ? "white" : "transparent",
+                boxShadow: selectedColor === color.id ? "0 0 0 2px black" : "none"
               }}
               title={color.name}
               data-testid={`color-${color.id}`}
@@ -419,8 +434,15 @@ function WeblinkSettingsForm({ settings, onSettingsChange }: { settings: Weblink
         </div>
       </div>
       
-      <Button onClick={handleSave} className="w-full" data-testid="button-save-weblink">
-        Speichern
+      <Button onClick={handleSave} className="w-full" disabled={isSaving} data-testid="button-save-weblink">
+        {isSaving ? (
+          <span className="flex items-center gap-2">
+            <Check className="h-4 w-4" />
+            Gespeichert!
+          </span>
+        ) : (
+          "Speichern"
+        )}
       </Button>
     </div>
   );
