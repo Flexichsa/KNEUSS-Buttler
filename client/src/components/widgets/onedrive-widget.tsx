@@ -1,12 +1,38 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { HardDrive, File, Folder, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, Loader2, AlertCircle, ExternalLink, Clock, ChevronLeft, Home, ChevronRight } from "lucide-react";
+import { File, Folder, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, Loader2, AlertCircle, ExternalLink, ChevronLeft, Home, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { format, parseISO, formatDistanceToNow } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
+
+function OneDriveLogo({ className }: { className?: string }) {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      className={className}
+      fill="none"
+    >
+      <path 
+        d="M12.5 6c2.5 0 4.6 1.8 5 4.2.3-.1.6-.2 1-.2 2.2 0 4 1.8 4 4s-1.8 4-4 4H6c-2.8 0-5-2.2-5-5 0-2.5 1.8-4.5 4.2-4.9C6.2 5.3 9.1 3.5 12.5 6z" 
+        fill="#0364B8"
+      />
+      <path 
+        d="M10 8.5c1.8 0 3.4 1.1 4.1 2.7.4-.1.8-.2 1.2-.2 2.1 0 3.7 1.7 3.7 3.7 0 .5-.1 1-.3 1.4h-13c-.3-.4-.5-.9-.5-1.4 0-1.5 1.2-2.8 2.7-2.8.3 0 .5 0 .8.1C9.3 10 10.5 8.5 10 8.5z" 
+        fill="#0078D4"
+      />
+      <path 
+        d="M6 14c0-1.3.8-2.4 2-2.7-.5-.5-.8-1.2-.8-2C7.2 8 8.5 7 10 7c.9 0 1.7.3 2.3.9.7-.6 1.5-.9 2.5-.9 2 0 3.6 1.4 4 3.2.2 0 .4-.1.7-.1 1.9 0 3.5 1.6 3.5 3.5s-1.6 3.5-3.5 3.5H6.5C4.6 17 3 15.4 3 13.5c0-1.6 1.1-2.9 2.5-3.3.3.5.5 1 .5 1.5V14z" 
+        fill="#1490DF"
+      />
+      <path 
+        d="M19.5 11c-.2 0-.4 0-.5.1-.4-1.8-2-3.1-3.9-3.1-.9 0-1.8.3-2.5.9-.6-.6-1.4-.9-2.3-.9-1.5 0-2.8 1-3.2 2.3-.3 0-.5-.1-.8-.1-1.5 0-2.7 1.2-2.7 2.7 0 .5.2 1 .4 1.4h13.2c.2-.4.3-.9.3-1.4 0-1.9-1.5-3.5-3.5-3.5-.2-.2-.3-.4-.5-.4z" 
+        fill="#28A8EA"
+      />
+    </svg>
+  );
+}
 
 interface OneDriveItem {
   id: string;
@@ -21,14 +47,6 @@ interface OneDriveItem {
 interface FolderPath {
   id: string | null;
   name: string;
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
 function getFileIcon(item: OneDriveItem) {
@@ -133,22 +151,16 @@ export function OneDriveWidget() {
         href="https://onedrive.live.com" 
         target="_blank" 
         rel="noopener noreferrer"
-        className="flex items-center justify-between px-4 pr-14 py-3 border-b hover:bg-muted/50 transition-colors cursor-pointer group"
+        className="flex items-center gap-3 px-4 pr-14 py-3 border-b hover:bg-muted/50 transition-colors cursor-pointer group"
         data-testid="onedrive-widget-header"
       >
-        <div className="flex items-center gap-2">
-          <HardDrive className="h-5 w-5 text-blue-600" />
-          <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">OneDrive</h3>
-          <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-        <Badge variant="secondary" className="text-xs">
-          <Clock className="h-3 w-3 mr-1" />
-          {sortedFiles.length} Dateien
-        </Badge>
+        <OneDriveLogo className="h-6 w-6" />
+        <h3 className="font-semibold text-base text-[#0078D4] group-hover:text-[#0364B8] transition-colors">OneDrive</h3>
+        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       </a>
 
-      {folderPath.length > 1 && (
-        <div className="flex items-center gap-1 px-2 py-2 border-b bg-muted/30 overflow-x-auto">
+      <div className="flex items-center gap-1 px-3 py-2 border-b bg-muted/20 overflow-x-auto">
+        {folderPath.length > 1 && (
           <Button
             variant="ghost"
             size="sm"
@@ -158,27 +170,27 @@ export function OneDriveWidget() {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-1 text-sm overflow-x-auto">
-            {folderPath.map((folder, index) => (
-              <div key={index} className="flex items-center flex-shrink-0">
-                {index > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground mx-1" />}
-                <button
-                  onClick={() => navigateToPathIndex(index)}
-                  className={cn(
-                    "hover:text-primary transition-colors px-1 py-0.5 rounded",
-                    index === folderPath.length - 1 
-                      ? "font-medium text-foreground" 
-                      : "text-muted-foreground hover:bg-muted"
-                  )}
-                  data-testid={`breadcrumb-${index}`}
-                >
-                  {index === 0 ? <Home className="h-4 w-4" /> : folder.name}
-                </button>
-              </div>
-            ))}
-          </div>
+        )}
+        <div className="flex items-center gap-1 text-sm overflow-x-auto">
+          {folderPath.map((folder, index) => (
+            <div key={index} className="flex items-center flex-shrink-0">
+              {index > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground mx-1" />}
+              <button
+                onClick={() => navigateToPathIndex(index)}
+                className={cn(
+                  "hover:text-primary transition-colors px-1 py-0.5 rounded",
+                  index === folderPath.length - 1 
+                    ? "font-medium text-foreground" 
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+                data-testid={`breadcrumb-${index}`}
+              >
+                {index === 0 ? <Home className="h-4 w-4" /> : folder.name}
+              </button>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       {sortedFiles.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2">
@@ -187,33 +199,29 @@ export function OneDriveWidget() {
         </div>
       ) : (
         <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
+          <div className="border-b bg-muted/30 px-3 py-2 flex items-center text-xs font-medium text-muted-foreground">
+            <div className="flex-1">Name</div>
+            <div className="w-32 text-right">Geändert</div>
+          </div>
+          <div className="divide-y">
             {sortedFiles.map((item) => (
               item.isFolder ? (
                 <button
                   key={item.id}
                   onClick={() => navigateToFolder(item)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#E5F1FB] transition-colors group text-left"
                   data-testid={`folder-${item.id}`}
                 >
-                  <div className="flex-shrink-0">
-                    {getFileIcon(item)}
-                  </div>
+                  <Folder className="h-5 w-5 text-[#FFB900] flex-shrink-0" />
                   
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate group-hover:text-primary transition-colors">
+                    <p className="text-sm truncate group-hover:text-[#0078D4] transition-colors">
                       {item.name}
                     </p>
-                    
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                      <span>Ordner</span>
-                      <span>
-                        {formatDistanceToNow(parseISO(item.lastModifiedDateTime), { 
-                          addSuffix: true, 
-                          locale: de 
-                        })}
-                      </span>
-                    </div>
+                  </div>
+                  
+                  <div className="w-32 text-right text-xs text-muted-foreground flex-shrink-0">
+                    {format(parseISO(item.lastModifiedDateTime), "dd.MM.yyyy", { locale: de })}
                   </div>
                   
                   <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
@@ -224,7 +232,7 @@ export function OneDriveWidget() {
                   href={item.webUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+                  className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#E5F1FB] transition-colors group"
                   data-testid={`file-${item.id}`}
                 >
                   <div className="flex-shrink-0">
@@ -232,19 +240,13 @@ export function OneDriveWidget() {
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate group-hover:text-primary transition-colors">
+                    <p className="text-sm truncate group-hover:text-[#0078D4] transition-colors">
                       {item.name}
                     </p>
-                    
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                      <span>{formatFileSize(item.size)}</span>
-                      <span>
-                        {formatDistanceToNow(parseISO(item.lastModifiedDateTime), { 
-                          addSuffix: true, 
-                          locale: de 
-                        })}
-                      </span>
-                    </div>
+                  </div>
+                  
+                  <div className="w-32 text-right text-xs text-muted-foreground flex-shrink-0">
+                    {format(parseISO(item.lastModifiedDateTime), "dd.MM.yyyy", { locale: de })}
                   </div>
                   
                   <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
