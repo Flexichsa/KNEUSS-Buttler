@@ -422,6 +422,15 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                   <div className="widget-drag-handle absolute top-1 left-1 w-6 h-6 cursor-move z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-black/30">
                     <GripVertical className="h-3 w-3 text-white" />
                   </div>
+                  {canHaveSettings(widgetId) && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSettingsWidgetId(widgetId); }}
+                      className="absolute top-1 right-7 w-6 h-6 cursor-pointer z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-black/40 text-white"
+                      data-testid={`button-settings-icon-widget-${widgetId}`}
+                    >
+                      <Settings2 className="h-3 w-3" />
+                    </button>
+                  )}
                   {onRemoveWidget && (
                     <button
                       onClick={(e) => { e.stopPropagation(); onRemoveWidget(widgetId); }}

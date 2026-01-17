@@ -49,13 +49,14 @@ export function WeblinkWidget({ settings }: WeblinkWidgetProps) {
   if (!url) {
     return (
       <div 
-        className="h-full rounded-2xl flex flex-col items-center justify-center p-4 text-center"
+        className="h-full w-full rounded-xl flex items-center justify-center p-2"
         style={{ backgroundColor }}
         data-testid="weblink-widget-empty"
       >
-        <Globe className="h-10 w-10 text-white/60 mb-2" />
-        <p className="text-white/80 text-sm font-medium">Webseiten-Link</p>
-        <p className="text-white/60 text-xs mt-1">Klicke auf Einstellungen um eine URL hinzuzufügen</p>
+        <div className="flex flex-col items-center text-center">
+          <Globe className="h-6 w-6 text-white/60 mb-1" />
+          <p className="text-white/70 text-[10px] leading-tight">Einstellungen öffnen</p>
+        </div>
       </div>
     );
   }
@@ -63,43 +64,44 @@ export function WeblinkWidget({ settings }: WeblinkWidgetProps) {
   return (
     <button
       onClick={handleClick}
-      className="h-full w-full rounded-2xl flex flex-col items-center justify-center p-4 text-center cursor-pointer transition-all hover:scale-[1.02] hover:shadow-xl group relative overflow-hidden"
+      className="h-full w-full rounded-xl flex items-center justify-center p-2 cursor-pointer transition-all hover:scale-[1.02] hover:brightness-110 group relative overflow-hidden"
       style={{ backgroundColor }}
       data-testid="weblink-widget"
     >
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
       
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 shadow-lg">
+      <div className="relative z-10 flex flex-col items-center gap-1">
+        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md">
           {faviconUrl && !faviconError ? (
             <>
               {!faviconLoaded && (
-                <Loader2 className="h-6 w-6 text-white animate-spin" />
+                <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
               )}
               <img
                 src={faviconUrl}
                 alt={title}
-                className={`w-10 h-10 object-contain ${faviconLoaded ? "block" : "hidden"}`}
+                className={`w-6 h-6 object-contain ${faviconLoaded ? "block" : "hidden"}`}
                 onLoad={() => setFaviconLoaded(true)}
                 onError={() => setFaviconError(true)}
               />
             </>
           ) : (
-            <Globe className="h-8 w-8 text-white" />
+            <Globe className="h-5 w-5 text-gray-600" />
           )}
         </div>
         
-        <h3 className="text-white font-bold text-base truncate max-w-full px-2">
-          {title}
-        </h3>
-        <p className="text-white/70 text-xs truncate max-w-full px-2 mt-0.5">
-          {extractDomain(url)}
-        </p>
-        
-        <div className="mt-3 flex items-center gap-1 text-white/60 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-          <ExternalLink className="h-3 w-3" />
-          <span>Öffnen</span>
+        <div className="text-center max-w-full px-1">
+          <p className="text-white font-semibold text-xs truncate leading-tight drop-shadow-sm">
+            {title}
+          </p>
+          <p className="text-white/60 text-[9px] truncate leading-tight">
+            {extractDomain(url)}
+          </p>
         </div>
+      </div>
+      
+      <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <ExternalLink className="h-3 w-3 text-white/50" />
       </div>
     </button>
   );
