@@ -337,6 +337,15 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   };
 
   const renderIconWidget = (widgetId: string) => {
+    const widgetType = getWidgetType(widgetId, config.widgetInstances);
+    const settings = config.widgetSettings?.[widgetId] || {};
+    
+    // For weblink widgets in icon mode, render the actual WeblinkWidget component
+    // which handles its own styling based on saved settings
+    if (widgetType === "weblink") {
+      return <WeblinkWidget settings={settings as WeblinkSettings} />;
+    }
+    
     const widgetInfo = getWidgetInfo(widgetId);
     if (!widgetInfo) return null;
     
