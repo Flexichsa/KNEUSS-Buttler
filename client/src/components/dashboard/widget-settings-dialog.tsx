@@ -356,28 +356,15 @@ function CalendarSettingsForm({ settings, onSettingsChange }: { settings: Calend
   );
 }
 
-const BACKGROUND_COLORS = [
-  { id: "#3b82f6", name: "Blau" },
-  { id: "#10b981", name: "Grün" },
-  { id: "#f59e0b", name: "Orange" },
-  { id: "#ef4444", name: "Rot" },
-  { id: "#8b5cf6", name: "Violett" },
-  { id: "#ec4899", name: "Pink" },
-  { id: "#06b6d4", name: "Cyan" },
-  { id: "#6366f1", name: "Indigo" },
-  { id: "#64748b", name: "Grau" },
-];
-
 function WeblinkSettingsForm({ settings, onSettingsChange, onClose }: { settings: WeblinkSettings; onSettingsChange: (s: WeblinkSettings) => void; onClose: () => void }) {
   const [url, setUrl] = useState(settings.url || "");
   const [title, setTitle] = useState(settings.title || "");
-  const [selectedColor, setSelectedColor] = useState(settings.backgroundColor || "#3b82f6");
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   
   const handleSave = () => {
     setIsSaving(true);
-    onSettingsChange({ ...settings, url, title: title || undefined, backgroundColor: selectedColor });
+    onSettingsChange({ ...settings, url, title: title || undefined });
     
     toast({
       title: "Gespeichert",
@@ -412,26 +399,6 @@ function WeblinkSettingsForm({ settings, onSettingsChange, onClose }: { settings
           data-testid="input-weblink-title"
         />
         <p className="text-xs text-muted-foreground">Leer lassen für automatischen Titel</p>
-      </div>
-      
-      <div className="space-y-2">
-        <Label>Hintergrundfarbe</Label>
-        <div className="flex flex-wrap gap-2">
-          {BACKGROUND_COLORS.map((color) => (
-            <button
-              key={color.id}
-              onClick={() => setSelectedColor(color.id)}
-              className="w-8 h-8 rounded-lg border-2 transition-all"
-              style={{ 
-                backgroundColor: color.id,
-                borderColor: selectedColor === color.id ? "white" : "transparent",
-                boxShadow: selectedColor === color.id ? "0 0 0 2px black" : "none"
-              }}
-              title={color.name}
-              data-testid={`color-${color.id}`}
-            />
-          ))}
-        </div>
       </div>
       
       <Button onClick={handleSave} className="w-full" disabled={isSaving} data-testid="button-save-weblink">
