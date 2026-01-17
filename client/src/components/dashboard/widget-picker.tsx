@@ -429,7 +429,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Firmen und Ansprechpartner verwalten",
     icon: <Building2 className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-blue-500 to-indigo-600",
     category: "productivity",
     previewContent: (
@@ -454,8 +454,8 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     name: "Webseiten-Link", 
     description: "Schnellzugriff auf Webseiten",
     icon: <Globe className="h-5 w-5" />, 
-    defaultSize: { w: 3, h: 3 }, 
-    minSize: { w: 2, h: 2 },
+    defaultSize: { w: 2, h: 2 }, 
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-cyan-500 to-blue-600",
     category: "tools",
     previewContent: (
