@@ -11,7 +11,6 @@ import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, P
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { WidgetSizeMode } from "@shared/schema";
 
 export type WidgetCategory = "all" | "productivity" | "finance" | "microsoft" | "tools" | "info";
@@ -664,8 +663,8 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
               ))}
             </TabsList>
             
-            <ScrollArea className="flex-1 mt-4 max-h-[55vh]">
-              <div className="grid grid-cols-2 gap-4 pr-4 pb-2">
+            <div className="flex-1 mt-4 overflow-y-auto max-h-[55vh] pr-2">
+              <div className="grid grid-cols-2 gap-4 pb-2">
                 {filteredWidgets.map((widget) => (
                   <WidgetPreviewCard
                     key={widget.id}
@@ -674,7 +673,7 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
                   />
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </Tabs>
         )}
       </DialogContent>
