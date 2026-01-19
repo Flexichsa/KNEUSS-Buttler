@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTodos, useUpdateTodo, type Todo } from "@/hooks/use-todos";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, X, Calendar, ChevronRight, Check, Clock } from "lucide-react";
+import { AlertTriangle, Calendar, ChevronRight, Check, Clock } from "lucide-react";
 import { format, isToday, isPast, startOfDay, addDays } from "date-fns";
 import { de } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { TaskEditModal } from "@/components/task-edit-modal";
 export function PriorityReminderBanner() {
   const { data: todos = [] } = useTodos();
   const updateTodo = useUpdateTodo();
-  const [dismissed, setDismissed] = useState<Set<number>>(new Set());
   const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -20,14 +19,13 @@ export function PriorityReminderBanner() {
       if (todo.completed) return false;
       if (todo.priority !== 1) return false;
       if (!todo.dueDate) return false;
-      if (dismissed.has(todo.id)) return false;
       
       const dueDate = startOfDay(new Date(todo.dueDate));
       const today = startOfDay(new Date());
       
       return dueDate <= today;
     });
-  }, [todos, dismissed]);
+  }, [todos]);
 
   const handlePostpone = (todo: Todo) => {
     const tomorrow = addDays(new Date(), 1);
@@ -42,10 +40,6 @@ export function PriorityReminderBanner() {
       id: todo.id,
       completed: true,
     });
-  };
-
-  const handleDismiss = (todoId: number) => {
-    setDismissed(prev => new Set(prev).add(todoId));
   };
 
   const handleOpenTask = (todo: Todo) => {
@@ -148,13 +142,6 @@ export function PriorityReminderBanner() {
                         Öffnen
                         <ChevronRight className="h-3 w-3 ml-1" />
                       </Button>
-                      <button
-                        onClick={() => handleDismiss(todo.id)}
-                        className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600"
-                        data-testid={`btn-dismiss-urgent-${todo.id}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
                     </div>
                   </div>
                 </motion.div>

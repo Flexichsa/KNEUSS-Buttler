@@ -4,9 +4,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { 
   Plus, Loader2, Circle, Calendar as CalendarIcon, Check, Eye, EyeOff, 
   Flag, ChevronDown, ChevronRight, Trash2, Edit2, MoreHorizontal,
-  Sun, CalendarDays, Inbox, Tag, X
+  Sun, CalendarDays, Inbox, Tag, X, Mic, MicOff
 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { 
   useTodos, useCreateTodo, useToggleTodo, useUpdateTodo, useDeleteTodo,
   useTodoLabels, useCreateTodoLabel,
@@ -58,6 +59,24 @@ export function TodoWidget() {
   const [selectedPriority, setSelectedPriority] = useState<number>(4);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
+
+  const handleVoiceResult = useCallback((text: string, isFinal: boolean) => {
+    if (isFinal) {
+      setNewTodo(prev => prev + text);
+    }
+  }, []);
+
+  const {
+    isListening,
+    isSupported: voiceSupported,
+    startListening,
+    stopListening,
+    interimTranscript,
+  } = useSpeechRecognition({
+    language: "de-DE",
+    continuous: false,
+    onResult: handleVoiceResult,
+  });
   const [expandedTodos, setExpandedTodos] = useState<Set<number>>(new Set());
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
@@ -447,10 +466,16 @@ export function TodoWidget() {
         </div>
         
         <form onSubmit={handleAddTodo} className="relative">
+          {isListening && interimTranscript && (
+            <div className="mb-2 text-xs text-blue-500 italic truncate flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              {interimTranscript}...
+            </div>
+          )}
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <Input 
-                placeholder="Aufgabe hinzufügen... (z.B. 'Meeting morgen !1 @arbeit')" 
+                placeholder={isListening ? "Ich höre zu..." : "Aufgabe hinzufügen... (z.B. 'Meeting morgen !1 @arbeit')"} 
                 className="bg-slate-50 border-slate-200 text-slate-700 placeholder:text-slate-400 focus-visible:ring-blue-200 focus-visible:border-blue-300"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
@@ -661,6 +686,31 @@ export function TodoWidget() {
                 </PopoverContent>
               </Popover>
             </div>
+
+            {voiceSupported && (
+              <button
+                type="button"
+                onClick={() => isListening ? stopListening() : startListening()}
+                className={cn(
+                  "w-9 h-9 rounded-md flex items-center justify-center transition-all relative",
+                  isListening 
+                    ? "bg-red-500 hover:bg-red-600 text-white" 
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700"
+                )}
+                disabled={createTodo.isPending}
+                data-testid="btn-voice-todo"
+                title={isListening ? "Spracheingabe stoppen" : "Spracheingabe starten"}
+              >
+                {isListening ? (
+                  <>
+                    <MicOff className="h-4 w-4" />
+                    <span className="absolute inset-0 rounded-md animate-ping bg-red-400 opacity-30" />
+                  </>
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </button>
+            )}
             
             <button 
               type="submit"
