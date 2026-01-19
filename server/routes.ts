@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema } from "@shared/schema";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
@@ -275,10 +275,129 @@ export async function registerRoutes(
     }
   });
 
+  // Todo Labels CRUD
+  app.get("/api/todo-labels", async (req, res) => {
+    try {
+      const labels = await storage.getTodoLabels();
+      res.json(labels);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch labels" });
+    }
+  });
+
+  app.post("/api/todo-labels", async (req, res) => {
+    try {
+      const validatedData = insertTodoLabelSchema.parse(req.body);
+      const label = await storage.createTodoLabel(validatedData);
+      res.status(201).json(label);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Invalid label data" });
+    }
+  });
+
+  app.patch("/api/todo-labels/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertTodoLabelSchema.partial().parse(req.body);
+      const label = await storage.updateTodoLabel(id, validatedData);
+      if (!label) {
+        return res.status(404).json({ error: "Label not found" });
+      }
+      res.json(label);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update label" });
+    }
+  });
+
+  app.delete("/api/todo-labels/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteTodoLabel(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete label" });
+    }
+  });
+
+  // Todo Sections CRUD
+  app.get("/api/todo-sections", async (req, res) => {
+    try {
+      const projectId = req.query.projectId !== undefined 
+        ? req.query.projectId === 'null' ? null : parseInt(req.query.projectId as string)
+        : undefined;
+      const sections = await storage.getTodoSections(projectId);
+      res.json(sections);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch sections" });
+    }
+  });
+
+  app.post("/api/todo-sections", async (req, res) => {
+    try {
+      const validatedData = insertTodoSectionSchema.parse(req.body);
+      const section = await storage.createTodoSection(validatedData);
+      res.status(201).json(section);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Invalid section data" });
+    }
+  });
+
+  app.patch("/api/todo-sections/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertTodoSectionSchema.partial().parse(req.body);
+      const section = await storage.updateTodoSection(id, validatedData);
+      if (!section) {
+        return res.status(404).json({ error: "Section not found" });
+      }
+      res.json(section);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update section" });
+    }
+  });
+
+  app.delete("/api/todo-sections/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteTodoSection(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete section" });
+    }
+  });
+
   // Todos CRUD
   app.get("/api/todos", async (req, res) => {
     try {
       const todos = await storage.getTodos();
+      res.json(todos);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch todos" });
+    }
+  });
+
+  app.get("/api/todos/today", async (req, res) => {
+    try {
+      const todos = await storage.getTodosForToday();
+      res.json(todos);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch today's todos" });
+    }
+  });
+
+  app.get("/api/todos/upcoming", async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 7;
+      const todos = await storage.getUpcomingTodos(days);
+      res.json(todos);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch upcoming todos" });
+    }
+  });
+
+  app.get("/api/todos/with-subtasks", async (req, res) => {
+    try {
+      const todos = await storage.getTodosWithSubtasks();
       res.json(todos);
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to fetch todos" });
@@ -307,6 +426,16 @@ export async function registerRoutes(
       res.json(todo);
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to update todo" });
+    }
+  });
+
+  app.post("/api/todos/reorder", async (req, res) => {
+    try {
+      const orderings = req.body as { id: number; orderIndex: number }[];
+      await storage.reorderTodos(orderings);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to reorder todos" });
     }
   });
 

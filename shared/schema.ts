@@ -120,11 +120,36 @@ export const oauthStates = pgTable("oauth_states", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const todoLabels = pgTable("todo_labels", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#6b7280"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const todoSections = pgTable("todo_sections", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const todos = pgTable("todos", {
   id: serial("id").primaryKey(),
   text: text("text").notNull(),
+  description: text("description"),
   completed: boolean("completed").notNull().default(false),
+  priority: integer("priority").notNull().default(4),
   dueDate: timestamp("due_date"),
+  dueTime: text("due_time"),
+  projectId: integer("project_id").references(() => projects.id, { onDelete: 'set null' }),
+  sectionId: integer("section_id").references(() => todoSections.id, { onDelete: 'set null' }),
+  parentTodoId: integer("parent_todo_id"),
+  orderIndex: integer("order_index").notNull().default(0),
+  labelIds: integer("label_ids").array(),
+  recurringPattern: text("recurring_pattern"),
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -166,6 +191,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
+export const insertTodoLabelSchema = createInsertSchema(todoLabels).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTodoSectionSchema = createInsertSchema(todoSections).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTodoSchema = createInsertSchema(todos, {
   dueDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
     if (!val) return null;
@@ -173,14 +208,18 @@ export const insertTodoSchema = createInsertSchema(todos, {
     const parsed = new Date(val);
     return isNaN(parsed.getTime()) ? null : parsed;
   }),
+  labelIds: z.array(z.number()).optional().nullable(),
 }).omit({
   id: true,
   createdAt: true,
+  completedAt: true,
 });
 
 export const updateTodoSchema = z.object({
   completed: z.boolean().optional(),
   text: z.string().optional(),
+  description: z.string().optional().nullable(),
+  priority: z.number().min(1).max(4).optional(),
   dueDate: z.union([z.string(), z.date(), z.null()]).optional().transform(val => {
     if (val === undefined) return undefined;
     if (val === null) return null;
@@ -188,6 +227,13 @@ export const updateTodoSchema = z.object({
     const parsed = new Date(val);
     return isNaN(parsed.getTime()) ? null : parsed;
   }),
+  dueTime: z.string().optional().nullable(),
+  projectId: z.number().optional().nullable(),
+  sectionId: z.number().optional().nullable(),
+  parentTodoId: z.number().optional().nullable(),
+  orderIndex: z.number().optional(),
+  labelIds: z.array(z.number()).optional().nullable(),
+  recurringPattern: z.string().optional().nullable(),
 });
 
 export const insertNoteSchema = createInsertSchema(notes).omit({
@@ -199,8 +245,15 @@ export const insertNoteSchema = createInsertSchema(notes).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export type InsertTodoLabel = z.infer<typeof insertTodoLabelSchema>;
+export type TodoLabel = typeof todoLabels.$inferSelect;
+
+export type InsertTodoSection = z.infer<typeof insertTodoSectionSchema>;
+export type TodoSection = typeof todoSections.$inferSelect;
+
 export type InsertTodo = z.infer<typeof insertTodoSchema>;
 export type Todo = typeof todos.$inferSelect;
+export type TodoWithSubtasks = Todo & { subtasks: Todo[] };
 
 export type InsertNote = z.infer<typeof insertNoteSchema>;
 export type Note = typeof notes.$inferSelect;
