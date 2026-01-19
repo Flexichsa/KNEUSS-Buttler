@@ -3,8 +3,9 @@ import { useEffect, useState, useMemo } from "react";
 import type { DashboardConfig, DashboardTab, WidgetLayout, WidgetSizeMode } from "@shared/schema";
 import { DEFAULT_CONFIG } from "@/components/dashboard/dashboard-grid";
 import { AVAILABLE_WIDGETS, DEFAULT_SIZE_OPTIONS } from "@/components/dashboard/widget-picker";
+import { useAuth } from "@/hooks/use-auth";
 
-function getSessionId(): string {
+function getLocalSessionId(): string {
   let sessionId = localStorage.getItem("session_id");
   if (!sessionId) {
     sessionId = crypto.randomUUID();
@@ -27,14 +28,16 @@ const DEFAULT_TABS: DashboardTab[] = [
 
 export function useDashboardLayout() {
   const queryClient = useQueryClient();
-  const sessionId = getSessionId();
+  const { user } = useAuth();
+  // Use user ID if logged in, otherwise fall back to local session ID
+  const layoutId = user?.id || getLocalSessionId();
   const [tabs, setTabs] = useState<DashboardTab[]>(DEFAULT_TABS);
   const [activeTabId, setActiveTabId] = useState<string>("main");
 
   const { data: savedConfig, isLoading } = useQuery<DashboardConfig | null>({
-    queryKey: ["dashboard-layout", sessionId],
+    queryKey: ["dashboard-layout", layoutId],
     queryFn: async () => {
-      const res = await fetch(`/api/dashboard/layout/${sessionId}`);
+      const res = await fetch(`/api/dashboard/layout/${layoutId}`);
       if (!res.ok) throw new Error("Failed to fetch layout");
       return res.json();
     },
@@ -54,7 +57,7 @@ export function useDashboardLayout() {
         widgetSettings: data.tabs.find(t => t.id === data.activeTabId)?.widgetSettings || {},
       };
       
-      const res = await fetch(`/api/dashboard/layout/${sessionId}`, {
+      const res = await fetch(`/api/dashboard/layout/${layoutId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
@@ -63,7 +66,7 @@ export function useDashboardLayout() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dashboard-layout", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-layout", layoutId] });
     },
   });
 
