@@ -64,8 +64,7 @@ export async function decryptPassword(id: number): Promise<string> {
 
 function handleAuthError(error: Error) {
   if (isUnauthorizedError(error)) {
-    window.location.href = "/api/login";
-    return;
+    throw new Error("Bitte melden Sie sich zuerst an, um Passwörter zu speichern.");
   }
   throw error;
 }
