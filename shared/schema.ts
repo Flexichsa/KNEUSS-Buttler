@@ -284,6 +284,25 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
 
+export const todoAttachments = pgTable("todo_attachments", {
+  id: serial("id").primaryKey(),
+  todoId: integer("todo_id").notNull().references(() => todos.id, { onDelete: 'cascade' }),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  path: text("path").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTodoAttachmentSchema = createInsertSchema(todoAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTodoAttachment = z.infer<typeof insertTodoAttachmentSchema>;
+export type TodoAttachment = typeof todoAttachments.$inferSelect;
+
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
   type: text("type").notNull().default("company"),

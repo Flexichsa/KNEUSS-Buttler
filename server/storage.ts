@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment } from "@shared/schema";
 import { eq, and, lt, desc, isNull, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -74,6 +74,11 @@ export interface IStorage {
   createContactPerson(person: InsertContactPerson): Promise<ContactPerson>;
   updateContactPerson(id: number, person: Partial<InsertContactPerson>): Promise<ContactPerson | undefined>;
   deleteContactPerson(id: number): Promise<void>;
+  
+  // Todo Attachments
+  getTodoAttachments(todoId: number): Promise<TodoAttachment[]>;
+  createTodoAttachment(attachment: InsertTodoAttachment): Promise<TodoAttachment>;
+  deleteTodoAttachment(id: number): Promise<TodoAttachment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -416,6 +421,21 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContactPerson(id: number): Promise<void> {
     await db.delete(contactPersons).where(eq(contactPersons.id, id));
+  }
+
+  // Todo Attachments
+  async getTodoAttachments(todoId: number): Promise<TodoAttachment[]> {
+    return db.select().from(todoAttachments).where(eq(todoAttachments.todoId, todoId)).orderBy(todoAttachments.createdAt);
+  }
+
+  async createTodoAttachment(attachment: InsertTodoAttachment): Promise<TodoAttachment> {
+    const [newAttachment] = await db.insert(todoAttachments).values(attachment).returning();
+    return newAttachment;
+  }
+
+  async deleteTodoAttachment(id: number): Promise<TodoAttachment | undefined> {
+    const [deleted] = await db.delete(todoAttachments).where(eq(todoAttachments.id, id)).returning();
+    return deleted;
   }
 }
 
