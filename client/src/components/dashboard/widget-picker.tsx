@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink, Key } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -466,6 +466,32 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
         <div className="flex items-center gap-1 text-white/60 text-[10px] mt-1">
           <ExternalLink className="w-2.5 h-2.5" />
           <span>Öffnen</span>
+        </div>
+      </div>
+    )
+  },
+  { 
+    id: "passwords", 
+    name: "Passwörter", 
+    description: "Sicherer Passwortmanager",
+    icon: <Key className="h-5 w-5" />, 
+    defaultSize: { w: 4, h: 5 }, 
+    minSize: { w: 2, h: 2 },
+    previewGradient: "from-purple-500 to-indigo-600",
+    category: "tools",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <Key className="w-3 h-3" />
+          <span>Google</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <Key className="w-3 h-3" />
+          <span>Netflix</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/60 text-xs">
+          <Key className="w-3 h-3" />
+          <span>••••••••</span>
         </div>
       </div>
     )

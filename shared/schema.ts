@@ -343,3 +343,25 @@ export type InsertContactPerson = z.infer<typeof insertContactPersonSchema>;
 export type ContactPerson = typeof contactPersons.$inferSelect;
 
 export type ContactWithPersons = Contact & { persons: ContactPerson[] };
+
+export const passwords = pgTable("passwords", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  username: text("username"),
+  encryptedPassword: text("encrypted_password").notNull(),
+  url: text("url"),
+  notes: text("notes"),
+  category: text("category").default("general"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPasswordSchema = createInsertSchema(passwords).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPassword = z.infer<typeof insertPasswordSchema>;
+export type Password = typeof passwords.$inferSelect;
