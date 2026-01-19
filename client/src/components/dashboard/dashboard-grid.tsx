@@ -424,6 +424,11 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 iconMode && "icon-widget"
               )}
               data-size-mode={sizeMode}
+              onDoubleClick={() => {
+                if (!isDraggingRef.current && canExpandWidget(widgetId)) {
+                  handleWidgetExpand(widgetId);
+                }
+              }}
             >
               {iconMode ? (
                 <div className="relative w-full h-full">
