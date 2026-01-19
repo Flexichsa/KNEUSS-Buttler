@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Bell, Menu, Settings } from "lucide-react";
+import { ArrowLeft, Bell, Menu, Settings, LogIn, LogOut } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import logoUrl from "@assets/logo_1766060914666.png";
+import { useAuth } from "@/hooks/use-auth";
 
 interface HeaderProps {
   title?: string;
@@ -16,6 +17,7 @@ export default function Header({
 }: HeaderProps) {
   const [location, setLocation] = useLocation();
   const isHomePage = location === "/";
+  const { user, isLoading: authLoading, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-primary shadow-md transition-all">
@@ -63,6 +65,31 @@ export default function Header({
           >
             <Settings className="h-5 w-5" />
           </Button>
+          {!authLoading && (
+            user ? (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-white/20 rounded-full flex items-center gap-2"
+                onClick={() => logout()}
+                data-testid="logout-button"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Abmelden</span>
+              </Button>
+            ) : (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-white hover:bg-white/20 rounded-full flex items-center gap-2"
+                onClick={() => window.location.href = "/api/login"}
+                data-testid="login-button"
+              >
+                <LogIn className="h-4 w-4" />
+                <span className="hidden sm:inline">Anmelden</span>
+              </Button>
+            )
+          )}
         </div>
       </div>
     </header>
