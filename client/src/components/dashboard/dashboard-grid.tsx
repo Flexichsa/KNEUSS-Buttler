@@ -286,7 +286,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   const canExpandWidget = (widgetId: string) => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
-    return ["contacts", "todo", "mail", "calendar", "asana", "mstodo", "onedrive", "docupload"].includes(widgetType);
+    return ["contacts", "todo", "mail", "calendar", "asana", "mstodo", "onedrive", "docupload", "statusreport", "assistant"].includes(widgetType);
   };
 
   const handleWidgetExpand = useCallback((widgetId: string) => {
