@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments } from "@shared/schema";
+import { db } from "../db";
+import { eq } from "drizzle-orm";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
@@ -446,6 +448,133 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to delete todo" });
+    }
+  });
+
+  // Todo Attachments
+  const attachmentUpload = multer({ 
+    dest: "uploads/attachments",
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const allowedTypes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain', 'text/csv'
+      ];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Dateityp nicht erlaubt'));
+      }
+    }
+  });
+
+  // Ensure upload directory exists
+  if (!fs.existsSync("uploads/attachments")) {
+    fs.mkdirSync("uploads/attachments", { recursive: true });
+  }
+
+  app.get("/api/todos/:todoId/attachments", async (req, res) => {
+    try {
+      const todoId = parseInt(req.params.todoId);
+      if (isNaN(todoId)) {
+        return res.status(400).json({ error: "Invalid todo ID" });
+      }
+      const attachments = await storage.getTodoAttachments(todoId);
+      res.json(attachments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch attachments" });
+    }
+  });
+
+  app.post("/api/todos/:todoId/attachments", attachmentUpload.single('file'), async (req, res) => {
+    try {
+      const todoId = parseInt(req.params.todoId);
+      if (isNaN(todoId)) {
+        return res.status(400).json({ error: "Invalid todo ID" });
+      }
+      
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+      const attachment = await storage.createTodoAttachment({
+        todoId,
+        filename: file.filename,
+        originalName: sanitizedOriginalName,
+        mimeType: file.mimetype,
+        size: file.size,
+        path: file.path,
+      });
+
+      res.status(201).json(attachment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to upload attachment" });
+    }
+  });
+
+  app.get("/api/attachments/:id/download", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [attachment] = await db.select().from(todoAttachments).where(eq(todoAttachments.id, id));
+      
+      if (!attachment) {
+        return res.status(404).json({ error: "Attachment not found" });
+      }
+
+      if (!fs.existsSync(attachment.path)) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      res.download(attachment.path, attachment.originalName);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to download attachment" });
+    }
+  });
+
+  app.get("/api/attachments/:id/preview", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [attachment] = await db.select().from(todoAttachments).where(eq(todoAttachments.id, id));
+      
+      if (!attachment) {
+        return res.status(404).json({ error: "Attachment not found" });
+      }
+
+      if (!fs.existsSync(attachment.path)) {
+        return res.status(404).json({ error: "File not found" });
+      }
+
+      res.setHeader('Content-Type', attachment.mimeType);
+      res.sendFile(path.resolve(attachment.path));
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to preview attachment" });
+    }
+  });
+
+  app.delete("/api/attachments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteTodoAttachment(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Attachment not found" });
+      }
+
+      // Delete the file from disk
+      if (fs.existsSync(deleted.path)) {
+        fs.unlinkSync(deleted.path);
+      }
+
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete attachment" });
     }
   });
 

@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TaskEditModal } from "@/components/task-edit-modal";
 
 type ViewMode = 'inbox' | 'today' | 'upcoming' | 'all';
 
@@ -61,6 +62,8 @@ export function TodoWidget() {
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
   const [newLabelName, setNewLabelName] = useState("");
+  const [selectedTodoForModal, setSelectedTodoForModal] = useState<Todo | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAddTodo = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,10 +278,19 @@ export function TodoWidget() {
             ) : (
               <span 
                 className={cn(
-                  "text-sm block cursor-pointer",
+                  "text-sm block cursor-pointer hover:text-blue-600 transition-colors",
                   todo.completed ? "text-slate-400 line-through" : "text-slate-700"
                 )}
-                onDoubleClick={() => startEditing(todo)}
+                onClick={() => {
+                  setSelectedTodoForModal(todo);
+                  setIsModalOpen(true);
+                }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  startEditing(todo);
+                }}
+                data-testid={`todo-text-${todo.id}`}
+                title="Klicken zum Öffnen, Doppelklick zum Bearbeiten"
               >
                 {todo.text}
               </span>
@@ -744,6 +756,15 @@ export function TodoWidget() {
           </div>
         )}
       </div>
+
+      <TaskEditModal
+        todo={selectedTodoForModal}
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          setIsModalOpen(open);
+          if (!open) setSelectedTodoForModal(null);
+        }}
+      />
     </div>
   );
 }

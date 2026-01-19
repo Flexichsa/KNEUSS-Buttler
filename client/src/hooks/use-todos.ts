@@ -381,3 +381,86 @@ export const PRIORITY_LABELS: Record<number, string> = {
   3: 'Priorität 3',
   4: 'Priorität 4',
 };
+
+export interface TodoAttachment {
+  id: number;
+  todoId: number;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  path: string;
+  createdAt: string;
+}
+
+export function useTodoAttachments(todoId: number | null) {
+  return useQuery({
+    queryKey: ['todo-attachments', todoId],
+    queryFn: async () => {
+      if (!todoId) return [];
+      const res = await fetch(`/api/todos/${todoId}/attachments`);
+      if (!res.ok) throw new Error('Failed to fetch attachments');
+      return res.json() as Promise<TodoAttachment[]>;
+    },
+    enabled: !!todoId,
+  });
+}
+
+export function useUploadAttachment() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ todoId, file }: { todoId: number; file: File }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const res = await fetch(`/api/todos/${todoId}/attachments`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error('Failed to upload attachment');
+      return res.json() as Promise<TodoAttachment>;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['todo-attachments', variables.todoId] });
+      toast({
+        title: "Datei hochgeladen",
+        description: "Die Datei wurde erfolgreich angehängt",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Fehler",
+        description: "Datei konnte nicht hochgeladen werden",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useDeleteAttachment() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, todoId }: { id: number; todoId: number }) => {
+      const res = await fetch(`/api/attachments/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete attachment');
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['todo-attachments', variables.todoId] });
+      toast({
+        title: "Datei gelöscht",
+        description: "Die Datei wurde entfernt",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Fehler",
+        description: "Datei konnte nicht gelöscht werden",
+        variant: "destructive",
+      });
+    },
+  });
+}

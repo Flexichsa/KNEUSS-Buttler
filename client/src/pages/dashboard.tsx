@@ -10,6 +10,7 @@ import { SettingsView } from "@/components/views/settings-view";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { WidgetPicker } from "@/components/dashboard/widget-picker";
 import { DashboardTabs } from "@/components/dashboard/dashboard-tabs";
+import { PriorityReminderBanner } from "@/components/priority-reminder-banner";
 import { useDashboardLayout } from "@/hooks/use-dashboard-layout";
 import { useAuth } from "@/hooks/use-auth";
 import { Search, Loader2 } from "lucide-react";
@@ -258,6 +259,11 @@ export default function Dashboard() {
               onRenameTab={renameTab}
               onDeleteTab={deleteTab}
             />
+          )}
+
+          {/* Priority 1 Tasks Reminder */}
+          {activeTab === "dashboard" && (
+            <PriorityReminderBanner />
           )}
 
           {/* Content Area */}
