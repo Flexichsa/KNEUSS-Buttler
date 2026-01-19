@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, passwords, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword } from "@shared/schema";
 import { eq, and, lt, desc, isNull, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -79,6 +79,13 @@ export interface IStorage {
   getTodoAttachments(todoId: number): Promise<TodoAttachment[]>;
   createTodoAttachment(attachment: InsertTodoAttachment): Promise<TodoAttachment>;
   deleteTodoAttachment(id: number): Promise<TodoAttachment | undefined>;
+  
+  // Passwords
+  getPasswords(userId: string): Promise<Password[]>;
+  getPassword(id: number, userId: string): Promise<Password | undefined>;
+  createPassword(password: InsertPassword): Promise<Password>;
+  updatePassword(id: number, userId: string, password: Partial<InsertPassword>): Promise<Password | undefined>;
+  deletePassword(id: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -436,6 +443,36 @@ export class DatabaseStorage implements IStorage {
   async deleteTodoAttachment(id: number): Promise<TodoAttachment | undefined> {
     const [deleted] = await db.delete(todoAttachments).where(eq(todoAttachments.id, id)).returning();
     return deleted;
+  }
+
+  // Passwords
+  async getPasswords(userId: string): Promise<Password[]> {
+    return db.select().from(passwords).where(eq(passwords.userId, userId)).orderBy(desc(passwords.updatedAt));
+  }
+
+  async getPassword(id: number, userId: string): Promise<Password | undefined> {
+    const [password] = await db.select().from(passwords).where(
+      and(eq(passwords.id, id), eq(passwords.userId, userId))
+    );
+    return password;
+  }
+
+  async createPassword(password: InsertPassword): Promise<Password> {
+    const [newPassword] = await db.insert(passwords).values(password).returning();
+    return newPassword;
+  }
+
+  async updatePassword(id: number, userId: string, passwordUpdate: Partial<InsertPassword>): Promise<Password | undefined> {
+    const [updated] = await db
+      .update(passwords)
+      .set({ ...passwordUpdate, updatedAt: new Date() })
+      .where(and(eq(passwords.id, id), eq(passwords.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deletePassword(id: number, userId: string): Promise<void> {
+    await db.delete(passwords).where(and(eq(passwords.id, id), eq(passwords.userId, userId)));
   }
 }
 

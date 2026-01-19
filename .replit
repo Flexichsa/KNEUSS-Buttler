@@ -41,3 +41,8 @@ waitForPort = 5000
 [agent]
 mockupState = "FULLSTACK"
 integrations = ["outlook:1.0.0", "javascript_openai_ai_integrations:1.0.0", "onedrive:1.0.0", "javascript_log_in_with_replit:2.0.0", "asana:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+ENCRYPTION_KEY = "8ae997b2daa309445dfbd907524f885b6ac75e39647b0fec42d359fd0b33a2fd"

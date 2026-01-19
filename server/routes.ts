@@ -1,13 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema } from "@shared/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { isAsanaConnected, getAsanaUser, getWorkspaces, getProjects as getAsanaProjects, getAllTasks as getAsanaTasks } from "./asana";
 import multer from "multer";
 import fs from "fs";
@@ -1285,6 +1285,116 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to delete contact person" });
+    }
+  });
+
+  // Password Manager CRUD (requires authentication for user isolation)
+  app.get("/api/passwords", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const passwords = await storage.getPasswords(userId);
+      res.json(passwords);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch passwords" });
+    }
+  });
+
+  app.get("/api/passwords/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const id = parseInt(req.params.id);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const password = await storage.getPassword(id, userId);
+      if (!password) {
+        return res.status(404).json({ error: "Password not found" });
+      }
+      res.json(password);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch password" });
+    }
+  });
+
+  app.get("/api/passwords/:id/decrypt", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const id = parseInt(req.params.id);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const password = await storage.getPassword(id, userId);
+      if (!password) {
+        return res.status(404).json({ error: "Password not found" });
+      }
+      const { decryptPassword } = await import("./crypto");
+      const decrypted = decryptPassword(password.encryptedPassword);
+      res.json({ password: decrypted });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to decrypt password" });
+    }
+  });
+
+  app.post("/api/passwords", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const { password, ...rest } = req.body;
+      if (!password) {
+        return res.status(400).json({ error: "Password is required" });
+      }
+      const { encryptPassword } = await import("./crypto");
+      const encryptedPassword = encryptPassword(password);
+      const validatedData = insertPasswordSchema.parse({ ...rest, userId, encryptedPassword });
+      const created = await storage.createPassword(validatedData);
+      res.status(201).json(created);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to create password" });
+    }
+  });
+
+  app.patch("/api/passwords/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const id = parseInt(req.params.id);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const { password, ...rest } = req.body;
+      let updateData = { ...rest };
+      
+      if (password) {
+        const { encryptPassword } = await import("./crypto");
+        updateData.encryptedPassword = encryptPassword(password);
+      }
+      
+      const validatedData = insertPasswordSchema.partial().parse(updateData);
+      const updated = await storage.updatePassword(id, userId, validatedData);
+      if (!updated) {
+        return res.status(404).json({ error: "Password not found" });
+      }
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update password" });
+    }
+  });
+
+  app.delete("/api/passwords/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const id = parseInt(req.params.id);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      await storage.deletePassword(id, userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete password" });
     }
   });
 
