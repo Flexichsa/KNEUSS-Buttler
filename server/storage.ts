@@ -1,6 +1,6 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons } from "@shared/schema";
-import { eq, and, lt, desc, isNull } from "drizzle-orm";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks } from "@shared/schema";
+import { eq, and, lt, desc, isNull, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -18,11 +18,28 @@ export interface IStorage {
   getAndDeleteOAuthState(state: string): Promise<OAuthState | undefined>;
   cleanupExpiredOAuthStates(): Promise<void>;
   
+  // Todo Labels
+  getTodoLabels(): Promise<TodoLabel[]>;
+  createTodoLabel(label: InsertTodoLabel): Promise<TodoLabel>;
+  updateTodoLabel(id: number, updates: Partial<InsertTodoLabel>): Promise<TodoLabel | undefined>;
+  deleteTodoLabel(id: number): Promise<void>;
+  
+  // Todo Sections
+  getTodoSections(projectId?: number | null): Promise<TodoSection[]>;
+  createTodoSection(section: InsertTodoSection): Promise<TodoSection>;
+  updateTodoSection(id: number, updates: Partial<InsertTodoSection>): Promise<TodoSection | undefined>;
+  deleteTodoSection(id: number): Promise<void>;
+  
   // Todos
   getTodos(): Promise<Todo[]>;
+  getTodosWithSubtasks(): Promise<TodoWithSubtasks[]>;
+  getTodosByProject(projectId: number | null): Promise<Todo[]>;
+  getTodosForToday(): Promise<Todo[]>;
+  getUpcomingTodos(days: number): Promise<Todo[]>;
   createTodo(todo: InsertTodo): Promise<Todo>;
-  updateTodo(id: number, updates: Partial<Pick<Todo, 'completed' | 'dueDate' | 'text'>>): Promise<Todo | undefined>;
+  updateTodo(id: number, updates: Partial<Todo>): Promise<Todo | undefined>;
   deleteTodo(id: number): Promise<void>;
+  reorderTodos(orderings: { id: number; orderIndex: number }[]): Promise<void>;
   
   // Notes
   getNotes(): Promise<Note[]>;
@@ -124,9 +141,97 @@ export class DatabaseStorage implements IStorage {
     await db.delete(oauthStates).where(lt(oauthStates.createdAt, tenMinutesAgo));
   }
 
+  // Todo Labels
+  async getTodoLabels(): Promise<TodoLabel[]> {
+    return db.select().from(todoLabels).orderBy(todoLabels.name);
+  }
+
+  async createTodoLabel(label: InsertTodoLabel): Promise<TodoLabel> {
+    const [newLabel] = await db.insert(todoLabels).values(label).returning();
+    return newLabel;
+  }
+
+  async updateTodoLabel(id: number, updates: Partial<InsertTodoLabel>): Promise<TodoLabel | undefined> {
+    const [updated] = await db.update(todoLabels).set(updates).where(eq(todoLabels.id, id)).returning();
+    return updated;
+  }
+
+  async deleteTodoLabel(id: number): Promise<void> {
+    await db.delete(todoLabels).where(eq(todoLabels.id, id));
+  }
+
+  // Todo Sections
+  async getTodoSections(projectId?: number | null): Promise<TodoSection[]> {
+    if (projectId !== undefined) {
+      if (projectId === null) {
+        return db.select().from(todoSections).where(isNull(todoSections.projectId)).orderBy(todoSections.orderIndex);
+      }
+      return db.select().from(todoSections).where(eq(todoSections.projectId, projectId)).orderBy(todoSections.orderIndex);
+    }
+    return db.select().from(todoSections).orderBy(todoSections.orderIndex);
+  }
+
+  async createTodoSection(section: InsertTodoSection): Promise<TodoSection> {
+    const [newSection] = await db.insert(todoSections).values(section).returning();
+    return newSection;
+  }
+
+  async updateTodoSection(id: number, updates: Partial<InsertTodoSection>): Promise<TodoSection | undefined> {
+    const [updated] = await db.update(todoSections).set(updates).where(eq(todoSections.id, id)).returning();
+    return updated;
+  }
+
+  async deleteTodoSection(id: number): Promise<void> {
+    await db.delete(todoSections).where(eq(todoSections.id, id));
+  }
+
   // Todos
   async getTodos(): Promise<Todo[]> {
-    return db.select().from(todos).orderBy(todos.createdAt);
+    return db.select().from(todos).orderBy(asc(todos.orderIndex), asc(todos.createdAt));
+  }
+
+  async getTodosWithSubtasks(): Promise<TodoWithSubtasks[]> {
+    const allTodos = await db.select().from(todos).orderBy(asc(todos.orderIndex), asc(todos.createdAt));
+    const parentTodos = allTodos.filter(t => !t.parentTodoId);
+    return parentTodos.map(parent => ({
+      ...parent,
+      subtasks: allTodos.filter(t => t.parentTodoId === parent.id)
+    }));
+  }
+
+  async getTodosByProject(projectId: number | null): Promise<Todo[]> {
+    if (projectId === null) {
+      return db.select().from(todos).where(isNull(todos.projectId)).orderBy(asc(todos.orderIndex));
+    }
+    return db.select().from(todos).where(eq(todos.projectId, projectId)).orderBy(asc(todos.orderIndex));
+  }
+
+  async getTodosForToday(): Promise<Todo[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return db.select().from(todos).where(
+      and(
+        gte(todos.dueDate, today),
+        lt(todos.dueDate, tomorrow),
+        eq(todos.completed, false)
+      )
+    ).orderBy(asc(todos.priority), asc(todos.orderIndex));
+  }
+
+  async getUpcomingTodos(days: number): Promise<Todo[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + days);
+    return db.select().from(todos).where(
+      and(
+        gte(todos.dueDate, today),
+        lte(todos.dueDate, endDate),
+        eq(todos.completed, false)
+      )
+    ).orderBy(asc(todos.dueDate), asc(todos.priority));
   }
 
   async createTodo(todo: InsertTodo): Promise<Todo> {
@@ -134,17 +239,28 @@ export class DatabaseStorage implements IStorage {
     return newTodo;
   }
 
-  async updateTodo(id: number, updates: Partial<Pick<Todo, 'completed' | 'dueDate' | 'text'>>): Promise<Todo | undefined> {
-    const [updated] = await db
-      .update(todos)
-      .set(updates)
-      .where(eq(todos.id, id))
-      .returning();
+  async updateTodo(id: number, updates: Partial<Todo>): Promise<Todo | undefined> {
+    const updateData: any = { ...updates };
+    if (updates.completed === true && !updates.completedAt) {
+      updateData.completedAt = new Date();
+    } else if (updates.completed === false) {
+      updateData.completedAt = null;
+    }
+    const [updated] = await db.update(todos).set(updateData).where(eq(todos.id, id)).returning();
     return updated;
   }
 
   async deleteTodo(id: number): Promise<void> {
+    await db.delete(todos).where(eq(todos.parentTodoId, id));
     await db.delete(todos).where(eq(todos.id, id));
+  }
+
+  async reorderTodos(orderings: { id: number; orderIndex: number }[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      for (const item of orderings) {
+        await tx.update(todos).set({ orderIndex: item.orderIndex }).where(eq(todos.id, item.id));
+      }
+    });
   }
 
   // Notes
