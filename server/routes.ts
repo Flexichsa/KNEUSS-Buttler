@@ -49,13 +49,16 @@ export async function registerRoutes(
   app.post("/api/auth/register", async (req, res) => {
     try {
       const data = registerSchema.parse(req.body);
+      console.log("[Register] Attempting registration for:", data.email);
       
-      const existingUser = await findUserByEmail(data.email);
+      const existingUser = await findUserByEmail(data.email.toLowerCase().trim());
+      console.log("[Register] Existing user check result:", existingUser ? "FOUND" : "NOT FOUND");
       if (existingUser) {
+        console.log("[Register] Blocking registration - email exists:", existingUser.email);
         return res.status(400).json({ error: "E-Mail-Adresse wird bereits verwendet" });
       }
       
-      const user = await createUser(data);
+      const user = await createUser({ ...data, email: data.email.toLowerCase().trim() });
       
       req.login({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } as any, (err: any) => {
         if (err) {
