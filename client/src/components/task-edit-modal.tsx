@@ -261,11 +261,12 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
           </div>
 
           <div>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">Notizen</label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Beschreibung hinzufügen..."
-              className="min-h-[80px] resize-none border-slate-200"
+              placeholder="Notizen, Details oder Kommentare hinzufügen..."
+              className="min-h-[120px] resize-y border-slate-200 text-sm leading-relaxed"
               data-testid="input-task-description"
             />
           </div>

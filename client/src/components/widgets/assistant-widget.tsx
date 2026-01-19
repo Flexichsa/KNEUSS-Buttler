@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, Sparkles, User, MoreHorizontal, Loader2 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Send, Bot, Sparkles, User, MoreHorizontal, Loader2, Mic, MicOff } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAssistantChat } from "@/hooks/use-assistant";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 
 interface Message {
   id: number;
@@ -20,6 +21,24 @@ export function AssistantWidget() {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const chat = useAssistantChat();
+
+  const handleVoiceResult = useCallback((text: string, isFinal: boolean) => {
+    if (isFinal) {
+      setInput(prev => prev + text);
+    }
+  }, []);
+
+  const {
+    isListening,
+    isSupported: voiceSupported,
+    startListening,
+    stopListening,
+    interimTranscript,
+  } = useSpeechRecognition({
+    language: "de-DE",
+    continuous: false,
+    onResult: handleVoiceResult,
+  });
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -138,14 +157,43 @@ export function AssistantWidget() {
       </div>
       
       <div className="p-4 border-t border-white/10 relative z-10">
+        {isListening && interimTranscript && (
+          <div className="mb-2 text-xs text-violet-300 italic truncate">
+            {interimTranscript}...
+          </div>
+        )}
         <form onSubmit={sendMessage} className="flex w-full gap-2 items-center">
           <Input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Frage stellen..." 
+            placeholder={isListening ? "Ich höre zu..." : "Frage stellen..."} 
             className="bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-violet-500/50 focus-visible:bg-white/15 transition-all h-10"
             disabled={chat.isPending}
           />
+          {voiceSupported && (
+            <Button
+              type="button"
+              size="icon"
+              onClick={() => isListening ? stopListening() : startListening()}
+              className={cn(
+                "shrink-0 h-10 w-10 rounded-xl transition-all relative",
+                isListening 
+                  ? "bg-red-500 hover:bg-red-600 text-white" 
+                  : "bg-white/10 hover:bg-white/20 text-white/60 hover:text-white"
+              )}
+              disabled={chat.isPending}
+              data-testid="btn-voice-assistant"
+            >
+              {isListening ? (
+                <>
+                  <MicOff className="h-4 w-4" />
+                  <span className="absolute inset-0 rounded-xl animate-ping bg-red-400 opacity-30" />
+                </>
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           <Button 
             type="submit" 
             size="icon" 
