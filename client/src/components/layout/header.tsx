@@ -82,7 +82,7 @@ export default function Header({
                 variant="ghost" 
                 size="sm"
                 className="text-white hover:bg-white/20 rounded-full flex items-center gap-2"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => setLocation("/login")}
                 data-testid="login-button"
               >
                 <LogIn className="h-4 w-4" />

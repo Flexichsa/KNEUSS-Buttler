@@ -9,6 +9,8 @@ import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { isAsanaConnected, getAsanaUser, getWorkspaces, getProjects as getAsanaProjects, getAllTasks as getAsanaTasks } from "./asana";
+import { findUserByEmail, findUserById, createUser, verifyPassword, getUserId, updateUserPassword, updateUserProfile, isAuthenticatedCustom } from "./customAuth";
+import { loginSchema, registerSchema } from "@shared/schema";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
@@ -42,6 +44,117 @@ export async function registerRoutes(
   // Setup Replit Auth (must be before other routes)
   await setupAuth(app);
   registerAuthRoutes(app);
+
+  // Custom Login/Register Endpoints
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const data = registerSchema.parse(req.body);
+      
+      const existingUser = await findUserByEmail(data.email);
+      if (existingUser) {
+        return res.status(400).json({ error: "E-Mail-Adresse wird bereits verwendet" });
+      }
+      
+      const user = await createUser(data);
+      
+      req.login({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } as any, (err: any) => {
+        if (err) {
+          return res.status(500).json({ error: "Registrierung erfolgreich, aber Anmeldung fehlgeschlagen" });
+        }
+        res.status(201).json({ 
+          id: user.id, 
+          email: user.email, 
+          firstName: user.firstName, 
+          lastName: user.lastName 
+        });
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Registrierung fehlgeschlagen" });
+    }
+  });
+
+  app.post("/api/auth/login-password", async (req, res) => {
+    try {
+      const data = loginSchema.parse(req.body);
+      
+      const user = await findUserByEmail(data.email);
+      if (!user || !user.passwordHash) {
+        return res.status(401).json({ error: "Ungültige E-Mail oder Passwort" });
+      }
+      
+      const isValid = await verifyPassword(data.password, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ error: "Ungültige E-Mail oder Passwort" });
+      }
+      
+      req.login({ id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } as any, (err: any) => {
+        if (err) {
+          return res.status(500).json({ error: "Anmeldung fehlgeschlagen" });
+        }
+        res.json({ 
+          id: user.id, 
+          email: user.email, 
+          firstName: user.firstName, 
+          lastName: user.lastName 
+        });
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Anmeldung fehlgeschlagen" });
+    }
+  });
+
+  app.post("/api/auth/change-password", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Nicht authentifiziert" });
+      }
+      
+      const { currentPassword, newPassword } = req.body;
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: "Neues Passwort muss mindestens 6 Zeichen haben" });
+      }
+      
+      const user = await findUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Benutzer nicht gefunden" });
+      }
+      
+      if (user.passwordHash && currentPassword) {
+        const isValid = await verifyPassword(currentPassword, user.passwordHash);
+        if (!isValid) {
+          return res.status(401).json({ error: "Aktuelles Passwort ist falsch" });
+        }
+      }
+      
+      await updateUserPassword(userId, newPassword);
+      res.json({ success: true, message: "Passwort erfolgreich geändert" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Passwort ändern fehlgeschlagen" });
+    }
+  });
+
+  app.patch("/api/auth/profile", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Nicht authentifiziert" });
+      }
+      
+      const { firstName, lastName, email } = req.body;
+      await updateUserProfile(userId, { firstName, lastName, email });
+      
+      const user = await findUserById(userId);
+      res.json({ 
+        id: user?.id, 
+        email: user?.email, 
+        firstName: user?.firstName, 
+        lastName: user?.lastName 
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Profil aktualisieren fehlgeschlagen" });
+    }
+  });
 
   // OAuth Configuration Status
   app.get("/api/auth/oauth-config", async (req, res) => {
@@ -1289,9 +1402,9 @@ export async function registerRoutes(
   });
 
   // Password Manager CRUD (requires authentication for user isolation)
-  app.get("/api/passwords", isAuthenticated, async (req, res) => {
+  app.get("/api/passwords", isAuthenticatedCustom, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -1302,9 +1415,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/passwords/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/passwords/:id", isAuthenticatedCustom, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -1319,9 +1432,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/passwords/:id/decrypt", isAuthenticated, async (req, res) => {
+  app.get("/api/passwords/:id/decrypt", isAuthenticatedCustom, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -1338,9 +1451,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/passwords", isAuthenticated, async (req, res) => {
+  app.post("/api/passwords", isAuthenticatedCustom, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -1358,9 +1471,9 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/passwords/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/passwords/:id", isAuthenticatedCustom, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -1384,9 +1497,9 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/passwords/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/passwords/:id", isAuthenticatedCustom, async (req, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const userId = getUserId(req);
       const id = parseInt(req.params.id);
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
