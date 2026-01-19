@@ -26,6 +26,7 @@ interface ProcessedDocument {
   suggestedName: string;
   companyName: string;
   documentType: string;
+  subject: string;
   date: string;
   status: "processing" | "ready" | "error";
   error?: string;
@@ -63,6 +64,7 @@ export function DocumentUploadWidget() {
               suggestedName: data.suggestedName,
               companyName: data.companyName,
               documentType: data.documentType,
+              subject: data.subject || "",
               date: data.date,
               downloadUrl: data.downloadUrl,
             }
@@ -90,6 +92,7 @@ export function DocumentUploadWidget() {
         suggestedName: "",
         companyName: "",
         documentType: "",
+        subject: "",
         date: new Date().toISOString().split("T")[0],
         status: "processing",
         file: file,
@@ -249,10 +252,16 @@ export function DocumentUploadWidget() {
                           <p className="text-sm font-medium text-emerald-800 truncate">
                             {doc.suggestedName}
                           </p>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
                             <span>{doc.companyName}</span>
                             <span>•</span>
                             <span>{doc.documentType}</span>
+                            {doc.subject && (
+                              <>
+                                <span>•</span>
+                                <span className="text-emerald-700 font-medium">{doc.subject}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       )}

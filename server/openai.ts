@@ -77,6 +77,7 @@ export async function summarizeEmails(emails: Array<{subject: string, sender: st
 export interface DocumentAnalysis {
   companyName: string;
   documentType: string;
+  subject: string;
   date: string;
   suggestedName: string;
 }
@@ -87,6 +88,7 @@ export async function analyzeDocument(textContent: string, originalFileName: str
   const fallbackResult = {
     companyName: 'Unbekannt',
     documentType: 'Dokument',
+    subject: '',
     date: today,
     suggestedName: `${today}_Unbekannt_Dokument`,
   };
@@ -99,13 +101,15 @@ export async function analyzeDocument(textContent: string, originalFileName: str
           role: 'system',
           content: `You are a document analysis assistant. Analyze the document content and extract:
 1. Company/Organization name (the sender or issuer of the document)
-2. Document type (e.g., Rechnung, Vertrag, Angebot, Lieferschein, Brief, Bericht, etc.)
-3. Document date (if found in content, otherwise use today's date)
+2. Document type (e.g., Rechnung, Vertrag, Offerte, Angebot, Lieferschein, Brief, Bericht, etc.)
+3. Subject/Content summary - what is the document about? (e.g., "Tablets (Windows 10.1\")", "Drucker", "Büromöbel", "IT-Dienstleistungen")
+4. Document date (if found in content, otherwise use today's date)
 
 Respond in JSON format only:
 {
   "companyName": "extracted company name",
   "documentType": "document type in German",
+  "subject": "brief description of what the document is about",
   "date": "YYYY-MM-DD format"
 }
 
@@ -113,6 +117,7 @@ Rules:
 - Use the company that SENT or ISSUED the document, not the recipient
 - If company name not found, use "Unbekannt"
 - If document type unclear, use "Dokument"
+- For subject: extract the main product/service being offered, invoiced, or discussed. Keep it short (2-5 words). For offers/quotes, list the main items.
 - If no date in content, use today's date: ${today}
 - Keep company names short and clean (no "GmbH", "AG", etc.)
 - German document types preferred`
@@ -133,13 +138,19 @@ Rules:
       const parsed = JSON.parse(jsonMatch[0]);
       const companyName = (parsed.companyName || 'Unbekannt').replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '').trim();
       const documentType = (parsed.documentType || 'Dokument').replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '').trim();
+      const subject = (parsed.subject || '').replace(/[^a-zA-Z0-9äöüÄÖÜß\s\-\(\)\"\.]/g, '').trim();
       const date = parsed.date || today;
       
-      const suggestedName = `${date}_${companyName}_${documentType}`.replace(/\s+/g, '-');
+      let suggestedName = `${date}_${companyName}_${documentType}`;
+      if (subject) {
+        suggestedName += ` ${subject}`;
+      }
+      suggestedName = suggestedName.replace(/\s+/g, '-').replace(/--+/g, '-');
       
       return {
         companyName,
         documentType,
+        subject,
         date,
         suggestedName,
       };
