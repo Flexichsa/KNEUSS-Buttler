@@ -3,11 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Check, Mail, Calendar, Loader2, AlertCircle, User, LogOut, HardDrive, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Check, Mail, Calendar, Loader2, AlertCircle, User, LogOut, HardDrive, ExternalLink, Save, Key } from "lucide-react";
 import { useOutlookStatus, useOutlookUserInfo, useOAuthConfig, useUserOutlookStatus, useConnectOutlook, useDisconnectOutlook } from "@/hooks/use-outlook";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 function getSessionId(): string {
   let sessionId = localStorage.getItem('sessionId');
@@ -21,6 +24,86 @@ function getSessionId(): string {
 export function SettingsView() {
   const [sessionId] = useState(() => getSessionId());
   const [, setLocation] = useLocation();
+  const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || "");
+      setLastName(user.lastName || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
+  
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: { firstName?: string; lastName?: string; email?: string }) => {
+      const res = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Profil aktualisieren fehlgeschlagen");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth-user"] });
+      toast({ title: "Erfolg", description: "Profil wurde aktualisiert" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    },
+  });
+  
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Passwort ändern fehlgeschlagen");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      toast({ title: "Erfolg", description: "Passwort wurde geändert" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    },
+  });
+  
+  const handleUpdateProfile = () => {
+    updateProfileMutation.mutate({ firstName, lastName, email });
+  };
+  
+  const handleChangePassword = () => {
+    if (newPassword !== confirmNewPassword) {
+      toast({ title: "Fehler", description: "Passwörter stimmen nicht überein", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Fehler", description: "Passwort muss mindestens 6 Zeichen haben", variant: "destructive" });
+      return;
+    }
+    changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
   
   const { data: oauthConfig } = useOAuthConfig();
   const { data: legacyStatus, isLoading: legacyLoading } = useOutlookStatus();
@@ -63,7 +146,7 @@ export function SettingsView() {
   };
 
   const displayName = userConnected ? userOAuthStatus?.displayName : userInfo?.displayName;
-  const email = userConnected ? userOAuthStatus?.email : userInfo?.email;
+  const outlookEmail = userConnected ? userOAuthStatus?.email : userInfo?.email;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -73,6 +156,144 @@ export function SettingsView() {
       </div>
 
       <div className="grid gap-6">
+        {user && (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Benutzerprofil
+                </CardTitle>
+                <CardDescription>Verwalten Sie Ihre persönlichen Daten</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Vorname</Label>
+                    <Input
+                      id="firstName"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      data-testid="input-profile-firstname"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Nachname</Label>
+                    <Input
+                      id="lastName"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      data-testid="input-profile-lastname"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-Mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    data-testid="input-profile-email"
+                  />
+                </div>
+                <Button 
+                  onClick={handleUpdateProfile}
+                  disabled={updateProfileMutation.isPending}
+                  data-testid="button-save-profile"
+                >
+                  {updateProfileMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  Profil speichern
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Key className="h-5 w-5" />
+                  Passwort ändern
+                </CardTitle>
+                <CardDescription>Ändern Sie Ihr Anmeldepasswort</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Aktuelles Passwort</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Nur erforderlich wenn bereits ein Passwort gesetzt ist"
+                    data-testid="input-current-password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Neues Passwort</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mindestens 6 Zeichen"
+                    data-testid="input-new-password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmNewPassword">Neues Passwort bestätigen</Label>
+                  <Input
+                    id="confirmNewPassword"
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    placeholder="Passwort wiederholen"
+                    data-testid="input-confirm-new-password"
+                  />
+                </div>
+                <Button 
+                  onClick={handleChangePassword}
+                  disabled={changePasswordMutation.isPending || !newPassword}
+                  data-testid="button-change-password"
+                >
+                  {changePasswordMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Key className="h-4 w-4 mr-2" />
+                  )}
+                  Passwort ändern
+                </Button>
+              </CardContent>
+            </Card>
+          </>
+        )}
+        
+        {!user && !authLoading && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                <User className="h-5 w-5 mt-0.5" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Nicht angemeldet</p>
+                  <p>
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto" 
+                      onClick={() => setLocation("/login")}
+                    >
+                      Melden Sie sich an
+                    </Button>{" "}
+                    um Ihre Einstellungen zu verwalten und Ihr Dashboard auf allen Geräten zu synchronisieren.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Integrationen</CardTitle>
@@ -101,11 +322,11 @@ export function SettingsView() {
                       </Badge>
                     )}
                   </div>
-                  {isConnected && (displayName || email) ? (
+                  {isConnected && (displayName || outlookEmail) ? (
                     <div className="flex items-center gap-2 mt-1">
                       <User className="h-3 w-3 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground" data-testid="text-outlook-user">
-                        {displayName} {email && `(${email})`}
+                        {displayName} {outlookEmail && `(${outlookEmail})`}
                       </p>
                     </div>
                   ) : (
@@ -197,7 +418,7 @@ export function SettingsView() {
         </Card>
 
         {/* Connected Account Info */}
-        {isConnected && (displayName || email || (userInfo && userInfo.calendars)) && (
+        {isConnected && (displayName || outlookEmail || (userInfo && userInfo.calendars)) && (
           <Card className="animate-in fade-in slide-in-from-top-2">
             <CardHeader>
               <CardTitle>Verbundenes Konto</CardTitle>
@@ -211,7 +432,7 @@ export function SettingsView() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground uppercase">E-Mail</p>
-                  <p className="font-medium" data-testid="text-account-email">{email || 'Unbekannt'}</p>
+                  <p className="font-medium" data-testid="text-account-email">{outlookEmail || 'Unbekannt'}</p>
                 </div>
               </div>
               {userInfo?.calendars && userInfo.calendars.length > 0 && (

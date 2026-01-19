@@ -4,6 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export * from "./models/auth";
+import { users } from "./models/auth";
 
 export const WidgetSizeModeSchema = z.enum(["icon", "compact", "standard", "large"]);
 export type WidgetSizeMode = z.infer<typeof WidgetSizeModeSchema>;
@@ -96,11 +97,6 @@ export type WeblinkSettings = z.infer<typeof WeblinkSettingsSchema>;
 export type DashboardTab = z.infer<typeof DashboardTabSchema>;
 export type DashboardConfig = z.infer<typeof DashboardConfigSchema>;
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").unique(),
-  password: text("password"),
-});
 
 export const oauthTokens = pgTable("oauth_tokens", {
   id: serial("id").primaryKey(),
@@ -186,9 +182,22 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const loginSchema = z.object({
+  email: z.string().email("Ungültige E-Mail-Adresse"),
+  password: z.string().min(6, "Passwort muss mindestens 6 Zeichen haben"),
+});
+
+export const registerSchema = z.object({
+  email: z.string().email("Ungültige E-Mail-Adresse"),
+  password: z.string().min(6, "Passwort muss mindestens 6 Zeichen haben"),
+  firstName: z.string().min(1, "Vorname ist erforderlich"),
+  lastName: z.string().min(1, "Nachname ist erforderlich"),
 });
 
 export const insertTodoLabelSchema = createInsertSchema(todoLabels).omit({
