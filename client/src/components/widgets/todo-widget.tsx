@@ -522,18 +522,29 @@ export function TodoWidget() {
                     <CalendarIcon className="h-4 w-4" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <div className="p-2 border-b space-y-1">
+                <PopoverContent className="w-auto p-0 shadow-xl border-0 rounded-xl overflow-hidden" align="end">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3">
+                    <p className="text-white/80 text-xs font-medium uppercase tracking-wide">Fälligkeitsdatum</p>
+                    <p className="text-white text-lg font-semibold mt-0.5">
+                      {selectedDate ? format(selectedDate, "EEEE, dd. MMMM", { locale: de }) : "Datum auswählen"}
+                    </p>
+                  </div>
+                  <div className="p-2 border-b bg-slate-50 space-y-1">
                     <button
                       type="button"
                       onClick={() => {
                         setSelectedDate(new Date());
                         setCalendarOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-100 rounded-md"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-white rounded-lg transition-colors group"
                     >
-                      <Sun className="h-4 w-4 text-amber-500" />
-                      Heute
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
+                        <Sun className="h-4 w-4 text-amber-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium text-slate-700">Heute</p>
+                        <p className="text-xs text-slate-400">{format(new Date(), "dd. MMM", { locale: de })}</p>
+                      </div>
                     </button>
                     <button
                       type="button"
@@ -543,22 +554,30 @@ export function TodoWidget() {
                         setSelectedDate(tomorrow);
                         setCalendarOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-100 rounded-md"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-white rounded-lg transition-colors group"
                     >
-                      <CalendarDays className="h-4 w-4 text-orange-500" />
-                      Morgen
+                      <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                        <CalendarDays className="h-4 w-4 text-orange-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium text-slate-700">Morgen</p>
+                        <p className="text-xs text-slate-400">{format(addDays(new Date(), 1), "dd. MMM", { locale: de })}</p>
+                      </div>
                     </button>
                   </div>
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => {
-                      setSelectedDate(date);
-                      setCalendarOpen(false);
-                    }}
-                    locale={de}
-                    initialFocus
-                  />
+                  <div className="p-3 bg-white">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => {
+                        setSelectedDate(date);
+                        setCalendarOpen(false);
+                      }}
+                      locale={de}
+                      initialFocus
+                      className="rounded-lg border-0 [&_.rdp-month]:w-full [&_.rdp-caption]:px-2 [&_.rdp-caption_label]:text-sm [&_.rdp-caption_label]:font-semibold [&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-slate-400 [&_.rdp-cell]:p-0.5 [&_.rdp-button]:w-9 [&_.rdp-button]:h-9 [&_.rdp-button]:text-sm [&_.rdp-button]:font-medium [&_.rdp-day_selected]:bg-blue-500 [&_.rdp-day_selected]:text-white [&_.rdp-day_today]:bg-blue-100 [&_.rdp-day_today]:text-blue-700 [&_.rdp-day_today]:font-bold"
+                    />
+                  </div>
                 </PopoverContent>
               </Popover>
               

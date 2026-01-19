@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -165,18 +165,27 @@ function AttachmentPreview({ attachment, onDelete }: { attachment: TodoAttachmen
 }
 
 export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) {
-  const [text, setText] = useState(todo?.text || "");
-  const [description, setDescription] = useState(todo?.description || "");
-  const [priority, setPriority] = useState(todo?.priority || 4);
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    todo?.dueDate ? new Date(todo.dueDate) : undefined
-  );
-  const [dueTime, setDueTime] = useState(todo?.dueTime || "");
+  const [text, setText] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState(4);
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [dueTime, setDueTime] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [priorityOpen, setPriorityOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync form state with todo when modal opens or todo changes
+  useEffect(() => {
+    if (todo && open) {
+      setText(todo.text || "");
+      setDescription(todo.description || "");
+      setPriority(todo.priority || 4);
+      setDueDate(todo.dueDate ? new Date(todo.dueDate) : undefined);
+      setDueTime(todo.dueTime || "");
+    }
+  }, [todo, open]);
 
   const { data: attachments = [], isLoading: attachmentsLoading } = useTodoAttachments(todo?.id || null);
   const { data: labels = [] } = useTodoLabels();
