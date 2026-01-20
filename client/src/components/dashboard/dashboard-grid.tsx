@@ -141,7 +141,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   }, []);
 
   const handleDragStop = useCallback(
-    (layout: Layout[]) => {
+    (layout: any) => {
       onLayoutChange(convertLayout(layout));
       isDraggingRef.current = false;
       dragTimeoutRef.current = setTimeout(() => {
@@ -152,7 +152,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   );
 
   const handleResizeStop = useCallback(
-    (layout: Layout[]) => {
+    (layout: any) => {
       onLayoutChange(convertLayout(layout));
     },
     [onLayoutChange, convertLayout]
@@ -374,17 +374,19 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     );
   };
 
+  const GridLayoutComponent = GridLayout as any;
+
   return (
     <div id="dashboard-grid-container" className="w-full">
-      <GridLayout
+      <GridLayoutComponent
         className="layout"
-        layout={layoutItems as any}
+        layout={layoutItems}
         cols={COLS}
         rowHeight={ROW_HEIGHT}
         width={containerWidth}
-        onDragStart={handleDragStart as any}
-        onDragStop={handleDragStop as any}
-        onResizeStop={handleResizeStop as any}
+        onDragStart={handleDragStart}
+        onDragStop={handleDragStop}
+        onResizeStop={handleResizeStop}
         draggableHandle=".widget-drag-handle"
         useCSSTransforms={true}
         compactType="vertical"
@@ -478,7 +480,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
             </div>
           );
         })}
-      </GridLayout>
+      </GridLayoutComponent>
 
       {settingsWidgetId && (
         <WidgetSettingsDialog
