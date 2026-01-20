@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useMemo } from "react";
 import type { DashboardConfig, DashboardTab, WidgetLayout, WidgetSizeMode } from "@shared/schema";
-import { DEFAULT_CONFIG } from "@/components/dashboard/dashboard-grid";
+import { DEFAULT_CONFIG } from "@/components/dashboard/dashboard-config";
 import { AVAILABLE_WIDGETS, DEFAULT_SIZE_OPTIONS } from "@/components/dashboard/widget-picker";
 import { useAuth } from "@/hooks/use-auth";
 
