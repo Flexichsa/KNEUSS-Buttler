@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-// @ts-ignore - react-grid-layout types are incomplete
-import GridLayout from "react-grid-layout";
+import GridLayout, { Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { CalendarWidget } from "@/components/widgets/calendar-widget";
@@ -142,7 +141,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   }, []);
 
   const handleDragStop = useCallback(
-    (layout: any[]) => {
+    (layout: Layout[]) => {
       onLayoutChange(convertLayout(layout));
       isDraggingRef.current = false;
       dragTimeoutRef.current = setTimeout(() => {
@@ -153,7 +152,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   );
 
   const handleResizeStop = useCallback(
-    (layout: any[]) => {
+    (layout: Layout[]) => {
       onLayoutChange(convertLayout(layout));
     },
     [onLayoutChange, convertLayout]
@@ -377,7 +376,6 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   return (
     <div id="dashboard-grid-container" className="w-full">
-      {/* @ts-ignore - react-grid-layout types are incomplete */}
       <GridLayout
         className="layout"
         layout={layoutItems as any}
@@ -393,7 +391,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         preventCollision={false}
         isResizable={true}
         isDraggable={true}
-        margin={[16, 16] as [number, number]}
+        margin={[16, 16]}
       >
         {config.enabledWidgets.map((widgetId) => {
           const iconMode = isIconMode(widgetId);
