@@ -52,7 +52,7 @@ export function PriorityReminderBanner() {
         animate={{ opacity: 1, y: 0 }}
         className="mx-6 mt-4"
       >
-        <div className="bg-gradient-to-r from-red-500 via-red-600 to-orange-500 rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-rose-400 via-pink-400 to-orange-300 rounded-xl shadow-lg overflow-hidden">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="w-full px-4 py-2.5 flex items-center gap-3 bg-black/10 hover:bg-black/15 transition-colors cursor-pointer"
