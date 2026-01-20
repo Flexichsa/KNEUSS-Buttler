@@ -377,6 +377,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   return (
     <div id="dashboard-grid-container" className="w-full">
+      {/* @ts-ignore - react-grid-layout types are incomplete */}
       <GridLayout
         className="layout"
         layout={layoutItems as any}
