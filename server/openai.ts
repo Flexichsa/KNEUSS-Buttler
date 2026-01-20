@@ -102,14 +102,14 @@ export async function analyzeDocument(textContent: string, originalFileName: str
           content: `You are a document analysis assistant. Analyze the document content and extract:
 1. Company/Organization name (the sender or issuer of the document)
 2. Document type (e.g., Rechnung, Vertrag, Offerte, Angebot, Lieferschein, Brief, Bericht, etc.)
-3. Subject/Content summary - what is the document about? (e.g., "Tablets (Windows 10.1\")", "Drucker", "Büromöbel", "IT-Dienstleistungen")
+3. Subject - the SPECIFIC product name or model number mentioned (e.g., "SQUIX 4.3/300P", "iPhone 15 Pro", "ThinkPad T480")
 4. Document date (if found in content, otherwise use today's date)
 
 Respond in JSON format only:
 {
   "companyName": "extracted company name",
   "documentType": "document type in German",
-  "subject": "brief description of what the document is about",
+  "subject": "specific product model or name",
   "date": "YYYY-MM-DD format"
 }
 
@@ -117,7 +117,12 @@ Rules:
 - Use the company that SENT or ISSUED the document, not the recipient
 - If company name not found, use "Unbekannt"
 - If document type unclear, use "Dokument"
-- For subject: extract the main product/service being offered, invoiced, or discussed. Keep it short (2-5 words). For offers/quotes, list the main items.
+- IMPORTANT for subject: Use the EXACT product name/model number from the document, NOT generic categories. Examples:
+  * "CAB Etikettendrucker SQUIX 4.3/300P" → subject should be "SQUIX_4.3-300P"
+  * "HP LaserJet Pro M404dn" → subject should be "LaserJet_Pro_M404dn"  
+  * "Microsoft Surface Pro 9" → subject should be "Surface_Pro_9"
+  * Do NOT use generic terms like "Drucker", "Etikettendrucker", "Computer" - use the specific model!
+- Replace spaces and special characters in subject with underscores
 - If no date in content, use today's date: ${today}
 - Keep company names short and clean (no "GmbH", "AG", etc.)
 - German document types preferred`
