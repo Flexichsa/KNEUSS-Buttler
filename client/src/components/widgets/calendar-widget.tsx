@@ -72,6 +72,14 @@ export function CalendarWidget({ settings }: CalendarWidgetProps) {
     return events.filter(event => new Date(event.start) >= startOfDay(now));
   }, [events]);
 
+  const weeks = useMemo(() => {
+    const result: Date[][] = [];
+    for (let i = 0; i < monthDays.length; i += 7) {
+      result.push(monthDays.slice(i, i + 7));
+    }
+    return result;
+  }, [monthDays]);
+
   if (viewMode === "list") {
     return (
       <div className="h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl overflow-hidden flex flex-col relative">
@@ -245,14 +253,6 @@ export function CalendarWidget({ settings }: CalendarWidgetProps) {
   }
 
   if (viewMode === "month") {
-    const weeks = useMemo(() => {
-      const result: Date[][] = [];
-      for (let i = 0; i < monthDays.length; i += 7) {
-        result.push(monthDays.slice(i, i + 7));
-      }
-      return result;
-    }, [monthDays]);
-
     return (
       <div className="h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl overflow-hidden flex flex-col relative">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
