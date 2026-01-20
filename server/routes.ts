@@ -162,6 +162,37 @@ export async function registerRoutes(
     }
   });
 
+  // Admin Password Reset - Protected with secret key (temporary for initial setup)
+  app.post("/api/auth/admin-reset", async (req, res) => {
+    try {
+      const { email, adminKey } = req.body;
+      
+      // Simple admin key protection - should be replaced with proper admin auth
+      const expectedKey = "kneuss-admin-2026-temp";
+      if (adminKey !== expectedKey) {
+        return res.status(403).json({ error: "Unauthorized" });
+      }
+      
+      if (!email) {
+        return res.status(400).json({ error: "E-Mail-Adresse ist erforderlich" });
+      }
+      
+      const result = await createPasswordResetToken(email);
+      
+      if (!result) {
+        return res.status(404).json({ error: "Benutzer nicht gefunden" });
+      }
+      
+      res.json({ 
+        success: true, 
+        token: result.token,
+        message: "Reset-Token wurde generiert"
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Reset-Anfrage fehlgeschlagen" });
+    }
+  });
+
   // Password Reset - Verify Token
   app.post("/api/auth/verify-reset-token", async (req, res) => {
     try {
