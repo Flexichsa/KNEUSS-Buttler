@@ -208,74 +208,71 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      {/* Top Header */}
+    <div className="h-screen bg-background text-foreground flex flex-col font-sans overflow-hidden">
+      {/* Top Header - Fixed */}
       <Header 
         title="KNEUSS" 
         subtitle="Digital Assistant"
       />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-secondary/30">
-          {/* Sticky Header Section */}
-          <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm shadow-sm">
-            {/* Page Title Section */}
-            <div className="px-6 py-6 border-b bg-white/80 backdrop-blur-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                    {getPageTitle()}
-                  </h1>
-                  <p className="text-muted-foreground text-sm mt-1">
-                    {getPageSubtitle()}
-                  </p>
-                </div>
-                
-                <div className="hidden md:flex items-center gap-4">
-                  {activeTab === "dashboard" && (
-                    <WidgetPicker
-                      enabledWidgets={config.enabledWidgets}
-                      onAddWidget={addWidget}
-                    />
-                  )}
-                  <div className="relative group">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                    <input 
-                      type="text" 
-                      placeholder="Suchen..." 
-                      className="pl-9 pr-4 py-2 rounded-full bg-white border border-border shadow-sm w-64 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all placeholder:text-muted-foreground/50"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Dashboard Tabs */}
+      {/* Page Title Section - Fixed */}
+      <div className="flex-shrink-0 px-6 py-6 border-b bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              {getPageTitle()}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {getPageSubtitle()}
+            </p>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-4">
             {activeTab === "dashboard" && (
-              <DashboardTabs
-                tabs={tabs}
-                activeTabId={activeTabId}
-                onSwitchTab={switchTab}
-                onAddTab={addTab}
-                onRenameTab={renameTab}
-                onDeleteTab={deleteTab}
+              <WidgetPicker
+                enabledWidgets={config.enabledWidgets}
+                onAddWidget={addWidget}
               />
             )}
+            <div className="relative group">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Suchen..." 
+                className="pl-9 pr-4 py-2 rounded-full bg-white border border-border shadow-sm w-64 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all placeholder:text-muted-foreground/50"
+              />
+            </div>
           </div>
+        </div>
+      </div>
 
-          {/* Priority 1 Tasks Reminder */}
-          {activeTab === "dashboard" && (
-            <PriorityReminderBanner />
-          )}
+      {/* Dashboard Tabs - Fixed */}
+      {activeTab === "dashboard" && (
+        <div className="flex-shrink-0">
+          <DashboardTabs
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSwitchTab={switchTab}
+            onAddTab={addTab}
+            onRenameTab={renameTab}
+            onDeleteTab={deleteTab}
+          />
+        </div>
+      )}
 
-          {/* Content Area */}
-          <div className="p-6">
-            <AnimatePresence mode="wait">
-              {renderContent()}
-            </AnimatePresence>
-          </div>
-        </main>
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto bg-secondary/30">
+        {/* Priority 1 Tasks Reminder */}
+        {activeTab === "dashboard" && (
+          <PriorityReminderBanner />
+        )}
+
+        {/* Content Area */}
+        <div className="p-6">
+          <AnimatePresence mode="wait">
+            {renderContent()}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
