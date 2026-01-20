@@ -1,7 +1,8 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { db } from "../db";
-import { users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { users, passwordResetTokens } from "@shared/schema";
+import { eq, and, isNull, gt } from "drizzle-orm";
 import type { RequestHandler, Request, Response, NextFunction } from "express";
 
 export async function hashPassword(password: string): Promise<string> {
@@ -84,3 +85,70 @@ export const isAuthenticatedCustom: RequestHandler = async (req: Request, res: R
   
   return res.status(401).json({ message: "Unauthorized" });
 };
+
+export async function createPasswordResetToken(email: string): Promise<{ token: string; userId: string } | null> {
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await findUserByEmail(normalizedEmail);
+  
+  if (!user) {
+    return null;
+  }
+  
+  // Invalidate any existing tokens for this user
+  await db
+    .update(passwordResetTokens)
+    .set({ usedAt: new Date() })
+    .where(and(eq(passwordResetTokens.userId, user.id), isNull(passwordResetTokens.usedAt)));
+  
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  
+  await db.insert(passwordResetTokens).values({
+    userId: user.id,
+    tokenHash,
+    expiresAt,
+  });
+  
+  return { token, userId: user.id };
+}
+
+export async function verifyPasswordResetToken(token: string): Promise<string | null> {
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  
+  const [resetToken] = await db
+    .select()
+    .from(passwordResetTokens)
+    .where(
+      and(
+        eq(passwordResetTokens.tokenHash, tokenHash),
+        isNull(passwordResetTokens.usedAt),
+        gt(passwordResetTokens.expiresAt, new Date())
+      )
+    );
+  
+  if (!resetToken) {
+    return null;
+  }
+  
+  return resetToken.userId;
+}
+
+export async function resetPasswordWithToken(token: string, newPassword: string): Promise<boolean> {
+  const userId = await verifyPasswordResetToken(token);
+  
+  if (!userId) {
+    return false;
+  }
+  
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  
+  await db
+    .update(passwordResetTokens)
+    .set({ usedAt: new Date() })
+    .where(eq(passwordResetTokens.tokenHash, tokenHash));
+  
+  await updateUserPassword(userId, newPassword);
+  
+  return true;
+}
