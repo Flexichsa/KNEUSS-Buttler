@@ -71,7 +71,18 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Passwort</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Passwort</Label>
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-xs" 
+                  onClick={() => setLocation("/forgot-password")}
+                  type="button"
+                  data-testid="link-forgot-password"
+                >
+                  Passwort vergessen?
+                </Button>
+              </div>
               <Input
                 id="password"
                 type="password"

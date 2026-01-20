@@ -9,7 +9,7 @@ import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { isAsanaConnected, getAsanaUser, getWorkspaces, getProjects as getAsanaProjects, getAllTasks as getAsanaTasks } from "./asana";
-import { findUserByEmail, findUserById, createUser, verifyPassword, getUserId, updateUserPassword, updateUserProfile, isAuthenticatedCustom } from "./customAuth";
+import { findUserByEmail, findUserById, createUser, verifyPassword, getUserId, updateUserPassword, updateUserProfile, isAuthenticatedCustom, createPasswordResetToken, resetPasswordWithToken, verifyPasswordResetToken } from "./customAuth";
 import { loginSchema, registerSchema } from "@shared/schema";
 import multer from "multer";
 import fs from "fs";
@@ -134,6 +134,75 @@ export async function registerRoutes(
       res.json({ success: true, message: "Passwort erfolgreich geändert" });
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Passwort ändern fehlgeschlagen" });
+    }
+  });
+
+  // Password Reset - Request Token (Token is logged server-side for admin to retrieve)
+  app.post("/api/auth/request-reset", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "E-Mail-Adresse ist erforderlich" });
+      }
+      
+      const result = await createPasswordResetToken(email);
+      
+      // Log the token server-side for admin retrieval (not exposed in response)
+      if (result) {
+        console.log(`[Password Reset] Token generated for ${email}: ${result.token}`);
+      }
+      
+      // Always return success to prevent user enumeration - token is NOT exposed
+      res.json({ 
+        success: true, 
+        message: "Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Token erstellt. Kontaktieren Sie den Administrator, um den Token zu erhalten."
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: "Reset-Anfrage fehlgeschlagen" });
+    }
+  });
+
+  // Password Reset - Verify Token
+  app.post("/api/auth/verify-reset-token", async (req, res) => {
+    try {
+      const { token } = req.body;
+      if (!token) {
+        return res.status(400).json({ error: "Token ist erforderlich" });
+      }
+      
+      const userId = await verifyPasswordResetToken(token);
+      if (!userId) {
+        return res.status(400).json({ error: "Ungültiger oder abgelaufener Token" });
+      }
+      
+      res.json({ valid: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Token-Verifizierung fehlgeschlagen" });
+    }
+  });
+
+  // Password Reset - Reset with Token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token und neues Passwort sind erforderlich" });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Passwort muss mindestens 6 Zeichen haben" });
+      }
+      
+      const success = await resetPasswordWithToken(token, newPassword);
+      
+      if (!success) {
+        return res.status(400).json({ error: "Ungültiger oder abgelaufener Token" });
+      }
+      
+      res.json({ success: true, message: "Passwort wurde erfolgreich zurückgesetzt" });
+    } catch (error: any) {
+      res.status(500).json({ error: "Passwort zurücksetzen fehlgeschlagen" });
     }
   });
 
