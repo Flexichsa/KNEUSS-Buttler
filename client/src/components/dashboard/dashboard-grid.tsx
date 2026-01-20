@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-// @ts-ignore
-import ReactGridLayout from "react-grid-layout";
+// @ts-ignore - react-grid-layout types are incomplete
+import GridLayout from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { CalendarWidget } from "@/components/widgets/calendar-widget";
@@ -411,7 +411,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   return (
     <div id="dashboard-grid-container" className="w-full">
-      <ReactGridLayout
+      <GridLayout
         className="layout"
         layout={layoutItems as any}
         cols={COLS}
@@ -513,7 +513,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
             </div>
           );
         })}
-      </ReactGridLayout>
+      </GridLayout>
 
       {settingsWidgetId && (
         <WidgetSettingsDialog
