@@ -297,16 +297,18 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <div className="p-2 border-b space-y-1">
+                <div className="p-3 border-b space-y-1.5 bg-slate-50">
                   <button
                     type="button"
                     onClick={() => {
                       setDueDate(new Date());
                       setCalendarOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-100 rounded-md"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-white rounded-lg transition-colors"
                   >
-                    <Sun className="h-4 w-4 text-amber-500" />
+                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                      <Sun className="h-4 w-4 text-amber-600" />
+                    </div>
                     Heute
                   </button>
                   <button
@@ -317,9 +319,11 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
                       setDueDate(tomorrow);
                       setCalendarOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-100 rounded-md"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-white rounded-lg transition-colors"
                   >
-                    <CalendarDays className="h-4 w-4 text-orange-500" />
+                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                      <CalendarDays className="h-4 w-4 text-orange-600" />
+                    </div>
                     Morgen
                   </button>
                 </div>
@@ -332,7 +336,7 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
                   }}
                   locale={de}
                   initialFocus
-                  className="rounded-b-md"
+                  className="p-4 [--cell-size:2.5rem]"
                 />
               </PopoverContent>
             </Popover>
