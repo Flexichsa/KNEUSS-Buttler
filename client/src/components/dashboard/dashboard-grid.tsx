@@ -85,6 +85,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const [expandedWidgetId, setExpandedWidgetId] = useState<string | null>(null);
   const isDraggingRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const justDraggedRef = useRef(false);
 
   const { data: todos = [] } = useTodos();
   const { data: emails = [] } = useOutlookEmails(50);
@@ -168,6 +169,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   const handleDragStart = useCallback(() => {
     isDraggingRef.current = true;
+    justDraggedRef.current = true;
     if (dragTimeoutRef.current) {
       clearTimeout(dragTimeoutRef.current);
     }
@@ -176,9 +178,10 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const handleDragStop = useCallback(
     (layout: any[]) => {
       onLayoutChange(convertLayout(layout));
+      isDraggingRef.current = false;
       dragTimeoutRef.current = setTimeout(() => {
-        isDraggingRef.current = false;
-      }, 100);
+        justDraggedRef.current = false;
+      }, 500);
     },
     [onLayoutChange, convertLayout]
   );
@@ -292,16 +295,26 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     return ["contacts", "todo", "mail", "calendar", "asana", "mstodo", "onedrive", "docupload", "statusreport", "assistant", "passwords"].includes(widgetType);
   };
 
-  const handleWidgetExpand = useCallback((widgetId: string) => {
-    if (!isDraggingRef.current) {
-      setExpandedWidgetId(widgetId);
+  const handleWidgetExpand = useCallback((widgetId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
     }
+    if (isDraggingRef.current || justDraggedRef.current) {
+      return;
+    }
+    setExpandedWidgetId(widgetId);
   }, []);
 
-  const handleIconWidgetClick = useCallback((widgetId: string) => {
-    if (!isDraggingRef.current) {
-      setExpandedIconWidgetId(widgetId);
+  const handleIconWidgetClick = useCallback((widgetId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
     }
+    if (isDraggingRef.current || justDraggedRef.current) {
+      return;
+    }
+    setExpandedIconWidgetId(widgetId);
   }, []);
 
   const getIconWidgetData = (widgetId: string): { text?: string; subtext?: string } | null => {
@@ -357,7 +370,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     
     return (
       <button
-        onClick={() => handleIconWidgetClick(widgetId)}
+        onDoubleClick={(e) => handleIconWidgetClick(widgetId, e)}
         className={cn(
           "w-full h-full flex flex-col items-center justify-center cursor-pointer relative",
           "bg-gradient-to-br text-white rounded-2xl transition-all hover:scale-105",
@@ -427,9 +440,9 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 iconMode && "icon-widget"
               )}
               data-size-mode={sizeMode}
-              onDoubleClick={() => {
-                if (!isDraggingRef.current && canExpandWidget(widgetId)) {
-                  handleWidgetExpand(widgetId);
+              onDoubleClick={(e) => {
+                if (canExpandWidget(widgetId)) {
+                  handleWidgetExpand(widgetId, e);
                 }
               }}
             >
@@ -467,7 +480,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                   <div className="absolute top-3 right-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
                     {canExpandWidget(widgetId) && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleWidgetExpand(widgetId); }}
+                        onClick={(e) => handleWidgetExpand(widgetId, e)}
                         className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-blue-500 hover:text-white text-muted-foreground transition-all"
                         data-testid={`button-expand-widget-${widgetId}`}
                         title="Vollansicht öffnen"
