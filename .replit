@@ -45,4 +45,3 @@ integrations = ["outlook:1.0.0", "javascript_openai_ai_integrations:1.0.0", "one
 [userenv]
 
 [userenv.shared]
-ENCRYPTION_KEY = "8ae997b2daa309445dfbd907524f885b6ac75e39647b0fec42d359fd0b33a2fd"
