@@ -263,6 +263,15 @@ export function DocumentUploadWidget() {
                               </>
                             )}
                           </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleDownload(doc)}
+                            className="mt-2 h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium"
+                            data-testid={`download-btn-${doc.id}`}
+                          >
+                            <Download className="h-3.5 w-3.5 mr-1.5" />
+                            Herunterladen
+                          </Button>
                         </div>
                       )}
                       
@@ -272,17 +281,6 @@ export function DocumentUploadWidget() {
                     </div>
                     
                     <div className="flex items-center gap-1">
-                      {doc.status === "ready" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDownload(doc)}
-                          className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100"
-                          data-testid={`download-${doc.id}`}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      )}
                       {doc.status === "error" && doc.file && (
                         <Button
                           size="sm"
