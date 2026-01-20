@@ -296,18 +296,18 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <div className="p-3 border-b space-y-1.5 bg-slate-50">
+              <PopoverContent className="w-[320px] p-0 bg-white rounded-xl shadow-xl border border-slate-200" align="start">
+                <div className="p-3 border-b border-slate-100 space-y-1">
                   <button
                     type="button"
                     onClick={() => {
                       setDueDate(new Date());
                       setCalendarOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-white rounded-lg transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-slate-50 rounded-lg transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                      <Sun className="h-4 w-4 text-amber-600" />
+                    <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center">
+                      <Sun className="h-3.5 w-3.5 text-amber-600" />
                     </div>
                     Heute
                   </button>
@@ -319,10 +319,10 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
                       setDueDate(tomorrow);
                       setCalendarOpen(false);
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-white rounded-lg transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-slate-50 rounded-lg transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                      <CalendarDays className="h-4 w-4 text-orange-600" />
+                    <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center">
+                      <CalendarDays className="h-3.5 w-3.5 text-orange-600" />
                     </div>
                     Morgen
                   </button>
@@ -336,7 +336,25 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
                   }}
                   locale={de}
                   initialFocus
-                  className="p-4 [--cell-size:2.5rem]"
+                  className="p-4 bg-white [--cell-size:2.5rem]"
+                  classNames={{
+                    months: "flex flex-col",
+                    month: "space-y-3",
+                    month_caption: "flex justify-center pt-1 relative items-center mb-3",
+                    caption_label: "text-base font-semibold text-slate-800",
+                    nav: "flex items-center justify-between absolute inset-x-0",
+                    button_previous: "size-8 bg-transparent p-0 opacity-70 hover:opacity-100 hover:bg-slate-100 rounded-lg flex items-center justify-center",
+                    button_next: "size-8 bg-transparent p-0 opacity-70 hover:opacity-100 hover:bg-slate-100 rounded-lg flex items-center justify-center",
+                    weekdays: "flex",
+                    weekday: "text-slate-400 min-w-[--cell-size] font-medium text-xs text-center py-2",
+                    week: "flex w-full mt-1",
+                    day: "min-w-[--cell-size] h-[--cell-size] text-center p-0 relative focus-within:relative focus-within:z-20",
+                    today: "bg-blue-50 text-blue-600 font-semibold rounded-lg",
+                    selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-lg",
+                    outside: "text-slate-300 opacity-50",
+                    disabled: "text-slate-300",
+                    hidden: "invisible",
+                  }}
                 />
               </PopoverContent>
             </Popover>
