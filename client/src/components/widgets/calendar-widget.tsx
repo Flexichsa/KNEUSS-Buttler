@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Clock, Video, MapPin, Loader2, AlertCircle, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useOutlookEvents } from "@/hooks/use-outlook";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, addDays, addMonths, subMonths, addWeeks, subWeeks, isWithinInterval, startOfDay, endOfDay } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, addDays, addMonths, subMonths, addWeeks, subWeeks, isWithinInterval, startOfDay, endOfDay, getISOWeek } from "date-fns";
 import { de } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
@@ -245,6 +245,14 @@ export function CalendarWidget({ settings }: CalendarWidgetProps) {
   }
 
   if (viewMode === "month") {
+    const weeks = useMemo(() => {
+      const result: Date[][] = [];
+      for (let i = 0; i < monthDays.length; i += 7) {
+        result.push(monthDays.slice(i, i + 7));
+      }
+      return result;
+    }, [monthDays]);
+
     return (
       <div className="h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl overflow-hidden flex flex-col relative">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -260,31 +268,39 @@ export function CalendarWidget({ settings }: CalendarWidgetProps) {
           </button>
         </div>
         <div className="flex-1 overflow-hidden relative z-10 p-2">
-          <div className="grid grid-cols-7 gap-px mb-1">
+          <div className="grid grid-cols-[auto_repeat(7,1fr)] gap-px mb-1">
+            <div className="text-[9px] font-bold text-white/40 text-center py-1 pr-1">KW</div>
             {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((d) => (
               <div key={d} className="text-[10px] font-bold text-white/60 text-center py-1">{d}</div>
             ))}
           </div>
-          <div className="grid grid-cols-7 gap-px">
-            {monthDays.map((day) => {
-              const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-              const hasEvents = eventsForDay(day).length > 0;
-              return (
-                <div 
-                  key={day.toISOString()} 
-                  className={cn(
-                    "aspect-square flex flex-col items-center justify-center rounded-lg text-xs",
-                    isCurrentMonth ? "text-white" : "text-white/30",
-                    isSameDay(day, new Date()) && "bg-white/30 font-bold",
-                  )}
-                >
-                  <span>{format(day, 'd')}</span>
-                  {hasEvents && (
-                    <div className="w-1 h-1 rounded-full bg-white mt-0.5" />
-                  )}
+          <div className="space-y-px">
+            {weeks.map((week, weekIndex) => (
+              <div key={weekIndex} className="grid grid-cols-[auto_repeat(7,1fr)] gap-px">
+                <div className="text-[9px] font-bold text-white/50 flex items-center justify-center pr-1 min-w-[20px]">
+                  {getISOWeek(week[0])}
                 </div>
-              );
-            })}
+                {week.map((day) => {
+                  const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+                  const hasEvents = eventsForDay(day).length > 0;
+                  return (
+                    <div 
+                      key={day.toISOString()} 
+                      className={cn(
+                        "aspect-square flex flex-col items-center justify-center rounded-lg text-xs",
+                        isCurrentMonth ? "text-white" : "text-white/30",
+                        isSameDay(day, new Date()) && "bg-white/30 font-bold",
+                      )}
+                    >
+                      <span>{format(day, 'd')}</span>
+                      {hasEvents && (
+                        <div className="w-1 h-1 rounded-full bg-white mt-0.5" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </div>
       </div>

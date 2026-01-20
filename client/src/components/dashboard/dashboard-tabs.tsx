@@ -73,7 +73,7 @@ export function DashboardTabs({
   };
 
   return (
-    <div className="flex items-center gap-1 px-2 py-2 bg-white/80 backdrop-blur-sm border-b overflow-x-auto" data-testid="dashboard-tabs">
+    <div className="flex items-center gap-2 px-4 py-3 bg-white/90 backdrop-blur-md border-b border-border/50 overflow-x-auto" data-testid="dashboard-tabs">
       {tabs.map((tab) => {
         const IconComponent = getIconComponent(tab.icon || "layout");
         const isActive = tab.id === activeTabId;
@@ -83,10 +83,10 @@ export function DashboardTabs({
           <div
             key={tab.id}
             className={cn(
-              "group relative flex items-center gap-2 px-3 py-2 rounded-lg transition-all cursor-pointer min-w-[100px]",
+              "group relative flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer min-w-[100px]",
               isActive
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "hover:bg-secondary/80 text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "hover:bg-secondary text-muted-foreground hover:text-foreground"
             )}
             onClick={() => !isEditing && onSwitchTab(tab.id)}
             data-testid={`tab-${tab.id}`}

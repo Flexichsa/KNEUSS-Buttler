@@ -43,87 +43,87 @@
 }
 
 :root {
-  /* Swiss Style / Kneuss Brand Colors */
-  /* Primary Red: Deep, authoritative red */
-  --primary: 356 75% 42%; 
+  /* Friendly & Modern Colors */
+  /* Primary: Warm, approachable coral-rose */
+  --primary: 350 65% 55%; 
   --primary-foreground: 0 0% 100%;
 
-  /* Backgrounds: Clean, stark white and very light grays */
-  --background: 0 0% 98%;
-  --foreground: 0 0% 10%;
+  /* Backgrounds: Warm, soft off-white */
+  --background: 30 20% 98%;
+  --foreground: 220 15% 20%;
 
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 10%;
+  --card-foreground: 220 15% 20%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 10%;
+  --popover-foreground: 220 15% 20%;
 
-  --secondary: 0 0% 94%;
-  --secondary-foreground: 0 0% 10%;
+  --secondary: 220 15% 96%;
+  --secondary-foreground: 220 15% 25%;
 
-  --muted: 0 0% 94%;
-  --muted-foreground: 0 0% 45%;
+  --muted: 220 15% 95%;
+  --muted-foreground: 220 10% 50%;
 
-  --accent: 0 0% 94%;
-  --accent-foreground: 356 75% 42%;
+  --accent: 220 15% 96%;
+  --accent-foreground: 350 65% 50%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 70% 55%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
-  --ring: 356 75% 42%;
+  --border: 220 15% 92%;
+  --input: 220 15% 92%;
+  --ring: 350 65% 55%;
 
-  /* Sidebar: Slightly distinct or same as background for minimalism */
-  --sidebar: 0 0% 96%;
-  --sidebar-foreground: 0 0% 10%;
-  --sidebar-primary: 356 75% 42%;
+  /* Sidebar: Warm, soft tones */
+  --sidebar: 30 15% 97%;
+  --sidebar-foreground: 220 15% 20%;
+  --sidebar-primary: 350 65% 55%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 92%;
-  --sidebar-accent-foreground: 356 75% 42%;
-  --sidebar-border: 0 0% 90%;
-  --sidebar-ring: 356 75% 42%;
+  --sidebar-accent: 220 15% 94%;
+  --sidebar-accent-foreground: 350 65% 50%;
+  --sidebar-border: 220 15% 92%;
+  --sidebar-ring: 350 65% 55%;
 
-  --radius: 0.25rem;
+  --radius: 0.5rem;
 }
 
 .dark {
-  --background: 0 0% 10%;
+  --background: 220 15% 10%;
   --foreground: 0 0% 98%;
 
-  --card: 0 0% 12%;
+  --card: 220 15% 12%;
   --card-foreground: 0 0% 98%;
 
-  --popover: 0 0% 12%;
+  --popover: 220 15% 12%;
   --popover-foreground: 0 0% 98%;
 
-  --primary: 356 75% 42%;
+  --primary: 350 65% 55%;
   --primary-foreground: 0 0% 98%;
 
-  --secondary: 0 0% 16%;
+  --secondary: 220 15% 16%;
   --secondary-foreground: 0 0% 98%;
 
-  --muted: 0 0% 16%;
-  --muted-foreground: 0 0% 65%;
+  --muted: 220 15% 16%;
+  --muted-foreground: 220 10% 65%;
 
-  --accent: 0 0% 16%;
+  --accent: 220 15% 16%;
   --accent-foreground: 0 0% 98%;
 
-  --destructive: 0 62% 30%;
+  --destructive: 0 60% 45%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
-  --ring: 356 75% 42%;
+  --border: 220 15% 20%;
+  --input: 220 15% 20%;
+  --ring: 350 65% 55%;
 
-  --sidebar: 0 0% 11%;
+  --sidebar: 220 15% 11%;
   --sidebar-foreground: 0 0% 96%;
-  --sidebar-primary: 356 75% 42%;
+  --sidebar-primary: 350 65% 55%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 16%;
+  --sidebar-accent: 220 15% 16%;
   --sidebar-accent-foreground: 0 0% 96%;
-  --sidebar-border: 0 0% 20%;
-  --sidebar-ring: 356 75% 42%;
+  --sidebar-border: 220 15% 20%;
+  --sidebar-ring: 350 65% 55%;
 }
 
 @layer base {
