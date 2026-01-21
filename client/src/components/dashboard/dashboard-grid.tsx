@@ -51,6 +51,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const isDraggingRef = useRef(false);
   const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const justDraggedRef = useRef(false);
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
 
   const { data: todos = [] } = useTodos();
   const { data: emails = [] } = useOutlookEmails(50);
@@ -146,10 +147,21 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
       isDraggingRef.current = false;
       dragTimeoutRef.current = setTimeout(() => {
         justDraggedRef.current = false;
-      }, 500);
+      }, 800);
     },
     [onLayoutChange, convertLayout]
   );
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  const wasDragged = useCallback((e: React.MouseEvent): boolean => {
+    if (!mouseDownPosRef.current) return false;
+    const dx = Math.abs(e.clientX - mouseDownPosRef.current.x);
+    const dy = Math.abs(e.clientY - mouseDownPosRef.current.y);
+    return dx > 5 || dy > 5;
+  }, []);
 
   const handleResizeStop = useCallback(
     (layout: any) => {
@@ -264,23 +276,29 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     if (e) {
       e.stopPropagation();
       e.preventDefault();
+      if (wasDragged(e)) {
+        return;
+      }
     }
     if (isDraggingRef.current || justDraggedRef.current) {
       return;
     }
     setExpandedWidgetId(widgetId);
-  }, []);
+  }, [wasDragged]);
 
   const handleIconWidgetClick = useCallback((widgetId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
+      if (wasDragged(e)) {
+        return;
+      }
     }
     if (isDraggingRef.current || justDraggedRef.current) {
       return;
     }
     setExpandedIconWidgetId(widgetId);
-  }, []);
+  }, [wasDragged]);
 
   const getIconWidgetData = (widgetId: string): { text?: string; subtext?: string } | null => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
@@ -407,6 +425,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 iconMode && "icon-widget"
               )}
               data-size-mode={sizeMode}
+              onMouseDown={handleMouseDown}
               onDoubleClick={(e) => {
                 if (canExpandWidget(widgetId)) {
                   handleWidgetExpand(widgetId, e);
