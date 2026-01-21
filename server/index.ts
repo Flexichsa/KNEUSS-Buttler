@@ -20,6 +20,9 @@ app.use(
   }),
 );
 
+app.use(express.text({ type: ['text/csv', 'text/plain'] }));
+app.use(express.raw({ type: 'application/octet-stream' }));
+
 app.use(express.urlencoded({ extended: false }));
 
 export function log(message: string, source = "express") {

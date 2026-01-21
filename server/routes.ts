@@ -1631,5 +1631,106 @@ export async function registerRoutes(
     }
   });
 
+  // CSV Upload API - for external server uploads
+  app.post("/api/upload-csv", async (req, res) => {
+    try {
+      const apiKey = req.headers["x-api-key"] as string;
+      const expectedApiKey = process.env.CSV_UPLOAD_API_KEY;
+      
+      if (!expectedApiKey) {
+        console.error("[CSV Upload] CSV_UPLOAD_API_KEY not configured");
+        return res.status(500).json({ error: "API key not configured on server" });
+      }
+      
+      if (!apiKey || apiKey !== expectedApiKey) {
+        return res.status(401).json({ error: "Invalid or missing API key" });
+      }
+      
+      let csvContent: string;
+      
+      if (typeof req.body === 'string') {
+        csvContent = req.body;
+      } else if (Buffer.isBuffer(req.body)) {
+        csvContent = req.body.toString('utf-8');
+      } else {
+        return res.status(400).json({ error: "Request body must be CSV content" });
+      }
+      
+      if (!csvContent || csvContent.trim().length === 0) {
+        return res.status(400).json({ error: "Empty CSV content" });
+      }
+      
+      const lines = csvContent.trim().split('\n');
+      const rowCount = lines.length > 0 ? lines.length - 1 : 0;
+      
+      const filename = req.headers["x-filename"] as string || `upload_${Date.now()}.csv`;
+      
+      const upload = await storage.createCsvUpload({
+        filename,
+        rawContent: csvContent,
+        rowCount
+      });
+      
+      console.log(`[CSV Upload] Successfully received ${rowCount} rows from ${filename}`);
+      
+      res.status(201).json({
+        success: true,
+        id: upload.id,
+        filename: upload.filename,
+        rowCount: upload.rowCount,
+        uploadedAt: upload.uploadedAt
+      });
+    } catch (error: any) {
+      console.error("[CSV Upload] Error:", error);
+      res.status(500).json({ error: error.message || "Failed to process CSV upload" });
+    }
+  });
+
+  // CSV Upload Status - get latest upload info
+  app.get("/api/csv-status", async (req, res) => {
+    try {
+      const latest = await storage.getLatestCsvUpload();
+      const uploads = await storage.getCsvUploads(5);
+      
+      res.json({
+        latestUpload: latest ? {
+          id: latest.id,
+          filename: latest.filename,
+          rowCount: latest.rowCount,
+          uploadedAt: latest.uploadedAt
+        } : null,
+        recentUploads: uploads.map(u => ({
+          id: u.id,
+          filename: u.filename,
+          rowCount: u.rowCount,
+          uploadedAt: u.uploadedAt
+        }))
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to get CSV status" });
+    }
+  });
+
+  // CSV Data - get the actual CSV content
+  app.get("/api/csv-data", async (req, res) => {
+    try {
+      const latest = await storage.getLatestCsvUpload();
+      
+      if (!latest) {
+        return res.status(404).json({ error: "No CSV data available" });
+      }
+      
+      res.json({
+        id: latest.id,
+        filename: latest.filename,
+        rowCount: latest.rowCount,
+        uploadedAt: latest.uploadedAt,
+        content: latest.rawContent
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to get CSV data" });
+    }
+  });
+
   return httpServer;
 }

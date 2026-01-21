@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, passwords, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, passwords, csvUploads, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload } from "@shared/schema";
 import { eq, and, lt, desc, isNull, asc, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
@@ -86,6 +86,11 @@ export interface IStorage {
   createPassword(password: InsertPassword): Promise<Password>;
   updatePassword(id: number, userId: string, password: Partial<InsertPassword>): Promise<Password | undefined>;
   deletePassword(id: number, userId: string): Promise<void>;
+  
+  // CSV Uploads
+  getLatestCsvUpload(): Promise<CsvUpload | undefined>;
+  getCsvUploads(limit?: number): Promise<CsvUpload[]>;
+  createCsvUpload(upload: InsertCsvUpload): Promise<CsvUpload>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -473,6 +478,21 @@ export class DatabaseStorage implements IStorage {
 
   async deletePassword(id: number, userId: string): Promise<void> {
     await db.delete(passwords).where(and(eq(passwords.id, id), eq(passwords.userId, userId)));
+  }
+
+  // CSV Uploads
+  async getLatestCsvUpload(): Promise<CsvUpload | undefined> {
+    const [upload] = await db.select().from(csvUploads).orderBy(desc(csvUploads.uploadedAt)).limit(1);
+    return upload;
+  }
+
+  async getCsvUploads(limit: number = 10): Promise<CsvUpload[]> {
+    return db.select().from(csvUploads).orderBy(desc(csvUploads.uploadedAt)).limit(limit);
+  }
+
+  async createCsvUpload(upload: InsertCsvUpload): Promise<CsvUpload> {
+    const [newUpload] = await db.insert(csvUploads).values(upload).returning();
+    return newUpload;
   }
 }
 
