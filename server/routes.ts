@@ -1560,13 +1560,20 @@ export async function registerRoutes(
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
-      const { password, ...rest } = req.body;
+      const { password, username, url, notes, ...rest } = req.body;
       if (!password) {
         return res.status(400).json({ error: "Password is required" });
       }
       const { encryptPassword } = await import("./crypto");
       const encryptedPassword = encryptPassword(password);
-      const validatedData = insertPasswordSchema.parse({ ...rest, userId, encryptedPassword });
+      const validatedData = insertPasswordSchema.parse({ 
+        ...rest, 
+        userId, 
+        encryptedPassword,
+        username: username?.trim() || null,
+        url: url?.trim() || null,
+        notes: notes?.trim() || null
+      });
       const created = await storage.createPassword(validatedData);
       res.status(201).json(created);
     } catch (error: any) {
@@ -1581,12 +1588,22 @@ export async function registerRoutes(
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
-      const { password, ...rest } = req.body;
-      let updateData = { ...rest };
+      const { password, username, url, notes, ...rest } = req.body;
+      let updateData: any = { ...rest };
       
       if (password) {
         const { encryptPassword } = await import("./crypto");
         updateData.encryptedPassword = encryptPassword(password);
+      }
+      
+      if (username !== undefined) {
+        updateData.username = username?.trim() || null;
+      }
+      if (url !== undefined) {
+        updateData.url = url?.trim() || null;
+      }
+      if (notes !== undefined) {
+        updateData.notes = notes?.trim() || null;
       }
       
       const validatedData = insertPasswordSchema.partial().parse(updateData);
