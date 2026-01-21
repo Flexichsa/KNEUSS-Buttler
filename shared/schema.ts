@@ -374,3 +374,19 @@ export const insertPasswordSchema = createInsertSchema(passwords).omit({
 
 export type InsertPassword = z.infer<typeof insertPasswordSchema>;
 export type Password = typeof passwords.$inferSelect;
+
+export const csvUploads = pgTable("csv_uploads", {
+  id: serial("id").primaryKey(),
+  filename: text("filename"),
+  rawContent: text("raw_content").notNull(),
+  rowCount: integer("row_count"),
+  uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+});
+
+export const insertCsvUploadSchema = createInsertSchema(csvUploads).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export type InsertCsvUpload = z.infer<typeof insertCsvUploadSchema>;
+export type CsvUpload = typeof csvUploads.$inferSelect;
