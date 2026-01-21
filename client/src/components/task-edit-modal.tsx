@@ -84,13 +84,14 @@ function AttachmentPreview({ attachment, onDelete }: { attachment: TodoAttachmen
   const [imageError, setImageError] = useState(false);
   const [showFullPreview, setShowFullPreview] = useState(false);
 
-  return (
-    <>
-      <div className="group relative flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition-all">
-        {isImage && !imageError ? (
+  if (isImage && !imageError) {
+    return (
+      <>
+        <div className="group relative rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition-all overflow-hidden">
           <div 
-            className="w-12 h-12 rounded-md overflow-hidden bg-slate-100 flex-shrink-0 cursor-pointer"
+            className="relative w-full h-32 bg-slate-100 cursor-pointer"
             onClick={() => setShowFullPreview(true)}
+            data-testid={`img-preview-${attachment.id}`}
           >
             <img
               src={`/api/attachments/${attachment.id}/preview`}
@@ -98,69 +99,96 @@ function AttachmentPreview({ attachment, onDelete }: { attachment: TodoAttachmen
               className="w-full h-full object-cover"
               onError={() => setImageError(true)}
             />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <ExternalLink className="h-6 w-6 text-white drop-shadow-lg" />
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="w-12 h-12 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0">
-            {getFileIcon(attachment.mimeType)}
+          <div className="p-2 flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-slate-700 truncate">
+                {attachment.originalName}
+              </p>
+              <p className="text-xs text-slate-400">
+                {formatFileSize(attachment.size)}
+              </p>
+            </div>
+            <div className="flex items-center gap-0.5">
+              <a
+                href={`/api/attachments/${attachment.id}/download`}
+                className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                title="Herunterladen"
+                data-testid={`btn-download-${attachment.id}`}
+              >
+                <Download className="h-3.5 w-3.5" />
+              </a>
+              <button
+                onClick={onDelete}
+                className="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-500"
+                title="Löschen"
+                data-testid={`btn-delete-attachment-${attachment.id}`}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
+        </div>
+
+        {showFullPreview && (
+          <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>{attachment.originalName}</DialogTitle>
+              </DialogHeader>
+              <div className="flex items-center justify-center p-4">
+                <img
+                  src={`/api/attachments/${attachment.id}/preview`}
+                  alt={attachment.originalName}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
+      </>
+    );
+  }
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-700 truncate">
-            {attachment.originalName}
-          </p>
-          <p className="text-xs text-slate-400">
-            {formatFileSize(attachment.size)}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {isImage && !imageError && (
-            <button
-              onClick={() => setShowFullPreview(true)}
-              className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-              title="Vorschau"
-              data-testid={`btn-preview-${attachment.id}`}
-            >
-              <ExternalLink className="h-4 w-4" />
-            </button>
-          )}
-          <a
-            href={`/api/attachments/${attachment.id}/download`}
-            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-            title="Herunterladen"
-            data-testid={`btn-download-${attachment.id}`}
-          >
-            <Download className="h-4 w-4" />
-          </a>
-          <button
-            onClick={onDelete}
-            className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500"
-            title="Löschen"
-            data-testid={`btn-delete-attachment-${attachment.id}`}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
+  return (
+    <div className="group relative flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm transition-all">
+      <div className="w-12 h-12 rounded-md bg-slate-100 flex items-center justify-center flex-shrink-0">
+        {getFileIcon(attachment.mimeType)}
       </div>
 
-      {showFullPreview && isImage && (
-        <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>{attachment.originalName}</DialogTitle>
-            </DialogHeader>
-            <div className="flex items-center justify-center p-4">
-              <img
-                src={`/api/attachments/${attachment.id}/preview`}
-                alt={attachment.originalName}
-                className="max-w-full max-h-[70vh] object-contain rounded-lg"
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-slate-700 truncate">
+          {attachment.originalName}
+        </p>
+        <p className="text-xs text-slate-400">
+          {formatFileSize(attachment.size)}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <a
+          href={`/api/attachments/${attachment.id}/download`}
+          className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+          title="Herunterladen"
+          data-testid={`btn-download-${attachment.id}`}
+        >
+          <Download className="h-4 w-4" />
+        </a>
+        <button
+          onClick={onDelete}
+          className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500"
+          title="Löschen"
+          data-testid={`btn-delete-attachment-${attachment.id}`}
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -470,7 +498,7 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
                 <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
               </div>
             ) : attachments.length > 0 ? (
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {attachments.map((attachment) => (
                   <AttachmentPreview
                     key={attachment.id}
