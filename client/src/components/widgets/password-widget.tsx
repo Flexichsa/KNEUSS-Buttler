@@ -75,6 +75,16 @@ export function PasswordWidget() {
     }
   };
 
+  const resetFormData = () => {
+    setFormData({ name: "", username: "", password: "", url: "", notes: "", category: "general" });
+  };
+
+  const handleOpenAddDialog = () => {
+    resetFormData();
+    setShowPassword(false);
+    setShowAddDialog(true);
+  };
+
   const handleAddPassword = () => {
     if (!formData.name.trim() || !formData.password.trim()) return;
     
@@ -88,8 +98,15 @@ export function PasswordWidget() {
     }, {
       onSuccess: () => {
         setShowAddDialog(false);
-        setFormData({ name: "", username: "", password: "", url: "", notes: "", category: "general" });
+        resetFormData();
         toast({ title: "Gespeichert", description: "Passwort wurde hinzugefügt." });
+      },
+      onError: (error: any) => {
+        toast({ 
+          title: "Fehler", 
+          description: error?.message || "Passwort konnte nicht gespeichert werden.", 
+          variant: "destructive" 
+        });
       }
     });
   };
@@ -404,7 +421,7 @@ export function PasswordWidget() {
                 </div>
               </div>
               <button
-                onClick={() => setShowAddDialog(true)}
+                onClick={handleOpenAddDialog}
                 className="p-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
                 data-testid="btn-add-password"
               >
@@ -432,7 +449,7 @@ export function PasswordWidget() {
                   <p className="text-sm">{passwords.length === 0 ? "Noch keine Passwörter" : "Keine Treffer"}</p>
                   {passwords.length === 0 && (
                     <button
-                      onClick={() => setShowAddDialog(true)}
+                      onClick={handleOpenAddDialog}
                       className="mt-2 text-sm text-purple-600 hover:underline"
                       data-testid="btn-add-first-password"
                     >
