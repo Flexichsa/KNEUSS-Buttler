@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Building2, User, Plus, Phone, Mail, MapPin, ChevronRight, ChevronLeft, Loader2, Pencil, Trash2, UserPlus, X } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Building2, User, Plus, Phone, Mail, MapPin, ChevronRight, ChevronLeft, Loader2, Pencil, Trash2, UserPlus, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { cn } from "@/lib/utils";
 import { useContacts, useCreateContact, useUpdateContact, useDeleteContact, useCreateContactPerson, useDeleteContactPerson } from "@/hooks/use-contacts";
 
@@ -42,9 +43,24 @@ export function ContactsWidget() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", notes: "" });
   const [personFormData, setPersonFormData] = useState({ name: "", role: "", email: "", phone: "" });
   const [editMode, setEditMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const companies = contacts.filter(c => c.type === "company");
-  const persons = contacts.filter(c => c.type === "person");
+  const sortedAndFilteredContacts = useMemo(() => {
+    let filtered = [...contacts];
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(c => 
+        c.name.toLowerCase().includes(query) ||
+        c.email?.toLowerCase().includes(query) ||
+        c.phone?.toLowerCase().includes(query) ||
+        c.address?.toLowerCase().includes(query)
+      );
+    }
+    return filtered.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  }, [contacts, searchQuery]);
+
+  const companies = sortedAndFilteredContacts.filter(c => c.type === "company");
+  const persons = sortedAndFilteredContacts.filter(c => c.type === "person");
 
   const handleAddContact = () => {
     if (!formData.name.trim()) return;
@@ -186,10 +202,10 @@ export function ContactsWidget() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     data-testid="input-edit-email"
                   />
-                  <Input
+                  <PhoneInput
                     placeholder="Telefon"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(phone) => setFormData({ ...formData, phone })}
                     data-testid="input-edit-phone"
                   />
                   <Input
@@ -317,6 +333,20 @@ export function ContactsWidget() {
               </button>
             </div>
 
+            <div className="px-3 py-2 border-b border-gray-100">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Suchen..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-8 text-sm"
+                  data-testid="input-search-contacts"
+                />
+              </div>
+            </div>
+
             <div className="flex-1 overflow-y-auto">
               {contacts.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4">
@@ -329,6 +359,12 @@ export function ContactsWidget() {
                   >
                     Ersten Kontakt hinzufügen
                   </button>
+                </div>
+              ) : sortedAndFilteredContacts.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4">
+                  <Search className="w-10 h-10 mb-2 opacity-50" />
+                  <p className="text-sm">Keine Kontakte gefunden</p>
+                  <p className="text-xs mt-1">Versuche einen anderen Suchbegriff</p>
                 </div>
               ) : (
                 <div className="p-2 space-y-1">
@@ -426,11 +462,10 @@ export function ContactsWidget() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               data-testid="input-contact-email"
             />
-            <Input
+            <PhoneInput
               placeholder="Telefon"
-              type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={(phone) => setFormData({ ...formData, phone })}
               data-testid="input-contact-phone"
             />
             <Input
@@ -476,11 +511,10 @@ export function ContactsWidget() {
               onChange={(e) => setPersonFormData({ ...personFormData, email: e.target.value })}
               data-testid="input-person-email"
             />
-            <Input
+            <PhoneInput
               placeholder="Telefon"
-              type="tel"
               value={personFormData.phone}
-              onChange={(e) => setPersonFormData({ ...personFormData, phone: e.target.value })}
+              onChange={(phone) => setPersonFormData({ ...personFormData, phone })}
               data-testid="input-person-phone"
             />
           </div>
