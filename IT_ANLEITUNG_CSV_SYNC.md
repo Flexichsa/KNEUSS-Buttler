@@ -9,9 +9,10 @@ Diese Anleitung beschreibt, wie ein PowerShell-Skript auf dem Firmenserver einge
 
 | Parameter | Wert |
 |-----------|------|
-| **API-URL** | `https://[IHRE-REPLIT-APP-URL]/api/upload-csv` |
+| **API-URL** | `https://digital-butler--kneuss.replit.app/api/upload-csv` |
 | **API-Key** | Der API-Key wurde im Replit-Projekt als Secret `CSV_UPLOAD_API_KEY` hinterlegt |
 | **CSV-Pfad** | Lokaler Pfad zur CSV-Datei auf dem Firmenserver |
+| **Status-Seite** | `https://digital-butler--kneuss.replit.app/csv-status` |
 
 ---
 
@@ -24,7 +25,7 @@ Erstellen Sie eine Datei `csv-sync.ps1` auf dem Firmenserver:
 # Version 1.0
 
 # ===== KONFIGURATION - BITTE ANPASSEN =====
-$ApiUrl = "https://[IHRE-REPLIT-APP-URL]/api/upload-csv"
+$ApiUrl = "https://digital-butler--kneuss.replit.app/api/upload-csv"
 $ApiKey = "[HIER-API-KEY-EINFÜGEN]"
 $CsvFilePath = "C:\Pfad\zur\umsatzkennzahlen.csv"
 # ==========================================
@@ -113,7 +114,7 @@ powershell.exe -ExecutionPolicy Bypass -File "C:\Pfad\zum\csv-sync.ps1"
 ```
 
 ### Status in der App überprüfen
-Öffnen Sie im Browser: `https://[IHRE-REPLIT-APP-URL]/csv-status`
+Öffnen Sie im Browser: `https://digital-butler--kneuss.replit.app/csv-status`
 
 ---
 
