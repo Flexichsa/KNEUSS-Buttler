@@ -92,10 +92,9 @@ export function ContactsWidget() {
       address: formData.address || undefined,
       notes: formData.notes || undefined,
     }, {
-      onSuccess: () => {
+      onSuccess: (updatedContact) => {
         setEditMode(false);
-        const updatedContact = contacts.find(c => c.id === selectedContact.id);
-        if (updatedContact) setSelectedContact(updatedContact);
+        setSelectedContact(updatedContact);
       }
     });
   };
@@ -324,15 +323,15 @@ export function ContactsWidget() {
                               </div>
                               <div className="mt-1 space-y-0.5">
                                 {person.email && (
-                                  <div className="text-xs text-gray-600 flex items-center gap-1">
-                                    <Mail className="w-3 h-3" />
-                                    <a href={`mailto:${person.email}`} className="hover:underline">{person.email}</a>
+                                  <div className="text-xs flex items-center gap-1">
+                                    <Mail className="w-3 h-3 text-gray-400" />
+                                    <a href={`mailto:${person.email}`} className="text-blue-600 hover:underline">{person.email}</a>
                                   </div>
                                 )}
                                 {person.phone && (
-                                  <div className="text-xs text-gray-600 flex items-center gap-1">
-                                    <Phone className="w-3 h-3" />
-                                    <a href={`tel:${person.phone}`} className="hover:underline">{person.phone}</a>
+                                  <div className="text-xs flex items-center gap-1">
+                                    <Phone className="w-3 h-3 text-gray-400" />
+                                    <a href={`tel:${person.phone}`} className="text-blue-600 hover:underline">{person.phone}</a>
                                   </div>
                                 )}
                               </div>
