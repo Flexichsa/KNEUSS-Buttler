@@ -6,16 +6,35 @@ const AUTH_TAG_LENGTH = 16;
 
 let cachedKey: Buffer | null = null;
 
+function isValidHexKey(str: string): boolean {
+  // Must be exactly 64 hex characters (32 bytes)
+  return /^[0-9a-fA-F]{64}$/.test(str);
+}
+
 function getEncryptionKey(): Buffer {
   if (cachedKey) return cachedKey;
   
   const key = process.env.ENCRYPTION_KEY;
-  if (!key || key.length < 32) {
-    throw new Error("ENCRYPTION_KEY environment variable must be set (at least 32 hex characters) for password encryption. Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"");
+  if (!key) {
+    // Generate a new key automatically for development convenience
+    const generatedKey = crypto.randomBytes(32);
+    console.warn("[crypto] WARNING: ENCRYPTION_KEY not set. Using auto-generated key. This will NOT persist across restarts!");
+    console.warn("[crypto] Generate a permanent key with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"");
+    cachedKey = generatedKey;
+    return cachedKey;
   }
   
-  const normalizedKey = key.length >= 64 ? key.slice(0, 64) : key.padEnd(64, "0");
-  cachedKey = Buffer.from(normalizedKey, "hex");
+  // Check if the key is a valid 64-character hex string
+  if (!isValidHexKey(key)) {
+    // For flexibility, hash any non-standard key to produce a consistent 32-byte key
+    // This allows users to use any string as their encryption key
+    const hash = crypto.createHash('sha256').update(key).digest();
+    cachedKey = hash;
+    return cachedKey;
+  }
+  
+  // Convert hex string to buffer
+  cachedKey = Buffer.from(key, "hex");
   return cachedKey;
 }
 
