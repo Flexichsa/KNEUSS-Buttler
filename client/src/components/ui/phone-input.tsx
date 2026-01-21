@@ -79,12 +79,13 @@ export function PhoneInput({ value, onChange, placeholder = "Telefon", className
       <button
         type="button"
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className="flex items-center gap-1 px-2 h-9 border border-r-0 border-input rounded-l-md bg-muted/50 hover:bg-muted transition-colors text-sm"
+        className="flex items-center gap-1.5 px-3 h-9 border border-r-0 border-input rounded-l-md bg-muted/50 hover:bg-muted transition-colors text-sm"
         aria-haspopup="listbox"
         aria-expanded={dropdownOpen}
         data-testid={testId ? `${testId}-country-select` : "phone-country-select"}
       >
-        <span className="text-base">{selectedCountry.flag}</span>
+        <span className="text-xl leading-none">{selectedCountry.flag}</span>
+        <span className="text-xs font-medium text-gray-600">{selectedCountry.dialCode}</span>
         <ChevronDown className="w-3 h-3 text-muted-foreground" />
       </button>
       
@@ -113,14 +114,16 @@ export function PhoneInput({ value, onChange, placeholder = "Telefon", className
               aria-selected={country.code === countryCode}
               onClick={() => handleCountrySelect(country)}
               className={cn(
-                "w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-left text-sm transition-colors",
+                "w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 text-left transition-colors",
                 country.code === countryCode && "bg-blue-50"
               )}
               data-testid={`country-option-${country.code}`}
             >
-              <span className="text-base">{country.flag}</span>
-              <span className="flex-1 truncate">{country.name}</span>
-              <span className="text-gray-400 text-xs">{country.dialCode}</span>
+              <span className="text-2xl leading-none">{country.flag}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-gray-900">{country.name}</div>
+                <div className="text-xs text-gray-500">{country.dialCode}</div>
+              </div>
             </button>
           ))}
         </div>

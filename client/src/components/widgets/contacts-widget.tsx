@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { cn } from "@/lib/utils";
-import { useContacts, useCreateContact, useUpdateContact, useDeleteContact, useCreateContactPerson, useDeleteContactPerson } from "@/hooks/use-contacts";
+import { useContacts, useCreateContact, useUpdateContact, useDeleteContact, useCreateContactPerson, useUpdateContactPerson, useDeleteContactPerson } from "@/hooks/use-contacts";
 
 interface ContactPerson {
   id: number;
@@ -34,11 +34,14 @@ export function ContactsWidget() {
   const updateContact = useUpdateContact();
   const deleteContact = useDeleteContact();
   const createContactPerson = useCreateContactPerson();
+  const updateContactPerson = useUpdateContactPerson();
   const deleteContactPerson = useDeleteContactPerson();
 
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddPersonDialog, setShowAddPersonDialog] = useState(false);
+  const [showEditPersonDialog, setShowEditPersonDialog] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<ContactPerson | null>(null);
   const [contactType, setContactType] = useState<"company" | "person">("company");
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", notes: "" });
   const [personFormData, setPersonFormData] = useState({ name: "", role: "", email: "", phone: "" });
@@ -125,6 +128,34 @@ export function ContactsWidget() {
     if (confirm("Ansprechpartner wirklich löschen?")) {
       deleteContactPerson.mutate(personId);
     }
+  };
+
+  const openEditPersonDialog = (person: ContactPerson) => {
+    setEditingPerson(person);
+    setPersonFormData({
+      name: person.name,
+      role: person.role || "",
+      email: person.email || "",
+      phone: person.phone || "",
+    });
+    setShowEditPersonDialog(true);
+  };
+
+  const handleUpdatePerson = () => {
+    if (!editingPerson || !personFormData.name.trim()) return;
+    updateContactPerson.mutate({
+      id: editingPerson.id,
+      name: personFormData.name,
+      role: personFormData.role || undefined,
+      email: personFormData.email || undefined,
+      phone: personFormData.phone || undefined,
+    }, {
+      onSuccess: () => {
+        setShowEditPersonDialog(false);
+        setEditingPerson(null);
+        setPersonFormData({ name: "", role: "", email: "", phone: "" });
+      }
+    });
   };
 
   const openEditMode = () => {
@@ -274,13 +305,22 @@ export function ContactsWidget() {
                                   <div className="font-medium text-sm text-gray-900">{person.name}</div>
                                   {person.role && <div className="text-xs text-gray-500">{person.role}</div>}
                                 </div>
-                                <button
-                                  onClick={() => handleDeletePerson(person.id)}
-                                  className="p-1 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                  data-testid={`btn-delete-person-${person.id}`}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                                </button>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => openEditPersonDialog(person)}
+                                    className="p-1 hover:bg-gray-200 rounded"
+                                    data-testid={`btn-edit-person-${person.id}`}
+                                  >
+                                    <Pencil className="w-3.5 h-3.5 text-gray-500" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeletePerson(person.id)}
+                                    className="p-1 hover:bg-red-50 rounded"
+                                    data-testid={`btn-delete-person-${person.id}`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                  </button>
+                                </div>
                               </div>
                               <div className="mt-1 space-y-0.5">
                                 {person.email && (
@@ -524,6 +564,49 @@ export function ContactsWidget() {
             </Button>
             <Button onClick={handleAddPerson} disabled={createContactPerson.isPending || !personFormData.name.trim()} data-testid="btn-confirm-add-person">
               {createContactPerson.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Hinzufügen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditPersonDialog} onOpenChange={setShowEditPersonDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ansprechpartner bearbeiten</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Name"
+              value={personFormData.name}
+              onChange={(e) => setPersonFormData({ ...personFormData, name: e.target.value })}
+              data-testid="input-edit-person-name"
+            />
+            <Input
+              placeholder="Rolle (z.B. Geschäftsführer)"
+              value={personFormData.role}
+              onChange={(e) => setPersonFormData({ ...personFormData, role: e.target.value })}
+              data-testid="input-edit-person-role"
+            />
+            <Input
+              placeholder="E-Mail"
+              type="email"
+              value={personFormData.email}
+              onChange={(e) => setPersonFormData({ ...personFormData, email: e.target.value })}
+              data-testid="input-edit-person-email"
+            />
+            <PhoneInput
+              placeholder="Telefon"
+              value={personFormData.phone}
+              onChange={(phone) => setPersonFormData({ ...personFormData, phone })}
+              data-testid="input-edit-person-phone"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEditPersonDialog(false); setEditingPerson(null); }} data-testid="btn-cancel-edit-person">
+              Abbrechen
+            </Button>
+            <Button onClick={handleUpdatePerson} disabled={updateContactPerson.isPending || !personFormData.name.trim()} data-testid="btn-confirm-edit-person">
+              {updateContactPerson.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Speichern"}
             </Button>
           </DialogFooter>
         </DialogContent>
