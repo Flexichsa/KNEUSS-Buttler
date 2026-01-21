@@ -7,7 +7,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink, Key } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink, Key, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -618,6 +619,7 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
   const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<WidgetCategory>("all");
   const [selectedWidget, setSelectedWidget] = useState<WidgetDefinition | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleSelectWidget = (widget: WidgetDefinition) => {
     setSelectedWidget(widget);
@@ -639,12 +641,18 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
     setOpen(isOpen);
     if (!isOpen) {
       setSelectedWidget(null);
+      setSearchQuery("");
     }
   };
 
-  const filteredWidgets = selectedCategory === "all" 
-    ? AVAILABLE_WIDGETS 
-    : AVAILABLE_WIDGETS.filter(w => w.category === selectedCategory);
+  const filteredWidgets = AVAILABLE_WIDGETS.filter(w => {
+    const matchesCategory = selectedCategory === "all" || w.category === selectedCategory;
+    const searchLower = searchQuery.toLowerCase().trim();
+    const matchesSearch = searchLower === "" || 
+      w.name.toLowerCase().includes(searchLower) || 
+      w.description.toLowerCase().includes(searchLower);
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -674,7 +682,18 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
             onBack={handleBack} 
           />
         ) : (
-          <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as WidgetCategory)} className="flex-1 flex flex-col overflow-hidden">
+          <>
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Widgets durchsuchen..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-widget-search"
+              />
+            </div>
+            <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as WidgetCategory)} className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid grid-cols-6 h-auto p-1">
               {CATEGORIES.map((cat) => (
                 <TabsTrigger
@@ -701,6 +720,7 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
               </div>
             </div>
           </Tabs>
+          </>
         )}
       </DialogContent>
     </Dialog>
