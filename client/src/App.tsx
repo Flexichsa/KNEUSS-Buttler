@@ -10,6 +10,7 @@ import Dashboard from "@/pages/dashboard";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
 import ForgotPasswordPage from "@/pages/forgot-password";
+import CsvStatusPage from "@/pages/csv-status";
 
 function ProtectedDashboard() {
   return (
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/csv-status" component={CsvStatusPage} />
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/calendar" component={ProtectedDashboard} />
       <Route path="/mail" component={ProtectedDashboard} />
