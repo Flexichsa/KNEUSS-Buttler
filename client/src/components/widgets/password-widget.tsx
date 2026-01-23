@@ -201,6 +201,10 @@ export function PasswordWidget() {
     setFormData({ ...formData, password: newPassword });
   };
 
+  const stopPropagation = (e: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
+    e.stopPropagation();
+  };
+
   if (isLoading) {
     return (
       <div className="h-full bg-white rounded-2xl flex items-center justify-center">
@@ -497,11 +501,11 @@ export function PasswordWidget() {
       </AnimatePresence>
 
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" onMouseDown={stopPropagation} onTouchStart={stopPropagation} onPointerDown={stopPropagation}>
           <DialogHeader>
             <DialogTitle>Neues Passwort</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
             <Input
               placeholder="Name (z.B. Google, Netflix)"
               value={formData.name}
