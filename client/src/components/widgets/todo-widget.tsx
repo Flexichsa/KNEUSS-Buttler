@@ -567,7 +567,7 @@ export function TodoWidget() {
                     selected={selectedDate}
                     onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }}
                     locale={de}
-                    className="p-2"
+                    className="p-3 [--cell-size:2.25rem]"
                   />
                 </PopoverContent>
               </Popover>
