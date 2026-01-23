@@ -462,10 +462,10 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
               ) : (
                 <>
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl border border-white/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-white/70 group-hover:scale-[1.01] z-0" />
-                  <div className="widget-drag-handle absolute top-3 left-3 w-8 h-8 cursor-move z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/5 hover:bg-black/10">
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="absolute top-3 right-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-3 left-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-lg bg-black/5 hover:bg-black/10">
+                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    </div>
                     {canExpandWidget(widgetId) && (
                       <button
                         onClick={(e) => handleWidgetExpand(widgetId, e)}
