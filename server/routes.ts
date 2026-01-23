@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema, insertErpCategorySchema, insertErpProgramSchema, updateErpProgramSchema } from "@shared/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
@@ -1979,6 +1979,139 @@ export async function registerRoutes(
       res.json({ url: imageUrl });
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Bild-Upload fehlgeschlagen" });
+    }
+  });
+
+  // ========== ERP Categories ==========
+  app.get("/api/erp-categories", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const categories = await storage.getErpCategories();
+      res.json(categories);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Laden der Kategorien" });
+    }
+  });
+
+  app.post("/api/erp-categories", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const data = insertErpCategorySchema.parse(req.body);
+      const category = await storage.createErpCategory(data);
+      res.status(201).json(category);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Fehler beim Erstellen der Kategorie" });
+    }
+  });
+
+  app.patch("/api/erp-categories/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertErpCategorySchema.partial().parse(req.body);
+      const category = await storage.updateErpCategory(id, data);
+      if (!category) {
+        return res.status(404).json({ error: "Kategorie nicht gefunden" });
+      }
+      res.json(category);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Fehler beim Aktualisieren der Kategorie" });
+    }
+  });
+
+  app.delete("/api/erp-categories/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteErpCategory(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Löschen der Kategorie" });
+    }
+  });
+
+  // ========== ERP Programs ==========
+  app.get("/api/erp-programs", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const { categoryId } = req.query;
+      let programs;
+      if (categoryId !== undefined) {
+        programs = await storage.getErpProgramsByCategory(categoryId === 'null' ? null : parseInt(categoryId as string));
+      } else {
+        programs = await storage.getErpPrograms();
+      }
+      res.json(programs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Laden der Programme" });
+    }
+  });
+
+  app.get("/api/erp-programs/search", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ error: "Suchbegriff erforderlich" });
+      }
+      const programs = await storage.searchErpPrograms(q);
+      res.json(programs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler bei der Suche" });
+    }
+  });
+
+  app.get("/api/erp-programs/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const program = await storage.getErpProgram(id);
+      if (!program) {
+        return res.status(404).json({ error: "Programm nicht gefunden" });
+      }
+      res.json(program);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Laden des Programms" });
+    }
+  });
+
+  app.post("/api/erp-programs", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const data = insertErpProgramSchema.parse(req.body);
+      const userId = getUserId(req);
+      const program = await storage.createErpProgram(data, userId || 'System');
+      res.status(201).json(program);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Fehler beim Erstellen des Programms" });
+    }
+  });
+
+  app.patch("/api/erp-programs/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = updateErpProgramSchema.parse(req.body);
+      const userId = getUserId(req);
+      const program = await storage.updateErpProgram(id, data, userId || 'System');
+      if (!program) {
+        return res.status(404).json({ error: "Programm nicht gefunden" });
+      }
+      res.json(program);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Fehler beim Aktualisieren des Programms" });
+    }
+  });
+
+  app.delete("/api/erp-programs/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = getUserId(req);
+      await storage.deleteErpProgram(id, userId || 'System');
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Löschen des Programms" });
+    }
+  });
+
+  app.get("/api/erp-programs/:id/history", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const history = await storage.getErpProgramHistory(id);
+      res.json(history);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Laden der Historie" });
     }
   });
 

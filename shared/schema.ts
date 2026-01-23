@@ -452,3 +452,75 @@ export type InsertGuideStep = z.infer<typeof insertGuideStepSchema>;
 export type GuideStep = typeof guideSteps.$inferSelect;
 
 export type GuideWithSteps = Guide & { steps: GuideStep[]; category?: GuideCategory };
+
+// ERP-Programme Kategorien
+export const erpCategories = pgTable("erp_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#3b82f6"),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ERP-Programme
+export const erpPrograms = pgTable("erp_programs", {
+  id: serial("id").primaryKey(),
+  programNumber: text("program_number").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description"),
+  instruction: text("instruction"),
+  instructionUrl: text("instruction_url"),
+  categoryId: integer("category_id").references(() => erpCategories.id, { onDelete: 'set null' }),
+  lastModifiedBy: text("last_modified_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ERP-Programme Änderungshistorie
+export const erpProgramHistory = pgTable("erp_program_history", {
+  id: serial("id").primaryKey(),
+  programId: integer("program_id").notNull().references(() => erpPrograms.id, { onDelete: 'cascade' }),
+  changedBy: text("changed_by").notNull(),
+  changeType: text("change_type").notNull(),
+  oldValues: jsonb("old_values"),
+  newValues: jsonb("new_values"),
+  changedAt: timestamp("changed_at").notNull().defaultNow(),
+});
+
+export const insertErpCategorySchema = createInsertSchema(erpCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertErpProgramSchema = createInsertSchema(erpPrograms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateErpProgramSchema = z.object({
+  programNumber: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional().nullable(),
+  instruction: z.string().optional().nullable(),
+  instructionUrl: z.string().optional().nullable(),
+  categoryId: z.number().optional().nullable(),
+  lastModifiedBy: z.string().optional().nullable(),
+});
+
+export const insertErpProgramHistorySchema = createInsertSchema(erpProgramHistory).omit({
+  id: true,
+  changedAt: true,
+});
+
+export type InsertErpCategory = z.infer<typeof insertErpCategorySchema>;
+export type ErpCategory = typeof erpCategories.$inferSelect;
+
+export type InsertErpProgram = z.infer<typeof insertErpProgramSchema>;
+export type ErpProgram = typeof erpPrograms.$inferSelect;
+
+export type InsertErpProgramHistory = z.infer<typeof insertErpProgramHistorySchema>;
+export type ErpProgramHistory = typeof erpProgramHistory.$inferSelect;
+
+export type ErpProgramWithCategory = ErpProgram & { category?: ErpCategory };
