@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import Header from "@/components/layout/header";
 import { CalendarWidget } from "@/components/widgets/calendar-widget";
@@ -39,6 +39,8 @@ const tabToPath: Record<string, string> = {
 export default function Dashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
+  const [recentlySavedWidgetId, setRecentlySavedWidgetId] = useState<string | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
   const { 
     config, 
@@ -54,6 +56,32 @@ export default function Dashboard() {
     deleteTab,
     switchTab,
   } = useDashboardLayout();
+
+  const handleSettingsChange = useCallback((widgetId: string, settings: any) => {
+    updateWidgetSettings(widgetId, settings);
+    
+    // Show save feedback
+    setRecentlySavedWidgetId(widgetId);
+    
+    // Clear previous timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Hide feedback after animation
+    saveTimeoutRef.current = setTimeout(() => {
+      setRecentlySavedWidgetId(null);
+    }, 800);
+  }, [updateWidgetSettings]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const newTab = pathToTab[location];
@@ -148,8 +176,9 @@ export default function Dashboard() {
               <DashboardGrid
                 config={config}
                 onLayoutChange={updateLayouts}
-                onSettingsChange={updateWidgetSettings}
+                onSettingsChange={handleSettingsChange}
                 onRemoveWidget={removeWidget}
+                recentlySavedWidgetId={recentlySavedWidgetId}
               />
             )}
           </motion.div>
