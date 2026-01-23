@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Building2, User, Plus, Phone, Mail, MapPin, ChevronRight, ChevronLeft, Loader2, Pencil, Trash2, UserPlus, X, Search } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Building2, User, Plus, Phone, Mail, MapPin, ChevronRight, ChevronLeft, Loader2, Pencil, Trash2, UserPlus, X, Search, Upload, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ interface Contact {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  logoUrl: string | null;
   persons: ContactPerson[];
 }
 
@@ -43,10 +44,13 @@ export function ContactsWidget() {
   const [showEditPersonDialog, setShowEditPersonDialog] = useState(false);
   const [editingPerson, setEditingPerson] = useState<ContactPerson | null>(null);
   const [contactType, setContactType] = useState<"company" | "person">("company");
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", notes: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", notes: "", logoUrl: "" });
   const [personFormData, setPersonFormData] = useState({ name: "", role: "", email: "", phone: "" });
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const editLogoInputRef = useRef<HTMLInputElement>(null);
 
   const sortedAndFilteredContacts = useMemo(() => {
     let filtered = [...contacts];
@@ -65,6 +69,30 @@ export function ContactsWidget() {
   const companies = sortedAndFilteredContacts.filter(c => c.type === "company");
   const persons = sortedAndFilteredContacts.filter(c => c.type === "person");
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingLogo(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formDataUpload,
+      });
+      
+      if (!res.ok) throw new Error('Upload failed');
+      const { url } = await res.json();
+      setFormData(prev => ({ ...prev, logoUrl: url }));
+    } catch (err) {
+      console.error('Logo upload failed:', err);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleAddContact = () => {
     if (!formData.name.trim()) return;
     createContact.mutate({
@@ -74,10 +102,11 @@ export function ContactsWidget() {
       phone: formData.phone || undefined,
       address: formData.address || undefined,
       notes: formData.notes || undefined,
+      logoUrl: formData.logoUrl || undefined,
     }, {
       onSuccess: () => {
         setShowAddDialog(false);
-        setFormData({ name: "", email: "", phone: "", address: "", notes: "" });
+        setFormData({ name: "", email: "", phone: "", address: "", notes: "", logoUrl: "" });
       }
     });
   };
@@ -91,6 +120,7 @@ export function ContactsWidget() {
       phone: formData.phone || undefined,
       address: formData.address || undefined,
       notes: formData.notes || undefined,
+      logoUrl: formData.logoUrl || undefined,
     }, {
       onSuccess: (updatedContact) => {
         setEditMode(false);
@@ -165,6 +195,7 @@ export function ContactsWidget() {
         phone: selectedContact.phone || "",
         address: selectedContact.address || "",
         notes: selectedContact.notes || "",
+        logoUrl: selectedContact.logoUrl || "",
       });
       setEditMode(true);
     }
@@ -244,6 +275,55 @@ export function ContactsWidget() {
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     data-testid="input-edit-address"
                   />
+                  {selectedContact.type === "company" && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Firmenlogo</label>
+                      <div className="flex items-center gap-3">
+                        {formData.logoUrl ? (
+                          <div className="relative">
+                            <img 
+                              src={formData.logoUrl} 
+                              alt="Logo" 
+                              className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                            />
+                            <button
+                              onClick={() => setFormData({ ...formData, logoUrl: "" })}
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                              type="button"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                            <ImageIcon className="w-5 h-5 text-gray-400" />
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          ref={editLogoInputRef}
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleLogoUpload(e, true)}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => editLogoInputRef.current?.click()}
+                          disabled={uploadingLogo}
+                          data-testid="btn-edit-upload-logo"
+                        >
+                          {uploadingLogo ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <Upload className="w-4 h-4 mr-2" />
+                          )}
+                          {formData.logoUrl ? "Ändern" : "Hochladen"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <Button onClick={handleUpdateContact} disabled={updateContact.isPending} className="flex-1" data-testid="btn-save-contact">
                       {updateContact.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Speichern"}
@@ -417,9 +497,17 @@ export function ContactsWidget() {
                           className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
                           data-testid={`contact-${contact.id}`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="w-4 h-4 text-blue-600" />
-                          </div>
+                          {contact.logoUrl ? (
+                            <img 
+                              src={contact.logoUrl} 
+                              alt={contact.name} 
+                              className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                              <Building2 className="w-4 h-4 text-blue-600" />
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm text-gray-900 truncate">{contact.name}</div>
                             {contact.phone && <div className="text-xs text-gray-500 truncate">{contact.phone}</div>}
@@ -513,6 +601,55 @@ export function ContactsWidget() {
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               data-testid="input-contact-address"
             />
+            {contactType === "company" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Firmenlogo</label>
+                <div className="flex items-center gap-3">
+                  {formData.logoUrl ? (
+                    <div className="relative">
+                      <img 
+                        src={formData.logoUrl} 
+                        alt="Logo Vorschau" 
+                        className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                      />
+                      <button
+                        onClick={() => setFormData({ ...formData, logoUrl: "" })}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                        type="button"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50">
+                      <ImageIcon className="w-5 h-5 text-gray-400" />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={logoInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleLogoUpload(e)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    data-testid="btn-upload-logo"
+                  >
+                    {uploadingLogo ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Upload className="w-4 h-4 mr-2" />
+                    )}
+                    Logo hochladen
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)} data-testid="btn-cancel-add">

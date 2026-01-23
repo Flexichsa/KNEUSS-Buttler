@@ -320,6 +320,7 @@ export const contacts = pgTable("contacts", {
   phone: text("phone"),
   address: text("address"),
   notes: text("notes"),
+  logoUrl: text("logo_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

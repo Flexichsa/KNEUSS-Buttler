@@ -21,6 +21,7 @@ import { AsanaWidget } from "@/components/widgets/asana-widget";
 import { ContactsWidget } from "@/components/widgets/contacts-widget";
 import { WeblinkWidget } from "@/components/widgets/weblink-widget";
 import { PasswordWidget } from "@/components/widgets/password-widget";
+import { KnowledgeBaseWidget } from "@/components/widgets/knowledge-base-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import { getWidgetType } from "./dashboard-config";
 import type { DashboardConfig, WidgetLayout, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WeblinkSettings, WidgetSizeMode } from "@shared/schema";
@@ -257,6 +258,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         return <WeblinkWidget settings={settings as WeblinkSettings} />;
       case "passwords":
         return <PasswordWidget />;
+      case "knowledgebase":
+        return <KnowledgeBaseWidget />;
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
@@ -269,7 +272,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   const canExpandWidget = (widgetId: string) => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
-    return ["contacts", "todo", "mail", "calendar", "asana", "mstodo", "onedrive", "docupload", "statusreport", "assistant", "passwords"].includes(widgetType);
+    return ["contacts", "todo", "mail", "calendar", "asana", "mstodo", "onedrive", "docupload", "statusreport", "assistant", "passwords", "knowledgebase"].includes(widgetType);
   };
 
   const handleWidgetExpand = useCallback((widgetId: string, e?: React.MouseEvent) => {

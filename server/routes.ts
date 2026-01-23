@@ -1631,6 +1631,42 @@ export async function registerRoutes(
     }
   });
 
+  // General file upload API - for images (logos, etc.)
+  app.post("/api/upload", upload.single("file"), async (req, res) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+      
+      // Validate file type (only images allowed)
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        fs.unlinkSync(file.path);
+        return res.status(400).json({ error: "Only image files are allowed" });
+      }
+      
+      // Generate unique filename
+      const ext = path.extname(file.originalname) || ".jpg";
+      const uniqueName = `${crypto.randomBytes(16).toString("hex")}${ext}`;
+      const uploadDir = path.join(process.cwd(), "uploads", "logos");
+      
+      // Ensure directory exists
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      const destPath = path.join(uploadDir, uniqueName);
+      fs.renameSync(file.path, destPath);
+      
+      const url = `/uploads/logos/${uniqueName}`;
+      res.json({ url });
+    } catch (error: any) {
+      console.error("[Upload] Error:", error);
+      res.status(500).json({ error: error.message || "Upload failed" });
+    }
+  });
+
   // CSV Upload API - for external server uploads
   app.post("/api/upload-csv", async (req, res) => {
     try {
