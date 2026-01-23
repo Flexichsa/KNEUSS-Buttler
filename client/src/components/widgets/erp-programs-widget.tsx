@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Terminal, Search, ChevronRight, FolderOpen, Loader2, Plus, Edit2, Trash2, ExternalLink, History, X, Save, Filter } from "lucide-react";
+import { Terminal, Search, ChevronRight, Loader2, Plus, Edit2, Trash2, ExternalLink, History, X, Save, MoreHorizontal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,7 @@ export function ErpProgramsWidget() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [formData, setFormData] = useState<Partial<ErpProgram>>({});
+  const [hoveredProgramId, setHoveredProgramId] = useState<number | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -138,7 +139,8 @@ export function ErpProgramsWidget() {
     return categories.find(c => c.id === categoryId);
   };
 
-  const handleEdit = (program: ErpProgram) => {
+  const handleEdit = (program: ErpProgram, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setFormData({
       programNumber: program.programNumber,
       title: program.title,
@@ -171,6 +173,11 @@ export function ErpProgramsWidget() {
     }
   };
 
+  const handleOpenLink = (url: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(url, '_blank');
+  };
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('de-DE', {
       day: '2-digit',
@@ -190,7 +197,7 @@ export function ErpProgramsWidget() {
   }
 
   return (
-    <div className="h-full bg-white rounded-2xl overflow-hidden flex flex-col" data-testid="erp-programs-widget">
+    <div className="h-full bg-white rounded-2xl overflow-hidden flex flex-col shadow-sm" data-testid="erp-programs-widget">
       <AnimatePresence mode="wait">
         {viewMode === 'detail' && selectedProgram ? (
           <motion.div
@@ -200,72 +207,90 @@ export function ErpProgramsWidget() {
             exit={{ x: 50, opacity: 0 }}
             className="h-full flex flex-col"
           >
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-indigo-50 to-white">
               <button
                 onClick={() => { setViewMode('list'); setSelectedProgram(null); }}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/80 rounded-xl transition-all duration-200 shadow-sm bg-white"
                 data-testid="btn-back-programs"
               >
-                <ChevronRight className="w-5 h-5 text-gray-500 rotate-180" />
+                <ChevronRight className="w-4 h-4 text-indigo-600 rotate-180" />
               </button>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs font-mono">{selectedProgram.programNumber}</Badge>
-                  <h3 className="font-semibold text-gray-900 truncate">{selectedProgram.title}</h3>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-sm font-mono font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-md">
+                    {selectedProgram.programNumber}
+                  </span>
                 </div>
-                {selectedProgram.category && (
-                  <span className="text-xs text-gray-500">{selectedProgram.category.name}</span>
-                )}
+                <h3 className="font-semibold text-gray-900 truncate text-sm">{selectedProgram.title}</h3>
               </div>
               <div className="flex gap-1">
-                <Button size="sm" variant="ghost" onClick={() => setViewMode('history')} data-testid="btn-history">
-                  <History className="w-4 h-4" />
+                <Button size="sm" variant="ghost" onClick={() => setViewMode('history')} className="h-8 w-8 p-0 hover:bg-indigo-50" data-testid="btn-history">
+                  <History className="w-4 h-4 text-gray-500" />
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => handleEdit(selectedProgram)} data-testid="btn-edit">
-                  <Edit2 className="w-4 h-4" />
+                <Button size="sm" variant="ghost" onClick={() => handleEdit(selectedProgram)} className="h-8 w-8 p-0 hover:bg-indigo-50" data-testid="btn-edit">
+                  <Edit2 className="w-4 h-4 text-gray-500" />
                 </Button>
-                <Button size="sm" variant="ghost" className="text-red-600" onClick={handleDelete} data-testid="btn-delete">
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-500 hover:bg-red-50" onClick={handleDelete} data-testid="btn-delete">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {selectedProgram.category && (
+                <div className="flex items-center gap-2">
+                  <Badge 
+                    variant="secondary"
+                    className="text-xs font-medium"
+                    style={{ 
+                      backgroundColor: selectedProgram.category.color ? `${selectedProgram.category.color}20` : undefined,
+                      color: selectedProgram.category.color || undefined,
+                      borderColor: selectedProgram.category.color || undefined
+                    }}
+                  >
+                    {selectedProgram.category.name}
+                  </Badge>
+                </div>
+              )}
+
               {selectedProgram.description && (
-                <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Beschreibung</div>
-                  <p className="text-sm text-gray-700">{selectedProgram.description}</p>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Beschreibung</div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{selectedProgram.description}</p>
                 </div>
               )}
               
               {selectedProgram.instruction && (
-                <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Arbeitsanweisung</div>
-                  <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">
+                <div className="bg-blue-50 rounded-xl p-4">
+                  <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Arbeitsanweisung</div>
+                  <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
                     {selectedProgram.instruction}
                   </div>
                 </div>
               )}
 
               {selectedProgram.instructionUrl && (
-                <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Link zur Anleitung</div>
-                  <a 
-                    href={selectedProgram.instructionUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    {selectedProgram.instructionUrl}
-                  </a>
-                </div>
+                <a 
+                  href={selectedProgram.instructionUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-4 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors group"
+                >
+                  <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                    <ExternalLink className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Link zur Anleitung</div>
+                    <div className="text-sm text-gray-700 truncate">{selectedProgram.instructionUrl}</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-indigo-400" />
+                </a>
               )}
 
-              <div className="pt-4 border-t text-xs text-gray-500">
-                <div>Zuletzt geändert: {formatDate(selectedProgram.updatedAt)}</div>
+              <div className="pt-3 border-t border-gray-100 text-xs text-gray-400 flex items-center gap-4">
+                <span>Zuletzt: {formatDate(selectedProgram.updatedAt)}</span>
                 {selectedProgram.lastModifiedBy && (
-                  <div>Von: {selectedProgram.lastModifiedBy}</div>
+                  <span>von {selectedProgram.lastModifiedBy}</span>
                 )}
               </div>
             </div>
@@ -278,16 +303,16 @@ export function ErpProgramsWidget() {
             exit={{ x: 50, opacity: 0 }}
             className="h-full flex flex-col"
           >
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-amber-50 to-white">
               <button
                 onClick={() => setViewMode('detail')}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/80 rounded-xl transition-all duration-200 shadow-sm bg-white"
                 data-testid="btn-back-from-history"
               >
-                <ChevronRight className="w-5 h-5 text-gray-500 rotate-180" />
+                <ChevronRight className="w-4 h-4 text-amber-600 rotate-180" />
               </button>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">Änderungshistorie</h3>
+                <h3 className="font-semibold text-gray-900 text-sm">Änderungshistorie</h3>
                 <span className="text-xs text-gray-500">{selectedProgram.title}</span>
               </div>
             </div>
@@ -299,20 +324,26 @@ export function ErpProgramsWidget() {
                 </div>
               ) : history.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  <History className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Keine Änderungen vorhanden</p>
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <History className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-medium">Keine Änderungen</p>
+                  <p className="text-xs text-gray-400 mt-1">Änderungen werden hier protokolliert</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {history.map((entry) => (
-                    <div key={entry.id} className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <Badge variant={entry.changeType === 'created' ? 'default' : entry.changeType === 'deleted' ? 'destructive' : 'secondary'}>
+                    <div key={entry.id} className="bg-gray-50 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge 
+                          variant={entry.changeType === 'created' ? 'default' : entry.changeType === 'deleted' ? 'destructive' : 'secondary'}
+                          className="text-xs"
+                        >
                           {entry.changeType === 'created' ? 'Erstellt' : entry.changeType === 'deleted' ? 'Gelöscht' : 'Bearbeitet'}
                         </Badge>
                         <span className="text-xs text-gray-500">{formatDate(entry.changedAt)}</span>
                       </div>
-                      <div className="text-xs text-gray-600">Von: {entry.changedBy}</div>
+                      <div className="text-sm text-gray-600">Von: {entry.changedBy}</div>
                     </div>
                   ))}
                 </div>
@@ -327,43 +358,49 @@ export function ErpProgramsWidget() {
             exit={{ x: 50, opacity: 0 }}
             className="h-full flex flex-col"
           >
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-green-50 to-white">
               <button
                 onClick={() => { setViewMode('list'); setSelectedProgram(null); setFormData({}); }}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/80 rounded-xl transition-all duration-200 shadow-sm bg-white"
                 data-testid="btn-cancel-form"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-4 h-4 text-gray-500" />
               </button>
-              <h3 className="font-semibold text-gray-900 flex-1">
+              <h3 className="font-semibold text-gray-900 flex-1 text-sm">
                 {viewMode === 'create' ? 'Neues Programm' : 'Programm bearbeiten'}
               </h3>
-              <Button size="sm" onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending} data-testid="btn-save">
-                <Save className="w-4 h-4 mr-1" />
+              <Button 
+                size="sm" 
+                onClick={handleSave} 
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
+                data-testid="btn-save"
+              >
+                <Save className="w-4 h-4 mr-1.5" />
                 Speichern
               </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="programNumber">Programmnummer *</Label>
+                  <Label htmlFor="programNumber" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Programmnummer *</Label>
                   <Input
                     id="programNumber"
                     value={formData.programNumber || ''}
                     onChange={(e) => setFormData({ ...formData, programNumber: e.target.value })}
                     placeholder="z.B. PRG-001"
-                    className="font-mono"
+                    className="font-mono mt-1.5 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
                     data-testid="input-program-number"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="categoryId">Kategorie</Label>
+                  <Label htmlFor="categoryId" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Kategorie</Label>
                   <Select
                     value={formData.categoryId?.toString() || "none"}
                     onValueChange={(v) => setFormData({ ...formData, categoryId: v === "none" ? null : parseInt(v) })}
                   >
-                    <SelectTrigger data-testid="select-category">
+                    <SelectTrigger className="mt-1.5 rounded-xl border-gray-200" data-testid="select-category">
                       <SelectValue placeholder="Kategorie wählen" />
                     </SelectTrigger>
                     <SelectContent>
@@ -377,47 +414,51 @@ export function ErpProgramsWidget() {
               </div>
 
               <div>
-                <Label htmlFor="title">Titel *</Label>
+                <Label htmlFor="title" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Titel *</Label>
                 <Input
                   id="title"
                   value={formData.title || ''}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="Programmtitel eingeben"
+                  className="mt-1.5 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
                   data-testid="input-title"
                 />
               </div>
 
               <div>
-                <Label htmlFor="description">Beschreibung</Label>
+                <Label htmlFor="description" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Beschreibung</Label>
                 <Textarea
                   id="description"
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Was macht dieses Programm?"
-                  rows={3}
+                  rows={2}
+                  className="mt-1.5 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500 resize-none"
                   data-testid="input-description"
                 />
               </div>
 
               <div>
-                <Label htmlFor="instruction">Arbeitsanweisung</Label>
+                <Label htmlFor="instruction" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Arbeitsanweisung</Label>
                 <Textarea
                   id="instruction"
                   value={formData.instruction || ''}
                   onChange={(e) => setFormData({ ...formData, instruction: e.target.value })}
                   placeholder="Schritt-für-Schritt Anleitung..."
-                  rows={5}
+                  rows={4}
+                  className="mt-1.5 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500 resize-none"
                   data-testid="input-instruction"
                 />
               </div>
 
               <div>
-                <Label htmlFor="instructionUrl">Link zur Anleitung (optional)</Label>
+                <Label htmlFor="instructionUrl" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Link zur Anleitung</Label>
                 <Input
                   id="instructionUrl"
                   value={formData.instructionUrl || ''}
                   onChange={(e) => setFormData({ ...formData, instructionUrl: e.target.value })}
                   placeholder="https://..."
+                  className="mt-1.5 rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
                   data-testid="input-instruction-url"
                 />
               </div>
@@ -431,96 +472,162 @@ export function ErpProgramsWidget() {
             exit={{ x: -50, opacity: 0 }}
             className="h-full flex flex-col"
           >
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                  <Terminal className="w-4 h-4 text-indigo-600" />
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+                  <Terminal className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-sm">ERP-Programme</h3>
+                  <h3 className="font-bold text-gray-900 text-sm">ERP-Programme</h3>
                   <span className="text-xs text-gray-500">{programs.length} Programme</span>
                 </div>
               </div>
-              <Button size="sm" variant="ghost" onClick={handleCreate} data-testid="btn-add-program">
-                <Plus className="w-4 h-4" />
+              <Button 
+                size="sm" 
+                onClick={handleCreate}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm"
+                data-testid="btn-add-program"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Neu
               </Button>
             </div>
 
-            <div className="px-3 py-2 border-b border-gray-100 space-y-2">
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            {/* Search & Filter - Compact Single Row */}
+            <div className="px-3 py-2 border-b border-gray-100 flex gap-2 items-center bg-gray-50/50">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Suche nach Nummer, Titel..."
+                  placeholder="Suchen..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 h-8 text-sm"
+                  className="pl-9 h-9 text-sm rounded-xl border-gray-200 bg-white"
                   data-testid="input-search-programs"
                 />
               </div>
               <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                <SelectTrigger className="h-8 text-sm" data-testid="select-filter-category">
-                  <Filter className="w-3 h-3 mr-1" />
-                  <SelectValue placeholder="Alle Kategorien" />
+                <SelectTrigger className="h-9 w-[140px] text-sm rounded-xl border-gray-200 bg-white" data-testid="select-filter-category">
+                  <SelectValue placeholder="Alle" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alle Kategorien</SelectItem>
                   <SelectItem value="none">Ohne Kategorie</SelectItem>
                   {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                    <SelectItem key={cat.id} value={cat.id.toString()}>
+                      <span className="flex items-center gap-2">
+                        {cat.color && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />}
+                        {cat.name}
+                      </span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Program List */}
             <div className="flex-1 overflow-y-auto">
               {programs.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4">
-                  <Terminal className="w-12 h-12 mb-2 opacity-50" />
-                  <p className="text-sm">Noch keine Programme</p>
-                  <Button size="sm" variant="outline" className="mt-2" onClick={handleCreate}>
+                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-6">
+                  <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                    <Terminal className="w-10 h-10 text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-500">Noch keine Programme</p>
+                  <p className="text-xs text-gray-400 mt-1 mb-4">Erstelle dein erstes ERP-Programm</p>
+                  <Button size="sm" onClick={handleCreate} className="rounded-xl">
                     <Plus className="w-4 h-4 mr-1" /> Programm anlegen
                   </Button>
                 </div>
               ) : filteredPrograms.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-4">
-                  <Search className="w-10 h-10 mb-2 opacity-50" />
-                  <p className="text-sm">Keine Programme gefunden</p>
-                  <p className="text-xs mt-1">Versuche einen anderen Suchbegriff</p>
+                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-6">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                    <Search className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-500">Keine Treffer</p>
+                  <p className="text-xs text-gray-400 mt-1">Versuche einen anderen Suchbegriff</p>
                 </div>
               ) : (
-                <div className="p-2 space-y-1">
+                <div className="p-2 space-y-1.5">
                   {filteredPrograms.map((program) => {
                     const category = getCategoryInfo(program.categoryId);
+                    const isHovered = hoveredProgramId === program.id;
+                    
                     return (
-                      <button
+                      <div
                         key={program.id}
                         onClick={() => { setSelectedProgram(program); setViewMode('detail'); }}
-                        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                        onMouseEnter={() => setHoveredProgramId(program.id)}
+                        onMouseLeave={() => setHoveredProgramId(null)}
+                        className="relative flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer group border border-transparent hover:border-gray-100 hover:shadow-sm"
                         data-testid={`program-${program.id}`}
                       >
+                        {/* Program Number Badge */}
                         <div 
-                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-gray-100"
-                          style={{ backgroundColor: category?.color ? `${category.color}20` : undefined }}
+                          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 font-mono text-sm font-bold transition-all duration-200"
+                          style={{ 
+                            backgroundColor: category?.color ? `${category.color}15` : '#f3f4f6',
+                            color: category?.color || '#6b7280'
+                          }}
                         >
-                          <span className="text-xs font-mono font-bold text-gray-600" style={{ color: category?.color || undefined }}>
-                            {program.programNumber.slice(0, 4)}
-                          </span>
+                          {program.programNumber.slice(0, 4)}
                         </div>
+                        
+                        {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-gray-900 truncate">{program.title}</div>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span className="font-mono">{program.programNumber}</span>
+                          <div className="font-semibold text-sm text-gray-900 truncate mb-0.5">
+                            {program.title}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-gray-400">{program.programNumber}</span>
                             {category && (
-                              <>
-                                <span>•</span>
-                                <span>{category.name}</span>
-                              </>
+                              <Badge 
+                                variant="outline" 
+                                className="text-[10px] px-1.5 py-0 h-4 font-medium border-0"
+                                style={{ 
+                                  backgroundColor: category.color ? `${category.color}15` : '#f3f4f6',
+                                  color: category.color || '#6b7280'
+                                }}
+                              >
+                                {category.name}
+                              </Badge>
                             )}
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      </button>
+
+                        {/* Quick Actions on Hover */}
+                        <AnimatePresence>
+                          {isHovered ? (
+                            <motion.div 
+                              initial={{ opacity: 0, x: 10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 10 }}
+                              className="flex items-center gap-1"
+                            >
+                              {program.instructionUrl && (
+                                <button
+                                  onClick={(e) => handleOpenLink(program.instructionUrl!, e)}
+                                  className="p-2 rounded-lg bg-white shadow-sm border border-gray-100 hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
+                                  title="Link öffnen"
+                                  data-testid={`btn-open-link-${program.id}`}
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5 text-indigo-600" />
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => handleEdit(program, e)}
+                                className="p-2 rounded-lg bg-white shadow-sm border border-gray-100 hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
+                                title="Bearbeiten"
+                                data-testid={`btn-edit-${program.id}`}
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-indigo-600" />
+                              </button>
+                            </motion.div>
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 group-hover:text-gray-400 transition-colors" />
+                          )}
+                        </AnimatePresence>
+                      </div>
                     );
                   })}
                 </div>
