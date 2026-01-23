@@ -1,6 +1,6 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, passwords, csvUploads, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload } from "@shared/schema";
-import { eq, and, lt, desc, isNull, asc, gte, lte } from "drizzle-orm";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, passwords, csvUploads, guideCategories, guides, guideSteps, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps } from "@shared/schema";
+import { eq, and, lt, desc, isNull, asc, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -91,6 +91,28 @@ export interface IStorage {
   getLatestCsvUpload(): Promise<CsvUpload | undefined>;
   getCsvUploads(limit?: number): Promise<CsvUpload[]>;
   createCsvUpload(upload: InsertCsvUpload): Promise<CsvUpload>;
+  
+  // Guide Categories
+  getGuideCategories(): Promise<GuideCategory[]>;
+  getGuideCategory(id: number): Promise<GuideCategory | undefined>;
+  createGuideCategory(category: InsertGuideCategory): Promise<GuideCategory>;
+  updateGuideCategory(id: number, category: Partial<InsertGuideCategory>): Promise<GuideCategory | undefined>;
+  deleteGuideCategory(id: number): Promise<void>;
+  
+  // Guides
+  getGuides(): Promise<GuideWithSteps[]>;
+  getGuidesByCategory(categoryId: number | null): Promise<GuideWithSteps[]>;
+  searchGuides(query: string): Promise<GuideWithSteps[]>;
+  getGuide(id: number): Promise<GuideWithSteps | undefined>;
+  createGuide(guide: InsertGuide): Promise<Guide>;
+  updateGuide(id: number, guide: Partial<InsertGuide>): Promise<Guide | undefined>;
+  deleteGuide(id: number): Promise<void>;
+  
+  // Guide Steps
+  getGuideSteps(guideId: number): Promise<GuideStep[]>;
+  createGuideStep(step: InsertGuideStep): Promise<GuideStep>;
+  updateGuideStep(id: number, step: Partial<InsertGuideStep>): Promise<GuideStep | undefined>;
+  deleteGuideStep(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -493,6 +515,114 @@ export class DatabaseStorage implements IStorage {
   async createCsvUpload(upload: InsertCsvUpload): Promise<CsvUpload> {
     const [newUpload] = await db.insert(csvUploads).values(upload).returning();
     return newUpload;
+  }
+
+  // Guide Categories
+  async getGuideCategories(): Promise<GuideCategory[]> {
+    return db.select().from(guideCategories).orderBy(asc(guideCategories.orderIndex), asc(guideCategories.name));
+  }
+
+  async getGuideCategory(id: number): Promise<GuideCategory | undefined> {
+    const [category] = await db.select().from(guideCategories).where(eq(guideCategories.id, id));
+    return category;
+  }
+
+  async createGuideCategory(category: InsertGuideCategory): Promise<GuideCategory> {
+    const [newCategory] = await db.insert(guideCategories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateGuideCategory(id: number, categoryUpdate: Partial<InsertGuideCategory>): Promise<GuideCategory | undefined> {
+    const [updated] = await db.update(guideCategories).set(categoryUpdate).where(eq(guideCategories.id, id)).returning();
+    return updated;
+  }
+
+  async deleteGuideCategory(id: number): Promise<void> {
+    await db.delete(guideCategories).where(eq(guideCategories.id, id));
+  }
+
+  // Guides
+  private async enrichGuidesWithSteps(guidesList: Guide[]): Promise<GuideWithSteps[]> {
+    if (guidesList.length === 0) return [];
+    
+    const allSteps = await db.select().from(guideSteps).orderBy(asc(guideSteps.stepNumber));
+    const allCategories = await db.select().from(guideCategories);
+    
+    return guidesList.map(guide => ({
+      ...guide,
+      steps: allSteps.filter(s => s.guideId === guide.id),
+      category: allCategories.find(c => c.id === guide.categoryId)
+    }));
+  }
+
+  async getGuides(): Promise<GuideWithSteps[]> {
+    const allGuides = await db.select().from(guides).orderBy(desc(guides.updatedAt));
+    return this.enrichGuidesWithSteps(allGuides);
+  }
+
+  async getGuidesByCategory(categoryId: number | null): Promise<GuideWithSteps[]> {
+    let guidesList: Guide[];
+    if (categoryId === null) {
+      guidesList = await db.select().from(guides).where(isNull(guides.categoryId)).orderBy(desc(guides.updatedAt));
+    } else {
+      guidesList = await db.select().from(guides).where(eq(guides.categoryId, categoryId)).orderBy(desc(guides.updatedAt));
+    }
+    return this.enrichGuidesWithSteps(guidesList);
+  }
+
+  async searchGuides(query: string): Promise<GuideWithSteps[]> {
+    const searchTerm = `%${query}%`;
+    const guidesList = await db.select().from(guides).where(
+      or(
+        ilike(guides.title, searchTerm),
+        ilike(guides.description, searchTerm),
+        ilike(guides.content, searchTerm)
+      )
+    ).orderBy(desc(guides.updatedAt));
+    return this.enrichGuidesWithSteps(guidesList);
+  }
+
+  async getGuide(id: number): Promise<GuideWithSteps | undefined> {
+    const [guide] = await db.select().from(guides).where(eq(guides.id, id));
+    if (!guide) return undefined;
+    
+    const steps = await db.select().from(guideSteps).where(eq(guideSteps.guideId, id)).orderBy(asc(guideSteps.stepNumber));
+    const category = guide.categoryId ? await this.getGuideCategory(guide.categoryId) : undefined;
+    
+    return { ...guide, steps, category };
+  }
+
+  async createGuide(guide: InsertGuide): Promise<Guide> {
+    const [newGuide] = await db.insert(guides).values(guide).returning();
+    return newGuide;
+  }
+
+  async updateGuide(id: number, guideUpdate: Partial<InsertGuide>): Promise<Guide | undefined> {
+    const [updated] = await db.update(guides).set({ ...guideUpdate, updatedAt: new Date() }).where(eq(guides.id, id)).returning();
+    return updated;
+  }
+
+  async deleteGuide(id: number): Promise<void> {
+    await db.delete(guides).where(eq(guides.id, id));
+  }
+
+  // Guide Steps
+  async getGuideSteps(guideId: number): Promise<GuideStep[]> {
+    return db.select().from(guideSteps).where(eq(guideSteps.guideId, guideId)).orderBy(asc(guideSteps.stepNumber));
+  }
+
+  async createGuideStep(step: InsertGuideStep): Promise<GuideStep> {
+    const [newStep] = await db.insert(guideSteps).values(step).returning();
+    return newStep;
+  }
+
+  async updateGuideStep(id: number, stepUpdate: Partial<InsertGuideStep>): Promise<GuideStep | undefined> {
+    const [updated] = await db.update(guideSteps).set(stepUpdate).where(eq(guideSteps.id, id)).returning();
+    return updated;
+  }
+
+  async deleteGuideStep(id: number): Promise<void> {
+    await db.delete(guideSteps).where(eq(guideSteps.id, id));
   }
 }
 

@@ -390,3 +390,64 @@ export const insertCsvUploadSchema = createInsertSchema(csvUploads).omit({
 
 export type InsertCsvUpload = z.infer<typeof insertCsvUploadSchema>;
 export type CsvUpload = typeof csvUploads.$inferSelect;
+
+// CSB ERP Knowledge Base - Kategorien
+export const guideCategories = pgTable("guide_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  icon: text("icon").default("folder"),
+  color: text("color").default("#3b82f6"),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// CSB ERP Knowledge Base - Anleitungen
+export const guides = pgTable("guides", {
+  id: serial("id").primaryKey(),
+  categoryId: integer("category_id").references(() => guideCategories.id, { onDelete: 'set null' }),
+  title: text("title").notNull(),
+  description: text("description"),
+  content: text("content"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// CSB ERP Knowledge Base - Anleitung Schritte
+export const guideSteps = pgTable("guide_steps", {
+  id: serial("id").primaryKey(),
+  guideId: integer("guide_id").notNull().references(() => guides.id, { onDelete: 'cascade' }),
+  stepNumber: integer("step_number").notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertGuideCategorySchema = createInsertSchema(guideCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGuideSchema = createInsertSchema(guides).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGuideStepSchema = createInsertSchema(guideSteps).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertGuideCategory = z.infer<typeof insertGuideCategorySchema>;
+export type GuideCategory = typeof guideCategories.$inferSelect;
+
+export type InsertGuide = z.infer<typeof insertGuideSchema>;
+export type Guide = typeof guides.$inferSelect;
+
+export type InsertGuideStep = z.infer<typeof insertGuideStepSchema>;
+export type GuideStep = typeof guideSteps.$inferSelect;
+
+export type GuideWithSteps = Guide & { steps: GuideStep[]; category?: GuideCategory };
