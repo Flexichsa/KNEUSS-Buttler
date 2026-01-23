@@ -2,11 +2,11 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { 
-  Plus, Loader2, Circle, Calendar as CalendarIcon, Check, Eye, EyeOff, 
+  Plus, Loader2, Calendar as CalendarIcon, Check, Eye, EyeOff, 
   Flag, ChevronDown, ChevronRight, Trash2, Edit2, MoreHorizontal,
-  Sun, CalendarDays, Inbox, Tag, X, Mic, MicOff
+  Sun, CalendarDays, Inbox, Tag, X, Mic, MicOff, Circle
 } from "lucide-react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { 
   useTodos, useCreateTodo, useToggleTodo, useUpdateTodo, useDeleteTodo,
@@ -14,7 +14,6 @@ import {
   parseNaturalLanguageTask, PRIORITY_COLORS, PRIORITY_LABELS,
   type Todo, type TodoLabel
 } from "@/hooks/use-todos";
-import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, isTomorrow, isPast, startOfDay, addDays, isWithinInterval } from "date-fns";
 import { de } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -34,12 +33,231 @@ const DEFAULT_LABEL_COLORS = [
   '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'
 ];
 
-const SOFT_PRIORITY_COLORS: Record<number, string> = {
-  1: '#dc2626',
-  2: '#ea580c', 
-  3: '#2563eb',
-  4: '#9ca3af'
+const PRIORITY_STYLE: Record<number, { border: string; bg: string; dot: string }> = {
+  1: { border: 'border-red-400', bg: 'bg-red-50', dot: 'bg-red-500' },
+  2: { border: 'border-orange-400', bg: 'bg-orange-50', dot: 'bg-orange-500' },
+  3: { border: 'border-blue-400', bg: 'bg-blue-50', dot: 'bg-blue-500' },
+  4: { border: 'border-slate-200', bg: 'bg-slate-50', dot: 'bg-slate-300' }
 };
+
+const formatDueDate = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  if (isToday(date)) return "Heute";
+  if (isTomorrow(date)) return "Morgen";
+  return format(date, "dd. MMM", { locale: de });
+};
+
+const isOverdue = (dateStr: string | null) => {
+  if (!dateStr) return false;
+  const date = startOfDay(new Date(dateStr));
+  return isPast(date) && !isToday(new Date(dateStr));
+};
+
+interface TodoItemProps {
+  todo: Todo;
+  labels: TodoLabel[];
+  subtasks: Todo[];
+  isSubtask?: boolean;
+  isExpanded: boolean;
+  isEditing: boolean;
+  editingText: string;
+  onToggle: (id: number, completed: boolean) => void;
+  onDelete: (id: number) => void;
+  onStartEdit: (todo: Todo) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onEditTextChange: (text: string) => void;
+  onToggleExpand: (id: number) => void;
+  onUpdatePriority: (id: number, priority: number) => void;
+  onOpenModal: (todo: Todo) => void;
+}
+
+const TodoItem = memo(function TodoItem({
+  todo, labels, subtasks, isSubtask = false, isExpanded, isEditing,
+  editingText, onToggle, onDelete, onStartEdit, onSaveEdit, onCancelEdit,
+  onEditTextChange, onToggleExpand, onUpdatePriority, onOpenModal
+}: TodoItemProps) {
+  const completedSubtasks = subtasks.filter(s => s.completed).length;
+  const priority = PRIORITY_STYLE[todo.priority] || PRIORITY_STYLE[4];
+
+  return (
+    <div className={cn("group", isSubtask && "ml-5 mt-1")}>
+      <div 
+        className={cn(
+          "flex items-start gap-2 px-2.5 py-2 rounded-lg transition-all",
+          todo.completed 
+            ? "bg-slate-50/80" 
+            : "bg-white hover:bg-slate-50 border border-slate-100 hover:border-slate-200"
+        )}
+      >
+        {subtasks.length > 0 && !isSubtask && (
+          <button
+            onClick={() => onToggleExpand(todo.id)}
+            className="mt-1 p-0.5 hover:bg-slate-200 rounded"
+            data-testid={`btn-expand-${todo.id}`}
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+            )}
+          </button>
+        )}
+        
+        <button
+          onClick={() => onToggle(todo.id, todo.completed)}
+          className={cn(
+            "mt-0.5 w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-colors",
+            todo.completed 
+              ? "border-slate-300 bg-slate-200" 
+              : priority.border
+          )}
+          data-testid={`btn-toggle-${todo.id}`}
+        >
+          {todo.completed && <Check className="h-2.5 w-2.5 text-slate-500" />}
+        </button>
+        
+        <div className="flex-1 min-w-0">
+          {isEditing ? (
+            <input
+              type="text"
+              value={editingText}
+              onChange={(e) => onEditTextChange(e.target.value)}
+              onBlur={onSaveEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSaveEdit();
+                if (e.key === 'Escape') onCancelEdit();
+              }}
+              className="w-full text-sm bg-transparent border-b border-blue-400 outline-none py-0.5"
+              autoFocus
+              data-testid={`input-edit-${todo.id}`}
+            />
+          ) : (
+            <span 
+              className={cn(
+                "text-sm block cursor-pointer leading-snug",
+                todo.completed ? "text-slate-400 line-through" : "text-slate-700 hover:text-slate-900"
+              )}
+              onClick={() => onOpenModal(todo)}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                onStartEdit(todo);
+              }}
+              data-testid={`todo-text-${todo.id}`}
+            >
+              {todo.text}
+            </span>
+          )}
+          
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            {todo.dueDate && (
+              <span className={cn(
+                "text-[11px] flex items-center gap-0.5 px-1.5 py-0.5 rounded-md font-medium",
+                isOverdue(todo.dueDate) && !todo.completed 
+                  ? "text-red-600 bg-red-50" 
+                  : "text-slate-500 bg-slate-100"
+              )}>
+                <CalendarIcon className="h-2.5 w-2.5" />
+                {formatDueDate(todo.dueDate)}
+                {todo.dueTime && ` ${todo.dueTime}`}
+              </span>
+            )}
+            
+            {subtasks.length > 0 && (
+              <span className="text-[11px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                {completedSubtasks}/{subtasks.length}
+              </span>
+            )}
+            
+            {todo.labelIds && todo.labelIds.length > 0 && (
+              <>
+                {todo.labelIds.slice(0, 2).map(labelId => {
+                  const label = labels.find(l => l.id === labelId);
+                  if (!label) return null;
+                  return (
+                    <span 
+                      key={labelId}
+                      className="text-[10px] px-1.5 py-0.5 rounded-md font-medium"
+                      style={{ backgroundColor: label.color + '18', color: label.color }}
+                    >
+                      {label.name}
+                    </span>
+                  );
+                })}
+                {todo.labelIds.length > 2 && (
+                  <span className="text-[10px] text-slate-400">+{todo.labelIds.length - 2}</span>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button 
+              className="p-1 rounded hover:bg-slate-100 opacity-0 group-hover:opacity-100 transition-opacity"
+              data-testid={`btn-menu-${todo.id}`}
+            >
+              <MoreHorizontal className="h-3.5 w-3.5 text-slate-400" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={() => onStartEdit(todo)}>
+              <Edit2 className="h-3.5 w-3.5 mr-2" />
+              Bearbeiten
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {[1, 2, 3, 4].map(p => (
+              <DropdownMenuItem 
+                key={p}
+                onClick={() => onUpdatePriority(todo.id, p)}
+                className="text-xs"
+              >
+                <div className={cn("w-2.5 h-2.5 rounded-full mr-2", PRIORITY_STYLE[p].dot)} />
+                {PRIORITY_LABELS[p]}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => onDelete(todo.id)}
+              className="text-red-500 focus:text-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-2" />
+              Löschen
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
+      {isExpanded && subtasks.length > 0 && (
+        <div className="mt-1">
+          {subtasks.map(subtask => (
+            <TodoItem
+              key={subtask.id}
+              todo={subtask}
+              labels={labels}
+              subtasks={[]}
+              isSubtask
+              isExpanded={false}
+              isEditing={false}
+              editingText=""
+              onToggle={onToggle}
+              onDelete={onDelete}
+              onStartEdit={onStartEdit}
+              onSaveEdit={onSaveEdit}
+              onCancelEdit={onCancelEdit}
+              onEditTextChange={onEditTextChange}
+              onToggleExpand={onToggleExpand}
+              onUpdatePriority={onUpdatePriority}
+              onOpenModal={onOpenModal}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
 
 export function TodoWidget() {
   const { data: todos = [], isLoading } = useTodos();
@@ -52,7 +270,6 @@ export function TodoWidget() {
   
   const [newTodo, setNewTodo] = useState("");
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [priorityOpen, setPriorityOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('inbox');
@@ -77,6 +294,7 @@ export function TodoWidget() {
     continuous: false,
     onResult: handleVoiceResult,
   });
+
   const [expandedTodos, setExpandedTodos] = useState<Set<number>>(new Set());
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
@@ -146,17 +364,40 @@ export function TodoWidget() {
     setEditingText("");
   }, [editingTodoId, editingText, updateTodo]);
 
+  const cancelEdit = useCallback(() => {
+    setEditingTodoId(null);
+    setEditingText("");
+  }, []);
+
   const toggleExpanded = useCallback((id: number) => {
     setExpandedTodos(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
+
+  const handleUpdatePriority = useCallback((id: number, priority: number) => {
+    updateTodo.mutate({ id, priority });
+  }, [updateTodo]);
+
+  const openModal = useCallback((todo: Todo) => {
+    setSelectedTodoForModal(todo);
+    setIsModalOpen(true);
+  }, []);
+
+  const subtasksMap = useMemo(() => {
+    const map = new Map<number, Todo[]>();
+    todos.forEach(t => {
+      if (t.parentTodoId) {
+        const existing = map.get(t.parentTodoId) || [];
+        existing.push(t);
+        map.set(t.parentTodoId, existing);
+      }
+    });
+    return map;
+  }, [todos]);
 
   const filteredTodos = useMemo(() => {
     const parentTodos = todos.filter(t => !t.parentTodoId);
@@ -184,299 +425,74 @@ export function TodoWidget() {
     }
   }, [todos, viewMode]);
 
-  const openTodos = filteredTodos.filter(t => !t.completed);
-  const completedTodos = filteredTodos.filter(t => t.completed);
+  const openTodos = useMemo(() => filteredTodos.filter(t => !t.completed), [filteredTodos]);
+  const completedTodos = useMemo(() => filteredTodos.filter(t => t.completed), [filteredTodos]);
 
-  const getSubtasks = useCallback((parentId: number) => {
-    return todos.filter(t => t.parentTodoId === parentId);
-  }, [todos]);
+  const VIEW_TABS = [
+    { mode: 'inbox' as const, icon: Inbox, label: 'Eingang', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+    { mode: 'today' as const, icon: Sun, label: 'Heute', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+    { mode: 'upcoming' as const, icon: CalendarDays, label: 'Demnächst', color: 'text-violet-600 bg-violet-50 border-violet-200' },
+  ];
 
-  const formatDueDate = (dateStr: string | null) => {
-    if (!dateStr) return null;
-    const date = new Date(dateStr);
-    
-    if (isToday(date)) return "Heute";
-    if (isTomorrow(date)) return "Morgen";
-    
-    return format(date, "dd. MMM", { locale: de });
-  };
-
-  const isOverdue = (dateStr: string | null) => {
-    if (!dateStr) return false;
-    const date = startOfDay(new Date(dateStr));
-    return isPast(date) && !isToday(new Date(dateStr));
-  };
-
-  const getViewIcon = () => {
-    switch (viewMode) {
-      case 'today': return <Sun className="h-5 w-5 text-amber-500" />;
-      case 'upcoming': return <CalendarDays className="h-5 w-5 text-violet-500" />;
-      case 'inbox': return <Inbox className="h-5 w-5 text-blue-500" />;
-      default: return <Inbox className="h-5 w-5 text-slate-600" />;
-    }
-  };
-
-  const getViewTitle = () => {
-    switch (viewMode) {
-      case 'today': return 'Heute';
-      case 'upcoming': return 'Demnächst';
-      case 'inbox': return 'Eingang';
-      default: return 'Alle Aufgaben';
-    }
-  };
-
-  const TodoItem = ({ todo, isSubtask = false }: { todo: Todo; isSubtask?: boolean }) => {
-    const subtasks = getSubtasks(todo.id);
-    const isExpanded = expandedTodos.has(todo.id);
-    const isEditing = editingTodoId === todo.id;
-    const completedSubtasks = subtasks.filter(s => s.completed).length;
-    const priorityColor = SOFT_PRIORITY_COLORS[todo.priority] || SOFT_PRIORITY_COLORS[4];
-
-    return (
-      <div className={cn("group", isSubtask && "ml-6")}>
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          className={cn(
-            "flex items-start gap-3 px-3 py-2.5 rounded-lg transition-all border",
-            todo.completed 
-              ? "bg-slate-50 border-slate-100 hover:bg-slate-100" 
-              : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
-          )}
-        >
-          {subtasks.length > 0 && !isSubtask && (
-            <button
-              onClick={() => toggleExpanded(todo.id)}
-              className="mt-0.5 p-0.5 hover:bg-slate-100 rounded transition-colors"
-              data-testid={`btn-expand-${todo.id}`}
-            >
-              {isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-slate-400" />
-              )}
-            </button>
-          )}
-          
-          <button
-            onClick={() => handleToggle(todo.id, todo.completed)}
-            className={cn(
-              "mt-0.5 w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0",
-              todo.completed 
-                ? "border-slate-300 bg-slate-200" 
-                : "hover:bg-opacity-20"
-            )}
-            style={{ 
-              borderColor: todo.completed ? undefined : priorityColor,
-              backgroundColor: todo.completed ? undefined : `${priorityColor}10`
-            }}
-            data-testid={`btn-toggle-${todo.id}`}
-          >
-            {todo.completed && <Check className="h-3 w-3 text-slate-500" />}
-          </button>
-          
-          <div className="flex-1 min-w-0">
-            {isEditing ? (
-              <input
-                type="text"
-                value={editingText}
-                onChange={(e) => setEditingText(e.target.value)}
-                onBlur={saveEdit}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveEdit();
-                  if (e.key === 'Escape') {
-                    setEditingTodoId(null);
-                    setEditingText("");
-                  }
-                }}
-                className="w-full bg-transparent text-slate-800 border-b border-slate-300 outline-none py-1 focus:border-blue-500"
-                autoFocus
-                data-testid={`input-edit-${todo.id}`}
-              />
-            ) : (
-              <span 
-                className={cn(
-                  "text-sm block cursor-pointer hover:text-blue-600 transition-colors",
-                  todo.completed ? "text-slate-400 line-through" : "text-slate-700"
-                )}
-                onClick={() => {
-                  setSelectedTodoForModal(todo);
-                  setIsModalOpen(true);
-                }}
-                onDoubleClick={(e) => {
-                  e.stopPropagation();
-                  startEditing(todo);
-                }}
-                data-testid={`todo-text-${todo.id}`}
-                title="Klicken zum Öffnen, Doppelklick zum Bearbeiten"
-              >
-                {todo.text}
-              </span>
-            )}
-            
-            {todo.description && (
-              <span className="text-xs text-slate-400 block mt-0.5">{todo.description}</span>
-            )}
-            
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              {todo.dueDate && (
-                <span className={cn(
-                  "text-xs flex items-center gap-1 px-1.5 py-0.5 rounded",
-                  isOverdue(todo.dueDate) && !todo.completed 
-                    ? "text-red-600 bg-red-50" 
-                    : "text-slate-500 bg-slate-100"
-                )}>
-                  <CalendarIcon className="h-3 w-3" />
-                  {formatDueDate(todo.dueDate)}
-                  {todo.dueTime && ` ${todo.dueTime}`}
-                </span>
-              )}
-              
-              {subtasks.length > 0 && (
-                <span className="text-xs text-slate-400">
-                  {completedSubtasks}/{subtasks.length}
-                </span>
-              )}
-              
-              {todo.labelIds && todo.labelIds.length > 0 && (
-                <div className="flex items-center gap-1">
-                  {todo.labelIds.map(labelId => {
-                    const label = labels.find(l => l.id === labelId);
-                    if (!label) return null;
-                    return (
-                      <span 
-                        key={labelId}
-                        className="text-xs px-1.5 py-0.5 rounded-full font-medium"
-                        style={{ backgroundColor: label.color + '20', color: label.color }}
-                      >
-                        {label.name}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button 
-                  className="p-1.5 rounded-md hover:bg-slate-100 transition-colors"
-                  data-testid={`btn-menu-${todo.id}`}
-                >
-                  <MoreHorizontal className="h-4 w-4 text-slate-400" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => startEditing(todo)}>
-                  <Edit2 className="h-4 w-4 mr-2" />
-                  Bearbeiten
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {[1, 2, 3, 4].map(p => (
-                  <DropdownMenuItem 
-                    key={p}
-                    onClick={() => updateTodo.mutate({ id: todo.id, priority: p })}
-                  >
-                    <Circle 
-                      className="h-4 w-4 mr-2" 
-                      style={{ color: SOFT_PRIORITY_COLORS[p] }}
-                      fill={p < 4 ? SOFT_PRIORITY_COLORS[p] : 'transparent'}
-                      strokeWidth={p < 4 ? 0 : 2}
-                    />
-                    {PRIORITY_LABELS[p]}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => handleDelete(todo.id)}
-                  className="text-red-500 focus:text-red-500"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Löschen
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </motion.div>
-        
-        <AnimatePresence>
-          {isExpanded && subtasks.map(subtask => (
-            <TodoItem key={subtask.id} todo={subtask} isSubtask />
-          ))}
-        </AnimatePresence>
-      </div>
-    );
-  };
+  const activeTab = VIEW_TABS.find(t => t.mode === viewMode) || VIEW_TABS[0];
 
   return (
-    <div className="h-full bg-slate-50 rounded-2xl overflow-hidden flex flex-col">
-      <div className="px-4 py-3 flex items-center gap-1 bg-white border-b border-slate-200">
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-hide">
-          {[
-            { mode: 'inbox' as const, icon: Inbox, label: 'Eingang', activeColor: 'text-blue-600 bg-blue-50' },
-            { mode: 'today' as const, icon: Sun, label: 'Heute', activeColor: 'text-amber-600 bg-amber-50' },
-            { mode: 'upcoming' as const, icon: CalendarDays, label: 'Demnächst', activeColor: 'text-violet-600 bg-violet-50' },
-          ].map(({ mode, icon: Icon, label, activeColor }) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
-                viewMode === mode 
-                  ? activeColor
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-              )}
-              data-testid={`btn-view-${mode}`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </div>
+    <div className="h-full bg-white rounded-xl overflow-hidden flex flex-col shadow-sm border border-slate-100">
+      <div className="px-3 py-2 flex items-center gap-1.5 border-b border-slate-100 bg-slate-50/50">
+        {VIEW_TABS.map(({ mode, icon: Icon, label, color }) => (
+          <button
+            key={mode}
+            onClick={() => setViewMode(mode)}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border",
+              viewMode === mode 
+                ? color
+                : "text-slate-500 bg-white border-transparent hover:bg-slate-100"
+            )}
+            data-testid={`btn-view-${mode}`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
         
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto">
           <button
             onClick={() => setShowCompleted(!showCompleted)}
             className={cn(
-              "p-2 rounded-md transition-colors",
-              showCompleted ? "bg-slate-100 text-slate-600" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              "p-1.5 rounded-lg transition-colors",
+              showCompleted ? "bg-slate-200 text-slate-600" : "text-slate-400 hover:bg-slate-100"
             )}
             data-testid="btn-toggle-completed"
             title={showCompleted ? "Erledigte ausblenden" : "Erledigte anzeigen"}
           >
-            {showCompleted ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
+            {showCompleted ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </button>
         </div>
       </div>
       
-      <div className="px-4 py-3 bg-white border-b border-slate-100">
-        <div className="flex items-center gap-2 mb-3">
-          {getViewIcon()}
-          <h3 className="text-lg font-semibold text-slate-800">{getViewTitle()}</h3>
-          <span className="text-sm text-slate-400 ml-auto">
-            {openTodos.length} offen
-          </span>
+      <div className="px-3 py-2.5 border-b border-slate-100">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <activeTab.icon className={cn("h-4 w-4", activeTab.color.split(' ')[0])} />
+            <span className="text-sm font-semibold text-slate-700">{activeTab.label}</span>
+          </div>
+          <span className="text-xs text-slate-400 tabular-nums">{openTodos.length} offen</span>
         </div>
         
-        <form onSubmit={handleAddTodo} className="relative">
+        <form onSubmit={handleAddTodo}>
           {isListening && interimTranscript && (
-            <div className="mb-2 text-xs text-blue-500 italic truncate flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            <div className="mb-1.5 text-[11px] text-blue-500 italic flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
               {interimTranscript}...
             </div>
           )}
-          <div className="flex gap-2">
+          
+          <div className="flex gap-1.5">
             <div className="flex-1 relative">
               <Input 
-                placeholder={isListening ? "Ich höre zu..." : "Aufgabe hinzufügen... (z.B. 'Meeting morgen !1 @arbeit')"} 
-                className="bg-slate-50 border-slate-200 text-slate-700 placeholder:text-slate-400 focus-visible:ring-blue-200 focus-visible:border-blue-300"
+                placeholder={isListening ? "Ich höre zu..." : "Aufgabe hinzufügen..."} 
+                className="h-8 text-sm bg-slate-50 border-slate-200 focus-visible:ring-1 focus-visible:ring-blue-200"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
                 data-testid="input-new-todo"
@@ -484,47 +500,32 @@ export function TodoWidget() {
               />
             </div>
             
-            <div className="flex items-center gap-1">
-              <Popover open={priorityOpen} onOpenChange={setPriorityOpen}>
+            <div className="flex items-center">
+              <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
                     className={cn(
-                      "w-8 h-8 rounded-md flex items-center justify-center transition-colors",
-                      selectedPriority < 4 
-                        ? "text-current" 
-                        : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                      "w-7 h-8 rounded flex items-center justify-center transition-colors",
+                      selectedPriority < 4 ? "text-current" : "text-slate-400 hover:bg-slate-100"
                     )}
-                    style={{ color: selectedPriority < 4 ? SOFT_PRIORITY_COLORS[selectedPriority] : undefined }}
                     data-testid="btn-priority"
-                    title="Priorität"
                   >
-                    <Flag 
-                      className="h-4 w-4" 
-                      fill={selectedPriority < 4 ? 'currentColor' : 'none'}
-                    />
+                    <div className={cn("w-2 h-2 rounded-full", PRIORITY_STYLE[selectedPriority].dot)} />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-40 p-1" align="end">
+                <PopoverContent className="w-32 p-1" align="end">
                   {[1, 2, 3, 4].map(p => (
                     <button
                       key={p}
                       type="button"
-                      onClick={() => {
-                        setSelectedPriority(p);
-                        setPriorityOpen(false);
-                      }}
+                      onClick={() => setSelectedPriority(p)}
                       className={cn(
-                        "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-100 rounded-md",
+                        "w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-slate-100 rounded",
                         selectedPriority === p && "bg-slate-100"
                       )}
                     >
-                      <Circle 
-                        className="h-3 w-3" 
-                        style={{ color: SOFT_PRIORITY_COLORS[p] }}
-                        fill={p < 4 ? SOFT_PRIORITY_COLORS[p] : 'transparent'}
-                        strokeWidth={p < 4 ? 0 : 2}
-                      />
+                      <div className={cn("w-2 h-2 rounded-full", PRIORITY_STYLE[p].dot)} />
                       {PRIORITY_LABELS[p]}
                     </button>
                   ))}
@@ -536,73 +537,38 @@ export function TodoWidget() {
                   <button
                     type="button"
                     className={cn(
-                      "w-8 h-8 rounded-md flex items-center justify-center transition-colors",
-                      selectedDate 
-                        ? "text-blue-500 bg-blue-50" 
-                        : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                      "w-7 h-8 rounded flex items-center justify-center transition-colors",
+                      selectedDate ? "text-blue-500" : "text-slate-400 hover:bg-slate-100"
                     )}
                     data-testid="btn-due-date"
-                    title="Fälligkeitsdatum"
                   >
-                    <CalendarIcon className="h-4 w-4" />
+                    <CalendarIcon className="h-3.5 w-3.5" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 shadow-xl border-0 rounded-xl overflow-hidden" align="end">
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3">
-                    <p className="text-white/80 text-xs font-medium uppercase tracking-wide">Fälligkeitsdatum</p>
-                    <p className="text-white text-lg font-semibold mt-0.5">
-                      {selectedDate ? format(selectedDate, "EEEE, dd. MMMM", { locale: de }) : "Datum auswählen"}
-                    </p>
-                  </div>
-                  <div className="p-2 border-b bg-slate-50 space-y-1">
+                <PopoverContent className="w-auto p-0" align="end">
+                  <div className="p-2 border-b space-y-1">
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedDate(new Date());
-                        setCalendarOpen(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-white rounded-lg transition-colors group"
+                      onClick={() => { setSelectedDate(new Date()); setCalendarOpen(false); }}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-slate-100 rounded"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
-                        <Sun className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-medium text-slate-700">Heute</p>
-                        <p className="text-xs text-slate-400">{format(new Date(), "dd. MMM", { locale: de })}</p>
-                      </div>
+                      <Sun className="h-3.5 w-3.5 text-amber-500" /> Heute
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        const tomorrow = new Date();
-                        tomorrow.setDate(tomorrow.getDate() + 1);
-                        setSelectedDate(tomorrow);
-                        setCalendarOpen(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-white rounded-lg transition-colors group"
+                      onClick={() => { setSelectedDate(addDays(new Date(), 1)); setCalendarOpen(false); }}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-slate-100 rounded"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                        <CalendarDays className="h-4 w-4 text-orange-600" />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-medium text-slate-700">Morgen</p>
-                        <p className="text-xs text-slate-400">{format(addDays(new Date(), 1), "dd. MMM", { locale: de })}</p>
-                      </div>
+                      <CalendarDays className="h-3.5 w-3.5 text-orange-500" /> Morgen
                     </button>
                   </div>
-                  <div className="p-3 bg-white">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        setSelectedDate(date);
-                        setCalendarOpen(false);
-                      }}
-                      locale={de}
-                      initialFocus
-                      className="rounded-lg border-0 [&_.rdp-month]:w-full [&_.rdp-caption]:px-2 [&_.rdp-caption_label]:text-sm [&_.rdp-caption_label]:font-semibold [&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-slate-400 [&_.rdp-cell]:p-0.5 [&_.rdp-button]:w-9 [&_.rdp-button]:h-9 [&_.rdp-button]:text-sm [&_.rdp-button]:font-medium [&_.rdp-day_selected]:bg-blue-500 [&_.rdp-day_selected]:text-white [&_.rdp-day_today]:bg-blue-100 [&_.rdp-day_today]:text-blue-700 [&_.rdp-day_today]:font-bold"
-                    />
-                  </div>
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => { setSelectedDate(date); setCalendarOpen(false); }}
+                    locale={de}
+                    className="p-2"
+                  />
                 </PopoverContent>
               </Popover>
               
@@ -611,59 +577,51 @@ export function TodoWidget() {
                   <button
                     type="button"
                     className={cn(
-                      "w-8 h-8 rounded-md flex items-center justify-center transition-colors",
-                      selectedLabelIds.length > 0 
-                        ? "text-violet-500 bg-violet-50" 
-                        : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                      "w-7 h-8 rounded flex items-center justify-center transition-colors",
+                      selectedLabelIds.length > 0 ? "text-violet-500" : "text-slate-400 hover:bg-slate-100"
                     )}
                     data-testid="btn-labels"
-                    title="Labels"
                   >
-                    <Tag className="h-4 w-4" />
+                    <Tag className="h-3.5 w-3.5" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-2" align="end">
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                <PopoverContent className="w-48 p-1" align="end">
+                  <div className="max-h-36 overflow-y-auto">
                     {labels.map(label => (
                       <button
                         key={label.id}
                         type="button"
                         onClick={() => {
                           setSelectedLabelIds(prev => 
-                            prev.includes(label.id) 
-                              ? prev.filter(id => id !== label.id)
-                              : [...prev, label.id]
+                            prev.includes(label.id) ? prev.filter(id => id !== label.id) : [...prev, label.id]
                           );
                         }}
                         className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-100 rounded-md",
+                          "w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-slate-100 rounded",
                           selectedLabelIds.includes(label.id) && "bg-slate-100"
                         )}
                       >
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: label.color }}
-                        />
-                        {label.name}
-                        {selectedLabelIds.includes(label.id) && (
-                          <Check className="h-4 w-4 ml-auto text-blue-500" />
-                        )}
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: label.color }} />
+                        <span className="flex-1 text-left">{label.name}</span>
+                        {selectedLabelIds.includes(label.id) && <Check className="h-3 w-3 text-blue-500" />}
                       </button>
                     ))}
                   </div>
-                  <div className="border-t mt-2 pt-2">
-                    <div className="flex gap-1">
+                  <div className="border-t mt-1 pt-1">
+                    <div className="flex gap-1 px-1">
                       <input
                         type="text"
                         placeholder="Neues Label..."
                         value={newLabelName}
                         onChange={(e) => setNewLabelName(e.target.value)}
-                        className="flex-1 text-sm px-2 py-1 border border-slate-200 rounded focus:border-blue-300 focus:outline-none"
+                        className="flex-1 text-xs px-2 py-1 border border-slate-200 rounded focus:outline-none focus:border-blue-300"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && newLabelName.trim()) {
                             e.preventDefault();
-                            const color = DEFAULT_LABEL_COLORS[labels.length % DEFAULT_LABEL_COLORS.length];
-                            createLabel.mutate({ name: newLabelName.trim(), color });
+                            createLabel.mutate({ 
+                              name: newLabelName.trim(), 
+                              color: DEFAULT_LABEL_COLORS[labels.length % DEFAULT_LABEL_COLORS.length] 
+                            });
                             setNewLabelName("");
                           }
                         }}
@@ -672,14 +630,16 @@ export function TodoWidget() {
                         type="button"
                         onClick={() => {
                           if (newLabelName.trim()) {
-                            const color = DEFAULT_LABEL_COLORS[labels.length % DEFAULT_LABEL_COLORS.length];
-                            createLabel.mutate({ name: newLabelName.trim(), color });
+                            createLabel.mutate({ 
+                              name: newLabelName.trim(), 
+                              color: DEFAULT_LABEL_COLORS[labels.length % DEFAULT_LABEL_COLORS.length] 
+                            });
                             setNewLabelName("");
                           }
                         }}
-                        className="p-1.5 hover:bg-slate-100 rounded text-slate-500"
+                        className="p-1 hover:bg-slate-100 rounded text-slate-500"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
@@ -692,37 +652,27 @@ export function TodoWidget() {
                 type="button"
                 onClick={() => isListening ? stopListening() : startListening()}
                 className={cn(
-                  "w-9 h-9 rounded-md flex items-center justify-center transition-all relative",
-                  isListening 
-                    ? "bg-red-500 hover:bg-red-600 text-white" 
-                    : "bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700"
+                  "w-8 h-8 rounded flex items-center justify-center transition-all",
+                  isListening ? "bg-red-500 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                 )}
                 disabled={createTodo.isPending}
                 data-testid="btn-voice-todo"
-                title={isListening ? "Spracheingabe stoppen" : "Spracheingabe starten"}
               >
-                {isListening ? (
-                  <>
-                    <MicOff className="h-4 w-4" />
-                    <span className="absolute inset-0 rounded-md animate-ping bg-red-400 opacity-30" />
-                  </>
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
+                {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
               </button>
             )}
             
             <button 
               type="submit"
-              className="px-3 h-9 rounded-md bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-white font-medium text-sm disabled:opacity-50 transition-colors"
+              className="px-2.5 h-8 rounded bg-blue-500 hover:bg-blue-600 flex items-center gap-1 text-white text-xs font-medium disabled:opacity-50 transition-colors"
               disabled={createTodo.isPending || !newTodo.trim()}
               data-testid="btn-add-todo"
             >
               {createTodo.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <>
-                  <Plus className="h-4 w-4 mr-1" />
+                  <Plus className="h-3.5 w-3.5" />
                   Hinzufügen
                 </>
               )}
@@ -730,39 +680,26 @@ export function TodoWidget() {
           </div>
           
           {(selectedDate || selectedLabelIds.length > 0) && (
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <div className="mt-1.5 flex flex-wrap items-center gap-1">
               {selectedDate && (
-                <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-full">
-                  <CalendarIcon className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                  <CalendarIcon className="h-2.5 w-2.5" />
                   {format(selectedDate, "dd. MMM", { locale: de })}
-                  <button 
-                    type="button" 
-                    onClick={() => setSelectedDate(undefined)}
-                    className="hover:bg-blue-100 rounded-full ml-0.5 p-0.5"
-                    data-testid="btn-clear-due-date"
-                  >
-                    <X className="h-3 w-3" />
+                  <button type="button" onClick={() => setSelectedDate(undefined)} className="hover:bg-blue-100 rounded-full p-0.5" data-testid="btn-clear-due-date">
+                    <X className="h-2.5 w-2.5" />
                   </button>
-                </div>
+                </span>
               )}
               {selectedLabelIds.map(labelId => {
                 const label = labels.find(l => l.id === labelId);
                 if (!label) return null;
                 return (
-                  <div 
-                    key={labelId}
-                    className="flex items-center gap-1 px-2 py-1 rounded-full font-medium"
-                    style={{ backgroundColor: label.color + '15', color: label.color }}
-                  >
+                  <span key={labelId} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ backgroundColor: label.color + '15', color: label.color }}>
                     {label.name}
-                    <button 
-                      type="button" 
-                      onClick={() => setSelectedLabelIds(prev => prev.filter(id => id !== labelId))}
-                      className="hover:opacity-70 ml-0.5 p-0.5"
-                    >
-                      <X className="h-3 w-3" />
+                    <button type="button" onClick={() => setSelectedLabelIds(prev => prev.filter(id => id !== labelId))} className="hover:opacity-70 p-0.5">
+                      <X className="h-2.5 w-2.5" />
                     </button>
-                  </div>
+                  </span>
                 );
               })}
             </div>
@@ -770,15 +707,15 @@ export function TodoWidget() {
         </form>
       </div>
       
-      <div className="flex-1 px-4 py-3 overflow-y-auto">
+      <div className="flex-1 px-3 py-2 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
           </div>
         ) : openTodos.length === 0 && completedTodos.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
-              <Check className="h-8 w-8 text-slate-300" />
+          <div className="text-center py-10">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
+              <Check className="h-6 w-6 text-slate-300" />
             </div>
             <p className="text-sm text-slate-400">
               {viewMode === 'today' && "Keine Aufgaben für heute"}
@@ -786,36 +723,63 @@ export function TodoWidget() {
               {viewMode === 'inbox' && "Dein Eingang ist leer"}
               {viewMode === 'all' && "Noch keine Aufgaben"}
             </p>
-            <p className="text-xs text-slate-300 mt-1">
-              Füge oben eine neue Aufgabe hinzu
-            </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            <AnimatePresence mode="popLayout">
-              {openTodos.map((todo) => (
-                <TodoItem key={todo.id} todo={todo} />
-              ))}
-            </AnimatePresence>
+          <div className="space-y-1.5">
+            {openTodos.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                labels={labels}
+                subtasks={subtasksMap.get(todo.id) || []}
+                isExpanded={expandedTodos.has(todo.id)}
+                isEditing={editingTodoId === todo.id}
+                editingText={editingText}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+                onStartEdit={startEditing}
+                onSaveEdit={saveEdit}
+                onCancelEdit={cancelEdit}
+                onEditTextChange={setEditingText}
+                onToggleExpand={toggleExpanded}
+                onUpdatePriority={handleUpdatePriority}
+                onOpenModal={openModal}
+              />
+            ))}
             
             {showCompleted && completedTodos.length > 0 && (
               <>
-                <div className="text-xs text-slate-400 pt-4 pb-2 font-medium flex items-center gap-2">
+                <div className="text-[11px] text-slate-400 pt-3 pb-1 font-medium flex items-center gap-1.5">
                   <Check className="h-3 w-3" />
                   Erledigt ({completedTodos.length})
                 </div>
-                <AnimatePresence mode="popLayout">
-                  {completedTodos.map((todo) => (
-                    <TodoItem key={todo.id} todo={todo} />
-                  ))}
-                </AnimatePresence>
+                {completedTodos.map((todo) => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    labels={labels}
+                    subtasks={subtasksMap.get(todo.id) || []}
+                    isExpanded={expandedTodos.has(todo.id)}
+                    isEditing={editingTodoId === todo.id}
+                    editingText={editingText}
+                    onToggle={handleToggle}
+                    onDelete={handleDelete}
+                    onStartEdit={startEditing}
+                    onSaveEdit={saveEdit}
+                    onCancelEdit={cancelEdit}
+                    onEditTextChange={setEditingText}
+                    onToggleExpand={toggleExpanded}
+                    onUpdatePriority={handleUpdatePriority}
+                    onOpenModal={openModal}
+                  />
+                ))}
               </>
             )}
             
             {!showCompleted && completedTodos.length > 0 && (
               <button
                 onClick={() => setShowCompleted(true)}
-                className="w-full text-xs text-slate-400 text-center py-3 hover:text-slate-600 transition-colors flex items-center justify-center gap-2 border-t border-slate-100 mt-3"
+                className="w-full text-[11px] text-slate-400 text-center py-2 hover:text-slate-600 transition-colors flex items-center justify-center gap-1.5 border-t border-slate-100 mt-2"
                 data-testid="btn-show-completed"
               >
                 <Check className="h-3 w-3" />
