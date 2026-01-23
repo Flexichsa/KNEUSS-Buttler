@@ -257,12 +257,14 @@ export function PasswordWidget() {
                     placeholder="Name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    autoComplete="off"
                     data-testid="input-edit-name"
                   />
                   <Input
                     placeholder="Benutzername"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    autoComplete="off"
                     data-testid="input-edit-username"
                   />
                   <div className="relative">
@@ -272,6 +274,7 @@ export function PasswordWidget() {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       className="pr-20"
+                      autoComplete="new-password"
                       data-testid="input-edit-password"
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
@@ -296,6 +299,7 @@ export function PasswordWidget() {
                     placeholder="URL"
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                    autoComplete="off"
                     data-testid="input-edit-url"
                   />
                   <div className="flex gap-2">
@@ -502,12 +506,14 @@ export function PasswordWidget() {
               placeholder="Name (z.B. Google, Netflix)"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              autoComplete="off"
               data-testid="input-password-name"
             />
             <Input
               placeholder="Benutzername / E-Mail"
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              autoComplete="off"
               data-testid="input-password-username"
             />
             <div className="relative">
@@ -517,6 +523,7 @@ export function PasswordWidget() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="pr-20"
+                autoComplete="new-password"
                 data-testid="input-password-password"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
@@ -542,12 +549,14 @@ export function PasswordWidget() {
               placeholder="URL (optional)"
               value={formData.url}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              autoComplete="off"
               data-testid="input-password-url"
             />
             <Input
               placeholder="Notizen (optional)"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              autoComplete="off"
               data-testid="input-password-notes"
             />
           </div>
