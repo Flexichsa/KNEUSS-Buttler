@@ -1,6 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
+interface ContactDetail {
+  id: number;
+  contactId: number | null;
+  contactPersonId: number | null;
+  type: string;
+  label: string | null;
+  value: string;
+  createdAt: string;
+}
+
 interface ContactPerson {
   id: number;
   contactId: number;
@@ -9,6 +19,7 @@ interface ContactPerson {
   email: string | null;
   phone: string | null;
   createdAt: string;
+  details: ContactDetail[];
 }
 
 interface Contact {
@@ -23,6 +34,7 @@ interface Contact {
   createdAt: string;
   updatedAt: string;
   persons: ContactPerson[];
+  details: ContactDetail[];
 }
 
 export function useContacts() {
@@ -192,6 +204,81 @@ export function useDeleteContactPerson() {
       toast({
         title: "Fehler",
         description: "Ansprechpartner konnte nicht gelöscht werden",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useCreateContactDetail() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: { contactId?: number; contactPersonId?: number; type: string; label?: string; value: string }) => {
+      const res = await fetch('/api/contact-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to create contact detail');
+      return res.json() as Promise<ContactDetail>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+    onError: () => {
+      toast({
+        title: "Fehler",
+        description: "Kontaktdaten konnten nicht hinzugefügt werden",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useUpdateContactDetail() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: number; type?: string; label?: string; value?: string }) => {
+      const res = await fetch(`/api/contact-details/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error('Failed to update contact detail');
+      return res.json() as Promise<ContactDetail>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+    onError: () => {
+      toast({
+        title: "Fehler",
+        description: "Kontaktdaten konnten nicht aktualisiert werden",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useDeleteContactDetail() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/contact-details/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete contact detail');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+    onError: () => {
+      toast({
+        title: "Fehler",
+        description: "Kontaktdaten konnten nicht gelöscht werden",
         variant: "destructive",
       });
     },
