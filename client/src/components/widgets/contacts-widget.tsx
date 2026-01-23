@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Building2, User, Plus, Phone, Mail, MapPin, ChevronRight, ChevronLeft, Loader2, Pencil, Trash2, UserPlus, X, Search, Upload, Image as ImageIcon, PlusCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -86,6 +86,19 @@ export function ContactsWidget() {
 
   const companies = sortedAndFilteredContacts.filter(c => c.type === "company");
   const persons = sortedAndFilteredContacts.filter(c => c.type === "person");
+
+  // Update editingPerson when contacts data changes (e.g., after adding/removing details)
+  useEffect(() => {
+    if (editingPerson) {
+      const contact = contacts.find(c => c.id === editingPerson.contactId);
+      if (contact) {
+        const updatedPerson = contact.persons.find(p => p.id === editingPerson.id);
+        if (updatedPerson && updatedPerson.details.length !== editingPerson.details.length) {
+          setEditingPerson(updatedPerson);
+        }
+      }
+    }
+  }, [contacts]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
     const file = e.target.files?.[0];
@@ -823,7 +836,7 @@ export function ContactsWidget() {
       </Dialog>
 
       <Dialog open={showEditPersonDialog} onOpenChange={setShowEditPersonDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Ansprechpartner bearbeiten</DialogTitle>
           </DialogHeader>
@@ -853,6 +866,51 @@ export function ContactsWidget() {
               onChange={(phone) => setPersonFormData({ ...personFormData, phone })}
               data-testid="input-edit-person-phone"
             />
+
+            {editingPerson && editingPerson.details && editingPerson.details.length > 0 && (
+              <div className="border-t pt-4">
+                <div className="text-sm font-medium text-gray-700 mb-2">Weitere Kontaktdaten</div>
+                <div className="space-y-2">
+                  {editingPerson.details.map((detail) => (
+                    <div key={detail.id} className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded-lg">
+                      {detail.type === "phone" ? (
+                        <Phone className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <Mail className="w-4 h-4 text-gray-400" />
+                      )}
+                      <span className="flex-1">{detail.value}</span>
+                      {detail.label && <span className="text-xs text-gray-500">({detail.label})</span>}
+                      <button
+                        onClick={() => {
+                          if (confirm("Kontaktdaten löschen?")) {
+                            deleteContactDetail.mutate(detail.id);
+                          }
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded"
+                        data-testid={`btn-delete-detail-${detail.id}`}
+                      >
+                        <X className="w-3 h-3 text-gray-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                if (editingPerson) {
+                  setDetailContext({ contactId: editingPerson.contactId, personId: editingPerson.id });
+                  setDetailFormData({ type: "phone", label: "", value: "" });
+                  setShowAddDetailDialog(true);
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 p-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg border border-dashed border-blue-300"
+              data-testid="btn-add-person-detail"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Weitere Kontaktdaten hinzufügen</span>
+            </button>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setShowEditPersonDialog(false); setEditingPerson(null); }} data-testid="btn-cancel-edit-person">
