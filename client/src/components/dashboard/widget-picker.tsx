@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink, Key, Search } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink, Key, Search, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -493,6 +493,32 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
         <div className="flex items-center gap-2 text-white/60 text-xs">
           <Key className="w-3 h-3" />
           <span>••••••••</span>
+        </div>
+      </div>
+    )
+  },
+  { 
+    id: "knowledgebase", 
+    name: "Wissensdatenbank", 
+    description: "ERP Anleitungen & Guides",
+    icon: <BookOpen className="h-5 w-5" />, 
+    defaultSize: { w: 4, h: 5 }, 
+    minSize: { w: 2, h: 2 },
+    previewGradient: "from-emerald-500 to-teal-600",
+    category: "productivity",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <BookOpen className="w-3 h-3" />
+          <span>Auftragserfassung</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/90 text-xs">
+          <BookOpen className="w-3 h-3" />
+          <span>Lagerverwaltung</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/60 text-xs">
+          <BookOpen className="w-3 h-3" />
+          <span>Rechnungen erstellen</span>
         </div>
       </div>
     )

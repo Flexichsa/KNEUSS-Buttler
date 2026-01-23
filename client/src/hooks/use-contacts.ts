@@ -19,6 +19,7 @@ interface Contact {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  logoUrl: string | null;
   createdAt: string;
   updatedAt: string;
   persons: ContactPerson[];
@@ -51,7 +52,7 @@ export function useCreateContact() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: { type: string; name: string; email?: string; phone?: string; address?: string; notes?: string }) => {
+    mutationFn: async (data: { type: string; name: string; email?: string; phone?: string; address?: string; notes?: string; logoUrl?: string }) => {
       const res = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,7 +78,7 @@ export function useUpdateContact() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: number; name?: string; email?: string; phone?: string; address?: string; notes?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: number; name?: string; email?: string; phone?: string; address?: string; notes?: string; logoUrl?: string }) => {
       const res = await fetch(`/api/contacts/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
