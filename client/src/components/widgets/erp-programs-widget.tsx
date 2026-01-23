@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Terminal, Search, ChevronRight, Loader2, Plus, Edit2, Trash2, ExternalLink, History, X, Save, MoreHorizontal } from "lucide-react";
+import { Terminal, Search, ChevronRight, Loader2, Plus, Edit2, Trash2, ExternalLink, History, X, Save, MoreHorizontal, Folder, FolderPlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ interface ErpProgramHistory {
   changedAt: string;
 }
 
-type ViewMode = 'list' | 'detail' | 'edit' | 'create' | 'history';
+type ViewMode = 'list' | 'detail' | 'edit' | 'create' | 'history' | 'categories' | 'category-edit' | 'category-create';
 
 export function ErpProgramsWidget() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -52,6 +52,9 @@ export function ErpProgramsWidget() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [formData, setFormData] = useState<Partial<ErpProgram>>({});
   const [hoveredProgramId, setHoveredProgramId] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ErpCategory | null>(null);
+  const [categoryFormData, setCategoryFormData] = useState<Partial<ErpCategory>>({});
+  const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -105,6 +108,50 @@ export function ErpProgramsWidget() {
       toast({ title: "Programm gelöscht" });
       setViewMode('list');
       setSelectedProgram(null);
+    },
+    onError: (error: any) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (data: Partial<ErpCategory>) => apiRequest("POST", "/api/erp-categories", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/erp-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/erp-programs"] });
+      toast({ title: "Kategorie erstellt" });
+      setViewMode('categories');
+      setCategoryFormData({});
+    },
+    onError: (error: any) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: (data: { id: number; updates: Partial<ErpCategory> }) => 
+      apiRequest("PATCH", `/api/erp-categories/${data.id}`, data.updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/erp-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/erp-programs"] });
+      toast({ title: "Kategorie aktualisiert" });
+      setViewMode('categories');
+      setSelectedCategory(null);
+      setCategoryFormData({});
+    },
+    onError: (error: any) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/erp-categories/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/erp-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/erp-programs"] });
+      toast({ title: "Kategorie gelöscht" });
+      setViewMode('categories');
+      setSelectedCategory(null);
     },
     onError: (error: any) => {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
@@ -177,6 +224,63 @@ export function ErpProgramsWidget() {
     e.stopPropagation();
     window.open(url, '_blank');
   };
+
+  const handleEditCategory = (category: ErpCategory, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCategoryFormData({
+      name: category.name,
+      description: category.description,
+      color: category.color,
+    });
+    setSelectedCategory(category);
+    setViewMode('category-edit');
+  };
+
+  const handleCreateCategory = () => {
+    setCategoryFormData({});
+    setSelectedCategory(null);
+    setViewMode('category-create');
+  };
+
+  const handleSaveCategory = () => {
+    if (!categoryFormData.name?.trim()) {
+      toast({ title: "Name erforderlich", description: "Bitte gib einen Namen für die Kategorie ein.", variant: "destructive" });
+      return;
+    }
+    if (viewMode === 'category-create') {
+      createCategoryMutation.mutate(categoryFormData);
+    } else if (viewMode === 'category-edit' && selectedCategory) {
+      updateCategoryMutation.mutate({ id: selectedCategory.id, updates: categoryFormData });
+    }
+  };
+
+  const handleDeleteCategory = () => {
+    if (selectedCategory) {
+      const programsInCategory = programs.filter(p => p.categoryId === selectedCategory.id);
+      if (programsInCategory.length > 0) {
+        toast({ 
+          title: "Kategorie nicht löschbar", 
+          description: `${programsInCategory.length} Programme sind dieser Kategorie zugeordnet. Entferne zuerst die Zuordnungen.`,
+          variant: "destructive" 
+        });
+        return;
+      }
+      if (confirm('Kategorie wirklich löschen?')) {
+        deleteCategoryMutation.mutate(selectedCategory.id);
+      }
+    }
+  };
+
+  const getProgramCountForCategory = (categoryId: number) => {
+    return programs.filter(p => p.categoryId === categoryId).length;
+  };
+
+  const PRESET_COLORS = [
+    "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899",
+    "#f43f5e", "#ef4444", "#f97316", "#f59e0b", "#eab308",
+    "#84cc16", "#22c55e", "#10b981", "#14b8a6", "#06b6d4",
+    "#0ea5e9", "#3b82f6", "#6b7280", "#374151", "#1f2937"
+  ];
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('de-DE', {
@@ -350,6 +454,221 @@ export function ErpProgramsWidget() {
               )}
             </div>
           </motion.div>
+        ) : viewMode === 'categories' ? (
+          <motion.div
+            key="categories"
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 50, opacity: 0 }}
+            className="h-full flex flex-col"
+          >
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-purple-50 to-white">
+              <button
+                onClick={() => setViewMode('list')}
+                className="p-2 hover:bg-white/80 rounded-xl transition-all duration-200 shadow-sm bg-white"
+                data-testid="btn-back-from-categories"
+              >
+                <ChevronRight className="w-4 h-4 text-purple-600 rotate-180" />
+              </button>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 text-sm">Kategorien verwalten</h3>
+                <span className="text-xs text-gray-500">{categories.length} Kategorien</span>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={handleCreateCategory}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-sm"
+                data-testid="btn-add-category"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Neu
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {categories.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-6">
+                  <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                    <Folder className="w-10 h-10 text-gray-300" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-500">Noch keine Kategorien</p>
+                  <p className="text-xs text-gray-400 mt-1 mb-4">Erstelle deine erste Kategorie</p>
+                  <Button size="sm" onClick={handleCreateCategory} className="rounded-xl bg-purple-600 hover:bg-purple-700">
+                    <Plus className="w-4 h-4 mr-1" /> Kategorie anlegen
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-2 space-y-1.5">
+                  {categories.map((category) => {
+                    const programCount = getProgramCountForCategory(category.id);
+                    const isHovered = hoveredCategoryId === category.id;
+                    
+                    return (
+                      <div
+                        key={category.id}
+                        onClick={() => handleEditCategory(category)}
+                        onMouseEnter={() => setHoveredCategoryId(category.id)}
+                        onMouseLeave={() => setHoveredCategoryId(null)}
+                        className="relative flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-all duration-200 cursor-pointer group border border-transparent hover:border-gray-100 hover:shadow-sm"
+                        data-testid={`category-${category.id}`}
+                      >
+                        <div 
+                          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: category.color ? `${category.color}20` : '#f3f4f6' }}
+                        >
+                          <Folder 
+                            className="w-5 h-5" 
+                            style={{ color: category.color || '#6b7280' }}
+                          />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm text-gray-900 truncate mb-0.5">
+                            {category.name}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400">{programCount} Programme</span>
+                            {category.description && (
+                              <span className="text-xs text-gray-400 truncate">• {category.description}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <AnimatePresence>
+                          {isHovered ? (
+                            <motion.div 
+                              initial={{ opacity: 0, x: 10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 10 }}
+                              className="flex items-center gap-1"
+                            >
+                              <button
+                                onClick={(e) => handleEditCategory(category, e)}
+                                className="p-2 rounded-lg bg-white shadow-sm border border-gray-100 hover:bg-purple-50 hover:border-purple-200 transition-colors"
+                                title="Bearbeiten"
+                                data-testid={`btn-edit-category-${category.id}`}
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-purple-600" />
+                              </button>
+                            </motion.div>
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0 group-hover:text-gray-400 transition-colors" />
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ) : (viewMode === 'category-edit' || viewMode === 'category-create') ? (
+          <motion.div
+            key="category-form"
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 50, opacity: 0 }}
+            className="h-full flex flex-col"
+          >
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-purple-50 to-white">
+              <button
+                onClick={() => { setViewMode('categories'); setSelectedCategory(null); setCategoryFormData({}); }}
+                className="p-2 hover:bg-white/80 rounded-xl transition-all duration-200 shadow-sm bg-white"
+                data-testid="btn-cancel-category-form"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+              <h3 className="font-semibold text-gray-900 flex-1 text-sm">
+                {viewMode === 'category-create' ? 'Neue Kategorie' : 'Kategorie bearbeiten'}
+              </h3>
+              {viewMode === 'category-edit' && selectedCategory && (
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-red-500 hover:bg-red-50" 
+                  onClick={handleDeleteCategory}
+                  data-testid="btn-delete-category"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+              <Button 
+                size="sm" 
+                onClick={handleSaveCategory} 
+                disabled={createCategoryMutation.isPending || updateCategoryMutation.isPending}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+                data-testid="btn-save-category"
+              >
+                <Save className="w-4 h-4 mr-1.5" />
+                Speichern
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div>
+                <Label htmlFor="categoryName" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Name *</Label>
+                <Input
+                  id="categoryName"
+                  value={categoryFormData.name || ''}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+                  placeholder="z.B. Finanzen, Produktion, Lager"
+                  className="mt-1.5 rounded-xl border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                  data-testid="input-category-name"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="categoryDescription" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Beschreibung</Label>
+                <Textarea
+                  id="categoryDescription"
+                  value={categoryFormData.description || ''}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
+                  placeholder="Kurze Beschreibung der Kategorie..."
+                  rows={2}
+                  className="mt-1.5 rounded-xl border-gray-200 focus:border-purple-500 focus:ring-purple-500 resize-none"
+                  data-testid="input-category-description"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Farbe</Label>
+                <div className="mt-2 grid grid-cols-10 gap-2">
+                  {PRESET_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setCategoryFormData({ ...categoryFormData, color })}
+                      className={`w-7 h-7 rounded-lg transition-all duration-200 ${
+                        categoryFormData.color === color 
+                          ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' 
+                          : 'hover:scale-110'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      data-testid={`color-${color}`}
+                    />
+                  ))}
+                </div>
+                {categoryFormData.color && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <div 
+                      className="w-8 h-8 rounded-lg" 
+                      style={{ backgroundColor: categoryFormData.color }}
+                    />
+                    <span className="text-sm text-gray-500">Ausgewählt: {categoryFormData.color}</span>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-6 text-xs text-gray-400"
+                      onClick={() => setCategoryFormData({ ...categoryFormData, color: null })}
+                      data-testid="btn-remove-category-color"
+                    >
+                      Entfernen
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
         ) : (viewMode === 'edit' || viewMode === 'create') ? (
           <motion.div
             key="form"
@@ -483,15 +802,27 @@ export function ErpProgramsWidget() {
                   <span className="text-xs text-gray-500">{programs.length} Programme</span>
                 </div>
               </div>
-              <Button 
-                size="sm" 
-                onClick={handleCreate}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm"
-                data-testid="btn-add-program"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Neu
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setViewMode('categories')}
+                  className="rounded-xl border-purple-200 text-purple-600 hover:bg-purple-50"
+                  data-testid="btn-manage-categories"
+                >
+                  <Folder className="w-4 h-4 mr-1" />
+                  Kategorien
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleCreate}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm"
+                  data-testid="btn-add-program"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Neu
+                </Button>
+              </div>
             </div>
 
             {/* Search & Filter - Compact Single Row */}
