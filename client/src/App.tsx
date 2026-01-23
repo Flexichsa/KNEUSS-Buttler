@@ -11,11 +11,20 @@ import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
 import ForgotPasswordPage from "@/pages/forgot-password";
 import CsvStatusPage from "@/pages/csv-status";
+import KnowledgeBase from "@/pages/knowledge-base";
 
 function ProtectedDashboard() {
   return (
     <ProtectedRoute>
       <Dashboard />
+    </ProtectedRoute>
+  );
+}
+
+function ProtectedKnowledgeBase() {
+  return (
+    <ProtectedRoute>
+      <KnowledgeBase />
     </ProtectedRoute>
   );
 }
@@ -27,6 +36,7 @@ function Router() {
       <Route path="/register" component={RegisterPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/csv-status" component={CsvStatusPage} />
+      <Route path="/wissensdatenbank" component={ProtectedKnowledgeBase} />
       <Route path="/" component={ProtectedDashboard} />
       <Route path="/calendar" component={ProtectedDashboard} />
       <Route path="/mail" component={ProtectedDashboard} />

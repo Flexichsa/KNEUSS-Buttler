@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema } from "@shared/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
@@ -1729,6 +1729,220 @@ export async function registerRoutes(
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to get CSV data" });
+    }
+  });
+
+  // ============ CSB ERP KNOWLEDGE BASE ============
+
+  // Guide Categories CRUD
+  app.get("/api/guide-categories", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const categories = await storage.getGuideCategories();
+      res.json(categories);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Kategorien konnten nicht geladen werden" });
+    }
+  });
+
+  app.get("/api/guide-categories/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const category = await storage.getGuideCategory(id);
+      if (!category) {
+        return res.status(404).json({ error: "Kategorie nicht gefunden" });
+      }
+      res.json(category);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Kategorie konnte nicht geladen werden" });
+    }
+  });
+
+  app.post("/api/guide-categories", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const validatedData = insertGuideCategorySchema.parse(req.body);
+      const category = await storage.createGuideCategory(validatedData);
+      res.status(201).json(category);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Ungültige Kategoriedaten" });
+    }
+  });
+
+  app.patch("/api/guide-categories/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertGuideCategorySchema.partial().parse(req.body);
+      const category = await storage.updateGuideCategory(id, validatedData);
+      if (!category) {
+        return res.status(404).json({ error: "Kategorie nicht gefunden" });
+      }
+      res.json(category);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Kategorie konnte nicht aktualisiert werden" });
+    }
+  });
+
+  app.delete("/api/guide-categories/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteGuideCategory(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Kategorie konnte nicht gelöscht werden" });
+    }
+  });
+
+  // Guides CRUD
+  app.get("/api/guides", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const categoryId = req.query.categoryId !== undefined 
+        ? req.query.categoryId === 'null' ? null : parseInt(req.query.categoryId as string)
+        : undefined;
+      
+      let guides;
+      if (categoryId !== undefined) {
+        guides = await storage.getGuidesByCategory(categoryId);
+      } else {
+        guides = await storage.getGuides();
+      }
+      res.json(guides);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Anleitungen konnten nicht geladen werden" });
+    }
+  });
+
+  app.get("/api/guides/search", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const query = req.query.q as string || '';
+      if (!query.trim()) {
+        return res.json([]);
+      }
+      const guides = await storage.searchGuides(query);
+      res.json(guides);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Suche fehlgeschlagen" });
+    }
+  });
+
+  app.get("/api/guides/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const guide = await storage.getGuide(id);
+      if (!guide) {
+        return res.status(404).json({ error: "Anleitung nicht gefunden" });
+      }
+      res.json(guide);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Anleitung konnte nicht geladen werden" });
+    }
+  });
+
+  app.post("/api/guides", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const validatedData = insertGuideSchema.parse(req.body);
+      const guide = await storage.createGuide(validatedData);
+      res.status(201).json(guide);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Ungültige Anleitungsdaten" });
+    }
+  });
+
+  app.patch("/api/guides/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertGuideSchema.partial().parse(req.body);
+      const guide = await storage.updateGuide(id, validatedData);
+      if (!guide) {
+        return res.status(404).json({ error: "Anleitung nicht gefunden" });
+      }
+      res.json(guide);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Anleitung konnte nicht aktualisiert werden" });
+    }
+  });
+
+  app.delete("/api/guides/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteGuide(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Anleitung konnte nicht gelöscht werden" });
+    }
+  });
+
+  // Guide Steps CRUD
+  app.get("/api/guides/:guideId/steps", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const guideId = parseInt(req.params.guideId);
+      const steps = await storage.getGuideSteps(guideId);
+      res.json(steps);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Schritte konnten nicht geladen werden" });
+    }
+  });
+
+  app.post("/api/guides/:guideId/steps", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const guideId = parseInt(req.params.guideId);
+      const validatedData = insertGuideStepSchema.parse({ ...req.body, guideId });
+      const step = await storage.createGuideStep(validatedData);
+      res.status(201).json(step);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Ungültige Schrittdaten" });
+    }
+  });
+
+  app.patch("/api/guide-steps/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertGuideStepSchema.partial().parse(req.body);
+      const step = await storage.updateGuideStep(id, validatedData);
+      if (!step) {
+        return res.status(404).json({ error: "Schritt nicht gefunden" });
+      }
+      res.json(step);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Schritt konnte nicht aktualisiert werden" });
+    }
+  });
+
+  app.delete("/api/guide-steps/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteGuideStep(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Schritt konnte nicht gelöscht werden" });
+    }
+  });
+
+  // Guide Image Upload - ensure directory exists
+  if (!fs.existsSync("uploads/guides")) {
+    fs.mkdirSync("uploads/guides", { recursive: true });
+  }
+  
+  const guideImageUpload = multer({
+    dest: "uploads/guides",
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Nur Bilder sind erlaubt'));
+      }
+    }
+  });
+
+  app.post("/api/guide-images/upload", isAuthenticatedCustom, guideImageUpload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Kein Bild hochgeladen" });
+      }
+      
+      const imageUrl = `/uploads/guides/${req.file.filename}`;
+      res.json({ url: imageUrl });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Bild-Upload fehlgeschlagen" });
     }
   });
 
