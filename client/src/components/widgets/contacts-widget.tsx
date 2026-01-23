@@ -1,12 +1,22 @@
 import { useState, useMemo, useRef } from "react";
-import { Building2, User, Plus, Phone, Mail, MapPin, ChevronRight, ChevronLeft, Loader2, Pencil, Trash2, UserPlus, X, Search, Upload, Image as ImageIcon } from "lucide-react";
+import { Building2, User, Plus, Phone, Mail, MapPin, ChevronRight, ChevronLeft, Loader2, Pencil, Trash2, UserPlus, X, Search, Upload, Image as ImageIcon, PlusCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useContacts, useCreateContact, useUpdateContact, useDeleteContact, useCreateContactPerson, useUpdateContactPerson, useDeleteContactPerson } from "@/hooks/use-contacts";
+import { useContacts, useCreateContact, useUpdateContact, useDeleteContact, useCreateContactPerson, useUpdateContactPerson, useDeleteContactPerson, useCreateContactDetail, useDeleteContactDetail } from "@/hooks/use-contacts";
+
+interface ContactDetail {
+  id: number;
+  contactId: number | null;
+  contactPersonId: number | null;
+  type: string;
+  label: string | null;
+  value: string;
+}
 
 interface ContactPerson {
   id: number;
@@ -15,6 +25,7 @@ interface ContactPerson {
   role: string | null;
   email: string | null;
   phone: string | null;
+  details: ContactDetail[];
 }
 
 interface Contact {
@@ -27,6 +38,7 @@ interface Contact {
   notes: string | null;
   logoUrl: string | null;
   persons: ContactPerson[];
+  details: ContactDetail[];
 }
 
 export function ContactsWidget() {
@@ -37,12 +49,17 @@ export function ContactsWidget() {
   const createContactPerson = useCreateContactPerson();
   const updateContactPerson = useUpdateContactPerson();
   const deleteContactPerson = useDeleteContactPerson();
+  const createContactDetail = useCreateContactDetail();
+  const deleteContactDetail = useDeleteContactDetail();
 
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddPersonDialog, setShowAddPersonDialog] = useState(false);
   const [showEditPersonDialog, setShowEditPersonDialog] = useState(false);
+  const [showAddDetailDialog, setShowAddDetailDialog] = useState(false);
   const [editingPerson, setEditingPerson] = useState<ContactPerson | null>(null);
+  const [detailContext, setDetailContext] = useState<{ contactId?: number; personId?: number } | null>(null);
+  const [detailFormData, setDetailFormData] = useState({ type: "phone", label: "", value: "" });
   const [contactType, setContactType] = useState<"company" | "person">("company");
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", notes: "", logoUrl: "" });
   const [personFormData, setPersonFormData] = useState({ name: "", role: "", email: "", phone: "" });
@@ -228,6 +245,13 @@ export function ContactsWidget() {
               >
                 <ChevronLeft className="w-5 h-5 text-gray-500" />
               </button>
+              {selectedContact.logoUrl && selectedContact.type === "company" && (
+                <img 
+                  src={selectedContact.logoUrl} 
+                  alt={selectedContact.name} 
+                  className="w-10 h-10 rounded-lg object-contain bg-gray-50 border border-gray-200 flex-shrink-0"
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 truncate">{selectedContact.name}</h3>
                 <span className="text-xs text-gray-500">{selectedContact.type === "company" ? "Firma" : "Person"}</span>
@@ -336,26 +360,70 @@ export function ContactsWidget() {
               ) : (
                 <>
                   <div className="bg-gray-50 rounded-xl p-3 space-y-2">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Kontaktdaten</div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Kontaktdaten</div>
+                      <button
+                        onClick={() => {
+                          setDetailContext({ contactId: selectedContact.id });
+                          setDetailFormData({ type: "phone", label: "", value: "" });
+                          setShowAddDetailDialog(true);
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        data-testid="btn-add-contact-detail"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        Hinzufügen
+                      </button>
+                    </div>
                     {selectedContact.email && (
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="w-4 h-4 text-gray-400" />
                         <a href={`mailto:${selectedContact.email}`} className="text-blue-600 hover:underline">{selectedContact.email}</a>
+                        <span className="text-gray-400 text-xs">(Haupt)</span>
                       </div>
                     )}
                     {selectedContact.phone && (
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="w-4 h-4 text-gray-400" />
                         <a href={`tel:${selectedContact.phone}`} className="text-blue-600 hover:underline">{selectedContact.phone}</a>
+                        <span className="text-gray-400 text-xs">(Haupt)</span>
                       </div>
                     )}
+                    {selectedContact.details?.filter(d => d.type === "email").map(detail => (
+                      <div key={detail.id} className="flex items-center gap-2 text-sm group">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        <a href={`mailto:${detail.value}`} className="text-blue-600 hover:underline">{detail.value}</a>
+                        {detail.label && <span className="text-gray-400 text-xs">({detail.label})</span>}
+                        <button 
+                          onClick={() => deleteContactDetail.mutate(detail.id)}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-50 rounded"
+                          data-testid={`btn-delete-detail-${detail.id}`}
+                        >
+                          <X className="w-3 h-3 text-red-500" />
+                        </button>
+                      </div>
+                    ))}
+                    {selectedContact.details?.filter(d => d.type === "phone").map(detail => (
+                      <div key={detail.id} className="flex items-center gap-2 text-sm group">
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <a href={`tel:${detail.value}`} className="text-blue-600 hover:underline">{detail.value}</a>
+                        {detail.label && <span className="text-gray-400 text-xs">({detail.label})</span>}
+                        <button 
+                          onClick={() => deleteContactDetail.mutate(detail.id)}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-50 rounded"
+                          data-testid={`btn-delete-detail-${detail.id}`}
+                        >
+                          <X className="w-3 h-3 text-red-500" />
+                        </button>
+                      </div>
+                    ))}
                     {selectedContact.address && (
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-700">{selectedContact.address}</span>
                       </div>
                     )}
-                    {!selectedContact.email && !selectedContact.phone && !selectedContact.address && (
+                    {!selectedContact.email && !selectedContact.phone && !selectedContact.address && (!selectedContact.details || selectedContact.details.length === 0) && (
                       <div className="text-sm text-gray-400">Keine Kontaktdaten</div>
                     )}
                   </div>
@@ -406,14 +474,56 @@ export function ContactsWidget() {
                                   <div className="text-xs flex items-center gap-1">
                                     <Mail className="w-3 h-3 text-gray-400" />
                                     <a href={`mailto:${person.email}`} className="text-blue-600 hover:underline">{person.email}</a>
+                                    <span className="text-gray-400">(Haupt)</span>
                                   </div>
                                 )}
+                                {person.details?.filter(d => d.type === "email").map(detail => (
+                                  <div key={detail.id} className="text-xs flex items-center gap-1 group/detail">
+                                    <Mail className="w-3 h-3 text-gray-400" />
+                                    <a href={`mailto:${detail.value}`} className="text-blue-600 hover:underline">{detail.value}</a>
+                                    {detail.label && <span className="text-gray-400">({detail.label})</span>}
+                                    <button 
+                                      onClick={() => deleteContactDetail.mutate(detail.id)}
+                                      className="opacity-0 group-hover/detail:opacity-100 p-0.5"
+                                      data-testid={`btn-delete-person-email-${detail.id}`}
+                                    >
+                                      <X className="w-2.5 h-2.5 text-red-500" />
+                                    </button>
+                                  </div>
+                                ))}
                                 {person.phone && (
                                   <div className="text-xs flex items-center gap-1">
                                     <Phone className="w-3 h-3 text-gray-400" />
                                     <a href={`tel:${person.phone}`} className="text-blue-600 hover:underline">{person.phone}</a>
+                                    <span className="text-gray-400">(Haupt)</span>
                                   </div>
                                 )}
+                                {person.details?.filter(d => d.type === "phone").map(detail => (
+                                  <div key={detail.id} className="text-xs flex items-center gap-1 group/detail">
+                                    <Phone className="w-3 h-3 text-gray-400" />
+                                    <a href={`tel:${detail.value}`} className="text-blue-600 hover:underline">{detail.value}</a>
+                                    {detail.label && <span className="text-gray-400">({detail.label})</span>}
+                                    <button 
+                                      onClick={() => deleteContactDetail.mutate(detail.id)}
+                                      className="opacity-0 group-hover/detail:opacity-100 p-0.5"
+                                      data-testid={`btn-delete-person-phone-${detail.id}`}
+                                    >
+                                      <X className="w-2.5 h-2.5 text-red-500" />
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  onClick={() => {
+                                    setDetailContext({ contactId: selectedContact.id, personId: person.id });
+                                    setDetailFormData({ type: "phone", label: "", value: "" });
+                                    setShowAddDetailDialog(true);
+                                  }}
+                                  className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-0.5 mt-1"
+                                  data-testid={`btn-add-person-detail-${person.id}`}
+                                >
+                                  <PlusCircle className="w-3 h-3" />
+                                  Kontaktdaten
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -743,6 +853,78 @@ export function ContactsWidget() {
             </Button>
             <Button onClick={handleUpdatePerson} disabled={updateContactPerson.isPending || !personFormData.name.trim()} data-testid="btn-confirm-edit-person">
               {updateContactPerson.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Speichern"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddDetailDialog} onOpenChange={setShowAddDetailDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Kontaktdaten hinzufügen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Typ</label>
+              <Select value={detailFormData.type} onValueChange={(value) => setDetailFormData({ ...detailFormData, type: value })}>
+                <SelectTrigger data-testid="select-detail-type">
+                  <SelectValue placeholder="Typ wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="phone">Telefon</SelectItem>
+                  <SelectItem value="email">E-Mail</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Input
+              placeholder="Bezeichnung (z.B. Mobil, Fax, Privat)"
+              value={detailFormData.label}
+              onChange={(e) => setDetailFormData({ ...detailFormData, label: e.target.value })}
+              data-testid="input-detail-label"
+            />
+            {detailFormData.type === "phone" ? (
+              <PhoneInput
+                placeholder="Telefonnummer"
+                value={detailFormData.value}
+                onChange={(phone) => setDetailFormData({ ...detailFormData, value: phone })}
+                data-testid="input-detail-value"
+              />
+            ) : (
+              <Input
+                placeholder="E-Mail-Adresse"
+                type="email"
+                value={detailFormData.value}
+                onChange={(e) => setDetailFormData({ ...detailFormData, value: e.target.value })}
+                data-testid="input-detail-value"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowAddDetailDialog(false); setDetailContext(null); }} data-testid="btn-cancel-add-detail">
+              Abbrechen
+            </Button>
+            <Button 
+              onClick={() => {
+                if (detailContext && detailFormData.value.trim()) {
+                  createContactDetail.mutate({
+                    contactId: detailContext.contactId,
+                    contactPersonId: detailContext.personId,
+                    type: detailFormData.type,
+                    label: detailFormData.label || undefined,
+                    value: detailFormData.value.trim(),
+                  }, {
+                    onSuccess: () => {
+                      setShowAddDetailDialog(false);
+                      setDetailContext(null);
+                      setDetailFormData({ type: "phone", label: "", value: "" });
+                    }
+                  });
+                }
+              }} 
+              disabled={createContactDetail.isPending || !detailFormData.value.trim()} 
+              data-testid="btn-confirm-add-detail"
+            >
+              {createContactDetail.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Hinzufügen"}
             </Button>
           </DialogFooter>
         </DialogContent>

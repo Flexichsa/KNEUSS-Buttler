@@ -346,13 +346,32 @@ export const insertContactPersonSchema = createInsertSchema(contactPersons).omit
   createdAt: true,
 });
 
+export const contactDetails = pgTable("contact_details", {
+  id: serial("id").primaryKey(),
+  contactId: integer("contact_id").references(() => contacts.id, { onDelete: 'cascade' }),
+  contactPersonId: integer("contact_person_id").references(() => contactPersons.id, { onDelete: 'cascade' }),
+  type: text("type").notNull(),
+  label: text("label"),
+  value: text("value").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertContactDetailSchema = createInsertSchema(contactDetails).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type Contact = typeof contacts.$inferSelect;
 
 export type InsertContactPerson = z.infer<typeof insertContactPersonSchema>;
 export type ContactPerson = typeof contactPersons.$inferSelect;
 
-export type ContactWithPersons = Contact & { persons: ContactPerson[] };
+export type InsertContactDetail = z.infer<typeof insertContactDetailSchema>;
+export type ContactDetail = typeof contactDetails.$inferSelect;
+
+export type ContactPersonWithDetails = ContactPerson & { details: ContactDetail[] };
+export type ContactWithPersons = Contact & { persons: ContactPersonWithDetails[]; details: ContactDetail[] };
 
 export const passwords = pgTable("passwords", {
   id: serial("id").primaryKey(),

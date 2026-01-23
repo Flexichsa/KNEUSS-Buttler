@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, passwords, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, contactDetails, todoLabels, todoSections, todoAttachments, passwords, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type ContactDetail, type InsertContactDetail, type ContactPersonWithDetails, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory } from "@shared/schema";
 import { eq, and, lt, desc, isNull, asc, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
@@ -74,6 +74,13 @@ export interface IStorage {
   createContactPerson(person: InsertContactPerson): Promise<ContactPerson>;
   updateContactPerson(id: number, person: Partial<InsertContactPerson>): Promise<ContactPerson | undefined>;
   deleteContactPerson(id: number): Promise<void>;
+  
+  // Contact Details
+  getContactDetails(contactId: number): Promise<ContactDetail[]>;
+  getPersonDetails(personId: number): Promise<ContactDetail[]>;
+  createContactDetail(detail: InsertContactDetail): Promise<ContactDetail>;
+  updateContactDetail(id: number, detail: Partial<InsertContactDetail>): Promise<ContactDetail | undefined>;
+  deleteContactDetail(id: number): Promise<void>;
   
   // Todo Attachments
   getTodoAttachments(todoId: number): Promise<TodoAttachment[]>;
@@ -421,10 +428,15 @@ export class DatabaseStorage implements IStorage {
   async getContacts(): Promise<ContactWithPersons[]> {
     const allContacts = await db.select().from(contacts).orderBy(desc(contacts.updatedAt));
     const allPersons = await db.select().from(contactPersons);
+    const allDetails = await db.select().from(contactDetails);
     
     return allContacts.map(contact => ({
       ...contact,
-      persons: allPersons.filter(p => p.contactId === contact.id)
+      persons: allPersons.filter(p => p.contactId === contact.id).map(person => ({
+        ...person,
+        details: allDetails.filter(d => d.contactPersonId === person.id)
+      })),
+      details: allDetails.filter(d => d.contactId === contact.id && !d.contactPersonId)
     }));
   }
 
@@ -433,7 +445,19 @@ export class DatabaseStorage implements IStorage {
     if (!contact) return undefined;
     
     const persons = await db.select().from(contactPersons).where(eq(contactPersons.contactId, id));
-    return { ...contact, persons };
+    const details = await db.select().from(contactDetails).where(eq(contactDetails.contactId, id));
+    const personDetails = await db.select().from(contactDetails).where(
+      or(...persons.map(p => eq(contactDetails.contactPersonId, p.id)))
+    );
+    
+    return { 
+      ...contact, 
+      persons: persons.map(person => ({
+        ...person,
+        details: personDetails.filter(d => d.contactPersonId === person.id)
+      })),
+      details: details.filter(d => !d.contactPersonId)
+    };
   }
 
   async createContact(contact: InsertContact): Promise<Contact> {
@@ -475,6 +499,29 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContactPerson(id: number): Promise<void> {
     await db.delete(contactPersons).where(eq(contactPersons.id, id));
+  }
+
+  // Contact Details
+  async getContactDetails(contactId: number): Promise<ContactDetail[]> {
+    return db.select().from(contactDetails).where(eq(contactDetails.contactId, contactId)).orderBy(contactDetails.createdAt);
+  }
+
+  async getPersonDetails(personId: number): Promise<ContactDetail[]> {
+    return db.select().from(contactDetails).where(eq(contactDetails.contactPersonId, personId)).orderBy(contactDetails.createdAt);
+  }
+
+  async createContactDetail(detail: InsertContactDetail): Promise<ContactDetail> {
+    const [newDetail] = await db.insert(contactDetails).values(detail).returning();
+    return newDetail;
+  }
+
+  async updateContactDetail(id: number, detailUpdate: Partial<InsertContactDetail>): Promise<ContactDetail | undefined> {
+    const [updated] = await db.update(contactDetails).set(detailUpdate).where(eq(contactDetails.id, id)).returning();
+    return updated;
+  }
+
+  async deleteContactDetail(id: number): Promise<void> {
+    await db.delete(contactDetails).where(eq(contactDetails.id, id));
   }
 
   // Todo Attachments

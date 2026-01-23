@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema, insertErpCategorySchema, insertErpProgramSchema, updateErpProgramSchema } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertContactDetailSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema, insertErpCategorySchema, insertErpProgramSchema, updateErpProgramSchema } from "@shared/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
@@ -1501,6 +1501,61 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to delete contact person" });
+    }
+  });
+
+  // Contact Details CRUD
+  app.get("/api/contacts/:contactId/details", async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const details = await storage.getContactDetails(contactId);
+      res.json(details);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch contact details" });
+    }
+  });
+
+  app.get("/api/contact-persons/:personId/details", async (req, res) => {
+    try {
+      const personId = parseInt(req.params.personId);
+      const details = await storage.getPersonDetails(personId);
+      res.json(details);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch person details" });
+    }
+  });
+
+  app.post("/api/contact-details", async (req, res) => {
+    try {
+      const data = insertContactDetailSchema.parse(req.body);
+      const detail = await storage.createContactDetail(data);
+      res.status(201).json(detail);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to create contact detail" });
+    }
+  });
+
+  app.patch("/api/contact-details/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = insertContactDetailSchema.partial().parse(req.body);
+      const detail = await storage.updateContactDetail(id, data);
+      if (!detail) {
+        return res.status(404).json({ error: "Contact detail not found" });
+      }
+      res.json(detail);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update contact detail" });
+    }
+  });
+
+  app.delete("/api/contact-details/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteContactDetail(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete contact detail" });
     }
   });
 
