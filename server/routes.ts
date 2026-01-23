@@ -11,10 +11,13 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import { isAsanaConnected, getAsanaUser, getWorkspaces, getProjects as getAsanaProjects, getAllTasks as getAsanaTasks } from "./asana";
 import { findUserByEmail, findUserById, createUser, verifyPassword, getUserId, updateUserPassword, updateUserProfile, isAuthenticatedCustom, createPasswordResetToken, resetPasswordWithToken, verifyPasswordResetToken } from "./customAuth";
 import { loginSchema, registerSchema } from "@shared/schema";
+import { ObjectStorageService, ObjectNotFoundError, registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+
+const objectStorageService = new ObjectStorageService();
 
 const loadPdfParse = async () => {
   try {
@@ -44,6 +47,9 @@ export async function registerRoutes(
   // Setup Replit Auth (must be before other routes)
   await setupAuth(app);
   registerAuthRoutes(app);
+  
+  // Register Object Storage routes for persistent file storage
+  registerObjectStorageRoutes(app);
 
   // Custom Login/Register Endpoints
   app.post("/api/auth/register", async (req, res) => {
@@ -667,9 +673,9 @@ export async function registerRoutes(
     }
   });
 
-  // Todo Attachments
+  // Todo Attachments - uses Object Storage for persistence
   const attachmentUpload = multer({ 
-    dest: "uploads/attachments",
+    dest: "/tmp/uploads",
     limits: { fileSize: 20 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
       const allowedTypes = [
@@ -687,11 +693,6 @@ export async function registerRoutes(
       }
     }
   });
-
-  // Ensure upload directory exists
-  if (!fs.existsSync("uploads/attachments")) {
-    fs.mkdirSync("uploads/attachments", { recursive: true });
-  }
 
   app.get("/api/todos/:todoId/attachments", async (req, res) => {
     try {
@@ -718,6 +719,26 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No file uploaded" });
       }
 
+      // Upload to Object Storage for persistence
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const fileBuffer = fs.readFileSync(file.path);
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: fileBuffer,
+        headers: { "Content-Type": file.mimetype },
+      });
+      
+      if (!uploadResponse.ok) {
+        fs.unlinkSync(file.path);
+        throw new Error("Failed to upload to Object Storage");
+      }
+      
+      // Clean up temp file
+      fs.unlinkSync(file.path);
+      
+      // Get the normalized object path
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+
       const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
 
       const attachment = await storage.createTodoAttachment({
@@ -726,7 +747,7 @@ export async function registerRoutes(
         originalName: sanitizedOriginalName,
         mimeType: file.mimetype,
         size: file.size,
-        path: file.path,
+        path: objectPath,
       });
 
       res.status(201).json(attachment);
@@ -744,11 +765,17 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Attachment not found" });
       }
 
-      if (!fs.existsSync(attachment.path)) {
-        return res.status(404).json({ error: "File not found" });
+      // Serve from Object Storage
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(attachment.path);
+        res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
+        await objectStorageService.downloadObject(objectFile, res);
+      } catch (objError) {
+        if (objError instanceof ObjectNotFoundError) {
+          return res.status(404).json({ error: "File not found" });
+        }
+        throw objError;
       }
-
-      res.download(attachment.path, attachment.originalName);
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to download attachment" });
     }
@@ -763,12 +790,16 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Attachment not found" });
       }
 
-      if (!fs.existsSync(attachment.path)) {
-        return res.status(404).json({ error: "File not found" });
+      // Serve from Object Storage
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(attachment.path);
+        await objectStorageService.downloadObject(objectFile, res);
+      } catch (objError) {
+        if (objError instanceof ObjectNotFoundError) {
+          return res.status(404).json({ error: "File not found" });
+        }
+        throw objError;
       }
-
-      res.setHeader('Content-Type', attachment.mimeType);
-      res.sendFile(path.resolve(attachment.path));
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to preview attachment" });
     }
@@ -783,9 +814,13 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Attachment not found" });
       }
 
-      // Delete the file from disk
-      if (fs.existsSync(deleted.path)) {
-        fs.unlinkSync(deleted.path);
+      // Also delete from Object Storage
+      if (deleted.path && deleted.path.startsWith("/objects/")) {
+        try {
+          await objectStorageService.deleteObjectEntity(deleted.path);
+        } catch (deleteError) {
+          console.warn("[Attachment] Failed to delete from Object Storage:", deleteError);
+        }
       }
 
       res.status(204).send();
@@ -1686,7 +1721,7 @@ export async function registerRoutes(
     }
   });
 
-  // General file upload API - for images (logos, etc.)
+  // General file upload API - for images (logos, etc.) - uses Object Storage for persistence
   app.post("/api/upload", upload.single("file"), async (req, res) => {
     try {
       const file = req.file;
@@ -1701,21 +1736,39 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Only image files are allowed" });
       }
       
-      // Generate unique filename
-      const ext = path.extname(file.originalname) || ".jpg";
-      const uniqueName = `${crypto.randomBytes(16).toString("hex")}${ext}`;
-      const uploadDir = path.join(process.cwd(), "uploads", "logos");
+      // Get presigned URL for Object Storage upload
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
       
-      // Ensure directory exists
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      // Read the temp file and upload to Object Storage
+      const fileBuffer = fs.readFileSync(file.path);
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: fileBuffer,
+        headers: { "Content-Type": file.mimetype },
+      });
+      
+      if (!uploadResponse.ok) {
+        fs.unlinkSync(file.path);
+        throw new Error("Failed to upload to Object Storage");
       }
       
-      const destPath = path.join(uploadDir, uniqueName);
-      fs.renameSync(file.path, destPath);
+      // Clean up temp file
+      fs.unlinkSync(file.path);
       
-      const url = `/uploads/logos/${uniqueName}`;
-      res.json({ url });
+      // Get the normalized object path for serving
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+      
+      // Set ACL policy for public access (logos should be publicly viewable)
+      try {
+        await objectStorageService.trySetObjectEntityAclPolicy(objectPath, {
+          owner: "system",
+          visibility: "public",
+        });
+      } catch (aclError) {
+        console.warn("[Upload] Could not set ACL policy:", aclError);
+      }
+      
+      res.json({ url: objectPath });
     } catch (error: any) {
       console.error("[Upload] Error:", error);
       res.status(500).json({ error: error.message || "Upload failed" });
