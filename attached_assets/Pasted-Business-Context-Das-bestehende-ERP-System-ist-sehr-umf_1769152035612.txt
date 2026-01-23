@@ -1,0 +1,74 @@
+Business Context
+
+Das bestehende ERP-System ist sehr umfangreich und schwer überschaubar. Viele Arbeitsschritte und Programme erfordern spezifisches Wissen, das derzeit oft nur in Köpfen einzelner Mitarbeiter existiert oder unübersichtlich dokumentiert ist.
+
+Benefits
+
+Schnellere Einarbeitung neuer Mitarbeiter
+
+Weniger Fehler durch klare, nachvollziehbare Anleitungen
+
+Effizienteres Arbeiten durch zentrale Informationsquelle
+
+Wissenstransfer & Entlastung von Key-Personen
+
+2. 🔍 Assumptions
+Problem
+
+Fehlendes zentrales Tool zur strukturierten Dokumentation von ERP-relevanten Programmen, Schritten und Prozessen
+
+Hoher Suchaufwand nach der richtigen Programmnummer oder Anleitung
+
+Value Proposition
+
+Ein pflegbares Widget/Dashboard innerhalb oder außerhalb des ERP-Systems, das alle relevanten Informationen zu Programmen bündelt und einfach zugänglich macht.
+
+Feature Research
+
+Referenzlösungen:
+
+Confluence-Wiki mit strukturierten Seiten
+
+Low-Code-Tools wie Notion oder Retool
+
+In-ERP Dashboards mit Custom Widgets
+
+3. 👤 User Stories & Requirements
+User Flow
+
+Nutzer öffnet das Widget (im ERP oder Web)
+
+Übersicht zeigt Liste aller Programme + Such-/Filterfunktion
+
+Nutzer kann Datensätze anlegen, bearbeiten, löschen
+
+Jeder Datensatz enthält: Programmnummer, Titel, Beschreibung, Anweisung, Zuständiger, uvm.
+
+Optional: Link zu Anleitung oder Screenshots
+
+Wireframe (Optional – kann ich auf Wunsch visualisieren)
+User Stories & Anforderungen
+ID	User Story	Requirement	Priority	ClickUp Task	Notes
+US1	Als Nutzer möchte ich eine Übersicht aller ERP-Programme sehen, um schnell Informationen zu finden.	Liste mit Such-/Filterfunktion	High	Widget: Übersicht bauen	
+US2	Als Nutzer möchte ich Programme anlegen/bearbeiten können, um die Datenbank aktuell zu halten.	Formular mit Feldern (siehe unten)	High	CRUD-Funktion bauen	
+US3	Als Nutzer möchte ich eine kurze Anleitung oder Link zu jedem Programm sehen.	Feld „Arbeitsanweisung“ (Text oder URL)	Medium	Anleitung-Feld hinzufügen	
+US4	Als Admin möchte ich sehen, wann und von wem ein Eintrag zuletzt geändert wurde.	Änderungs-Log mit Timestamp/User	Medium	Historie-Tracking implementieren	
+US5	Als Nutzer möchte ich nach ERP-Bereich oder Programmnummer filtern können.	Filter-/Suchleiste nach Kategorie & Nummer	High	Filter implementieren	
+Datenschema (Vorschlag)
+Feldname	Beschreibung
+Programmnummer	Eindeutiger Code des ERP-Programms
+Programmtitel	Kurzbezeichnung
+Beschreibung	Was macht das Programm?
+Arbeitsanweisung	Beschreibung oder Link zu Anleitung
+Zuständiger (Builder)	Wer ist Ansprechpartner?
+Kategorie/Bereich	Modul oder Abteilung im ERP
+Letzte Änderung	Datum + Name
+4. ✅ Success Metrics
+
+80 % der Mitarbeiter nutzen das Tool regelmäßig (Messung über Tracking/Feedback)
+
+50 % Zeitersparnis beim Nachschlagen von Anweisungen
+
+30 % weniger Rückfragen an Key-User innerhalb von 3 Monaten
+
+Vollständige Dokumentation von >90 % aller genutzten Programme nach 6 Monaten
