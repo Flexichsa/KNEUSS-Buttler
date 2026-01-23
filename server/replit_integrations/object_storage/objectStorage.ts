@@ -237,6 +237,21 @@ export class ObjectStorageService {
       requestedPermission: requestedPermission ?? ObjectPermission.READ,
     });
   }
+
+  // Deletes an object entity from storage.
+  async deleteObjectEntity(objectPath: string): Promise<boolean> {
+    try {
+      const objectFile = await this.getObjectEntityFile(objectPath);
+      await objectFile.delete();
+      return true;
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        return false;
+      }
+      console.error("[ObjectStorage] Delete error:", error);
+      return false;
+    }
+  }
 }
 
 function parseObjectPath(path: string): {
