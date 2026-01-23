@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, contactDetails, todoLabels, todoSections, todoAttachments, passwords, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type ContactDetail, type InsertContactDetail, type ContactPersonWithDetails, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, contactDetails, todoLabels, todoSections, todoAttachments, passwords, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, erpProgramAttachments, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type ContactDetail, type InsertContactDetail, type ContactPersonWithDetails, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory, type ErpProgramAttachment, type InsertErpProgramAttachment } from "@shared/schema";
 import { eq, and, lt, desc, isNull, asc, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
@@ -140,6 +140,12 @@ export interface IStorage {
   
   // ERP Program History
   getErpProgramHistory(programId: number): Promise<ErpProgramHistory[]>;
+  
+  // ERP Program Attachments
+  getErpProgramAttachments(programId: number): Promise<ErpProgramAttachment[]>;
+  getErpProgramAttachment(id: number): Promise<ErpProgramAttachment | undefined>;
+  createErpProgramAttachment(attachment: InsertErpProgramAttachment): Promise<ErpProgramAttachment>;
+  deleteErpProgramAttachment(id: number): Promise<ErpProgramAttachment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -824,6 +830,26 @@ export class DatabaseStorage implements IStorage {
   // ERP Program History
   async getErpProgramHistory(programId: number): Promise<ErpProgramHistory[]> {
     return db.select().from(erpProgramHistory).where(eq(erpProgramHistory.programId, programId)).orderBy(desc(erpProgramHistory.changedAt));
+  }
+
+  // ERP Program Attachments
+  async getErpProgramAttachments(programId: number): Promise<ErpProgramAttachment[]> {
+    return db.select().from(erpProgramAttachments).where(eq(erpProgramAttachments.programId, programId)).orderBy(erpProgramAttachments.createdAt);
+  }
+
+  async getErpProgramAttachment(id: number): Promise<ErpProgramAttachment | undefined> {
+    const [attachment] = await db.select().from(erpProgramAttachments).where(eq(erpProgramAttachments.id, id));
+    return attachment;
+  }
+
+  async createErpProgramAttachment(attachment: InsertErpProgramAttachment): Promise<ErpProgramAttachment> {
+    const [newAttachment] = await db.insert(erpProgramAttachments).values(attachment).returning();
+    return newAttachment;
+  }
+
+  async deleteErpProgramAttachment(id: number): Promise<ErpProgramAttachment | undefined> {
+    const [deleted] = await db.delete(erpProgramAttachments).where(eq(erpProgramAttachments.id, id)).returning();
+    return deleted;
   }
 }
 

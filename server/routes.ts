@@ -2223,5 +2223,140 @@ export async function registerRoutes(
     }
   });
 
+  // ERP Program Attachments
+  app.get("/api/erp-programs/:programId/attachments", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const programId = parseInt(req.params.programId);
+      if (isNaN(programId)) {
+        return res.status(400).json({ error: "Ungültige Programm-ID" });
+      }
+      const attachments = await storage.getErpProgramAttachments(programId);
+      res.json(attachments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Laden der Anhänge" });
+    }
+  });
+
+  app.post("/api/erp-programs/:programId/attachments", isAuthenticatedCustom, upload.single('file'), async (req, res) => {
+    try {
+      const programId = parseInt(req.params.programId);
+      if (isNaN(programId)) {
+        return res.status(400).json({ error: "Ungültige Programm-ID" });
+      }
+      
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ error: "Keine Datei hochgeladen" });
+      }
+
+      // Upload to Object Storage for persistence
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const fileBuffer = fs.readFileSync(file.path);
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: fileBuffer,
+        headers: { "Content-Type": file.mimetype },
+      });
+      
+      if (!uploadResponse.ok) {
+        fs.unlinkSync(file.path);
+        throw new Error("Fehler beim Hochladen in Object Storage");
+      }
+      
+      // Clean up temp file
+      fs.unlinkSync(file.path);
+      
+      // Get the normalized object path
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+
+      const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+      const attachment = await storage.createErpProgramAttachment({
+        programId,
+        filename: file.filename,
+        originalName: sanitizedOriginalName,
+        mimeType: file.mimetype,
+        size: file.size,
+        path: objectPath,
+      });
+
+      res.status(201).json(attachment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Fehler beim Hochladen des Anhangs" });
+    }
+  });
+
+  app.get("/api/erp-attachments/:id/download", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const attachment = await storage.getErpProgramAttachment(id);
+      
+      if (!attachment) {
+        return res.status(404).json({ error: "Anhang nicht gefunden" });
+      }
+
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(attachment.path);
+        res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
+        await objectStorageService.downloadObject(objectFile, res);
+      } catch (objError) {
+        if (objError instanceof ObjectNotFoundError) {
+          return res.status(404).json({ error: "Datei nicht gefunden" });
+        }
+        throw objError;
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Download des Anhangs" });
+    }
+  });
+
+  app.get("/api/erp-attachments/:id/preview", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const attachment = await storage.getErpProgramAttachment(id);
+      
+      if (!attachment) {
+        return res.status(404).json({ error: "Anhang nicht gefunden" });
+      }
+
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(attachment.path);
+        res.setHeader('Content-Type', attachment.mimeType);
+        await objectStorageService.downloadObject(objectFile, res);
+      } catch (objError) {
+        if (objError instanceof ObjectNotFoundError) {
+          return res.status(404).json({ error: "Datei nicht gefunden" });
+        }
+        throw objError;
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Vorschau des Anhangs" });
+    }
+  });
+
+  app.delete("/api/erp-attachments/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteErpProgramAttachment(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Anhang nicht gefunden" });
+      }
+
+      // Also delete from Object Storage
+      if (deleted.path && deleted.path.startsWith("/objects/")) {
+        try {
+          await objectStorageService.deleteObjectEntity(deleted.path);
+        } catch (deleteError) {
+          console.warn("[ERP Attachment] Fehler beim Löschen aus Object Storage:", deleteError);
+        }
+      }
+
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Fehler beim Löschen des Anhangs" });
+    }
+  });
+
   return httpServer;
 }
