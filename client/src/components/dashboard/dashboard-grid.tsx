@@ -26,7 +26,7 @@ import { ErpProgramsWidget } from "@/components/widgets/erp-programs-widget";
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import { getWidgetType } from "./dashboard-config";
 import type { DashboardConfig, WidgetLayout, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WeblinkSettings, WidgetSizeMode } from "@shared/schema";
-import { X, GripVertical, Settings2, Maximize2 } from "lucide-react";
+import { X, GripVertical, Settings2, Maximize2, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -40,12 +40,13 @@ interface DashboardGridProps {
   onLayoutChange: (layouts: WidgetLayout[]) => void;
   onSettingsChange?: (widgetId: string, settings: any) => void;
   onRemoveWidget?: (widgetId: string) => void;
+  recentlySavedWidgetId?: string | null;
 }
 
 const COLS = 12;
 const ROW_HEIGHT = 70;
 
-export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemoveWidget }: DashboardGridProps) {
+export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemoveWidget, recentlySavedWidgetId }: DashboardGridProps) {
   const [containerWidth, setContainerWidth] = useState(1200);
   const [settingsWidgetId, setSettingsWidgetId] = useState<string | null>(null);
   const [expandedIconWidgetId, setExpandedIconWidgetId] = useState<string | null>(null);
@@ -422,6 +423,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         {config.enabledWidgets.map((widgetId) => {
           const iconMode = isIconMode(widgetId);
           const sizeMode = getWidgetSizeMode(widgetId);
+          const isRecentlySaved = recentlySavedWidgetId === widgetId;
           
           return (
             <div 
@@ -438,6 +440,33 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 }
               }}
             >
+              {/* Save feedback indicator */}
+              <AnimatePresence>
+                {isRecentlySaved && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 0.3, 0] }}
+                      transition={{ duration: 0.6 }}
+                      className="absolute inset-0 rounded-2xl bg-green-500"
+                    />
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [0, 1.2, 1] }}
+                      transition={{ duration: 0.4, delay: 0.1 }}
+                      className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center shadow-lg"
+                    >
+                      <Check className="h-6 w-6 text-white" strokeWidth={3} />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {iconMode ? (
                 <div className="relative w-full h-full">
                   {renderIconWidget(widgetId)}
