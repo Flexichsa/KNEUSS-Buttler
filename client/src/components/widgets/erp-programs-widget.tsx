@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Terminal, Search, ChevronRight, Loader2, Plus, Edit2, Trash2, ExternalLink, History, X, Save, MoreHorizontal, Folder, FolderPlus } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Terminal, Search, ChevronRight, Loader2, Plus, Edit2, Trash2, ExternalLink, History, X, Save, MoreHorizontal, Folder, FolderPlus, Paperclip, Upload, FileText, Image, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,17 @@ interface ErpProgramHistory {
   changedAt: string;
 }
 
+interface ErpProgramAttachment {
+  id: number;
+  programId: number;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  path: string;
+  createdAt: string;
+}
+
 type ViewMode = 'list' | 'detail' | 'edit' | 'create' | 'history' | 'categories' | 'category-edit' | 'category-create';
 
 export function ErpProgramsWidget() {
@@ -55,6 +66,8 @@ export function ErpProgramsWidget() {
   const [selectedCategory, setSelectedCategory] = useState<ErpCategory | null>(null);
   const [categoryFormData, setCategoryFormData] = useState<Partial<ErpCategory>>({});
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -71,6 +84,12 @@ export function ErpProgramsWidget() {
     queryKey: ["/api/erp-programs", selectedProgram?.id, "history"],
     queryFn: () => selectedProgram ? fetch(`/api/erp-programs/${selectedProgram.id}/history`, { credentials: 'include' }).then(r => r.json()) : [],
     enabled: !!selectedProgram && viewMode === 'history',
+  });
+
+  const { data: attachments = [], isLoading: attachmentsLoading } = useQuery<ErpProgramAttachment[]>({
+    queryKey: ["/api/erp-programs", selectedProgram?.id, "attachments"],
+    queryFn: () => selectedProgram ? fetch(`/api/erp-programs/${selectedProgram.id}/attachments`, { credentials: 'include' }).then(r => r.json()) : [],
+    enabled: !!selectedProgram && (viewMode === 'detail' || viewMode === 'edit'),
   });
 
   const createMutation = useMutation({
@@ -157,6 +176,61 @@ export function ErpProgramsWidget() {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
     }
   });
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/erp-attachments/${id}`),
+    onSuccess: () => {
+      if (selectedProgram) {
+        queryClient.invalidateQueries({ queryKey: ["/api/erp-programs", selectedProgram.id, "attachments"] });
+      }
+      toast({ title: "Anhang gelöscht" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleFileUpload = async (file: File) => {
+    if (!selectedProgram) return;
+    
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch(`/api/erp-programs/${selectedProgram.id}/attachments`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Fehler beim Hochladen');
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/erp-programs", selectedProgram.id, "attachments"] });
+      toast({ title: "Datei hochgeladen" });
+    } catch (error: any) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith('image/')) return <Image className="w-4 h-4 text-purple-500" />;
+    return <FileText className="w-4 h-4 text-blue-500" />;
+  };
 
   const filteredPrograms = useMemo(() => {
     let result = programs;
@@ -390,6 +464,86 @@ export function ErpProgramsWidget() {
                   <ChevronRight className="w-4 h-4 text-indigo-400" />
                 </a>
               )}
+
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+                    <Paperclip className="w-4 h-4" />
+                    Anhänge ({attachments.length})
+                  </div>
+                  <label className="cursor-pointer">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                      }}
+                      disabled={uploadingFile}
+                      data-testid="input-file-upload"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs rounded-lg"
+                      disabled={uploadingFile}
+                      asChild
+                    >
+                      <span data-testid="btn-upload-file">
+                        {uploadingFile ? (
+                          <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                        ) : (
+                          <Upload className="w-3 h-3 mr-1.5" />
+                        )}
+                        Hochladen
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+                
+                {attachmentsLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                  </div>
+                ) : attachments.length === 0 ? (
+                  <div className="text-sm text-gray-400 text-center py-4">
+                    Keine Anhänge vorhanden
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {attachments.map((att) => (
+                      <div 
+                        key={att.id} 
+                        className="flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors group"
+                        data-testid={`attachment-${att.id}`}
+                      >
+                        {getFileIcon(att.mimeType)}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-700 truncate">{att.originalName}</div>
+                          <div className="text-xs text-gray-400">{formatFileSize(att.size)}</div>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <a
+                            href={`/api/erp-attachments/${att.id}/download`}
+                            className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+                            data-testid={`btn-download-${att.id}`}
+                          >
+                            <Download className="w-4 h-4 text-gray-500" />
+                          </a>
+                          <button
+                            onClick={() => deleteAttachmentMutation.mutate(att.id)}
+                            className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
+                            data-testid={`btn-delete-attachment-${att.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="pt-3 border-t border-gray-100 text-xs text-gray-400 flex items-center gap-4">
                 <span>Zuletzt: {formatDate(selectedProgram.updatedAt)}</span>

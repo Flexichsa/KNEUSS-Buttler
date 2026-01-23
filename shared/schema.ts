@@ -543,3 +543,23 @@ export type InsertErpProgramHistory = z.infer<typeof insertErpProgramHistorySche
 export type ErpProgramHistory = typeof erpProgramHistory.$inferSelect;
 
 export type ErpProgramWithCategory = ErpProgram & { category?: ErpCategory };
+
+// ERP-Programm Anhänge
+export const erpProgramAttachments = pgTable("erp_program_attachments", {
+  id: serial("id").primaryKey(),
+  programId: integer("program_id").notNull().references(() => erpPrograms.id, { onDelete: 'cascade' }),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  path: text("path").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertErpProgramAttachmentSchema = createInsertSchema(erpProgramAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertErpProgramAttachment = z.infer<typeof insertErpProgramAttachmentSchema>;
+export type ErpProgramAttachment = typeof erpProgramAttachments.$inferSelect;
