@@ -435,27 +435,29 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
               {iconMode ? (
                 <div className="relative w-full h-full">
                   {renderIconWidget(widgetId)}
-                  <div className="widget-drag-handle absolute top-1 left-1 w-6 h-6 cursor-move z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-black/30">
+                  <div className="widget-drag-handle absolute top-1 left-1 w-5 h-5 cursor-move z-20 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 hover:bg-black/50">
                     <GripVertical className="h-3 w-3 text-white" />
                   </div>
-                  {canHaveSettings(widgetId) && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSettingsWidgetId(widgetId); }}
-                      className="absolute top-1 right-7 w-6 h-6 cursor-pointer z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-black/40 text-white"
-                      data-testid={`button-settings-icon-widget-${widgetId}`}
-                    >
-                      <Settings2 className="h-3 w-3" />
-                    </button>
-                  )}
-                  {onRemoveWidget && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onRemoveWidget(widgetId); }}
-                      className="absolute top-1 right-1 w-6 h-6 cursor-pointer z-20 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 hover:bg-red-500 text-white"
-                      data-testid={`button-remove-icon-widget-${widgetId}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
+                  <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {canHaveSettings(widgetId) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSettingsWidgetId(widgetId); }}
+                        className="w-5 h-5 cursor-pointer flex items-center justify-center rounded bg-black/30 hover:bg-black/50 text-white"
+                        data-testid={`button-settings-icon-widget-${widgetId}`}
+                      >
+                        <Settings2 className="h-3 w-3" />
+                      </button>
+                    )}
+                    {onRemoveWidget && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRemoveWidget(widgetId); }}
+                        className="w-5 h-5 cursor-pointer flex items-center justify-center rounded bg-black/30 hover:bg-red-500 text-white"
+                        data-testid={`button-remove-icon-widget-${widgetId}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <>
