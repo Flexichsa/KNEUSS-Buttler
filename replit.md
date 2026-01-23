@@ -38,7 +38,7 @@ The server acts as a proxy for external services (Microsoft Graph, OpenAI) and m
 - **Database**: PostgreSQL via Drizzle ORM
 - **Schema Location**: `shared/schema.ts` (shared between client and server)
 - **Migrations**: Drizzle Kit with `db:push` command
-- **Tables**: Users, Todos, Notes with timestamps
+- **Tables**: Users, Todos, Notes, ErpCategories, ErpPrograms, ErpProgramHistory with timestamps
 
 Schema validation uses Zod via drizzle-zod for type-safe insert operations.
 
@@ -76,3 +76,31 @@ Schema validation uses Zod via drizzle-zod for type-safe insert operations.
 - `OPENAI_API_KEY`: User's own OpenAI API key
 - `MICROSOFT_CLIENT_ID`: Azure AD app client ID for Outlook integration
 - `MICROSOFT_CLIENT_SECRET`: Azure AD app client secret for Outlook integration
+
+## ERP Programs Widget
+
+A documentation system for ERP programs with the following features:
+
+### Data Model
+- **ErpCategories**: Categories/areas for organizing programs (name, description, color)
+- **ErpPrograms**: Individual ERP programs with:
+  - programNumber (unique identifier code)
+  - title (program name)
+  - description (what the program does)
+  - instruction (text-based work instructions)
+  - instructionUrl (link to external documentation)
+  - categoryId (reference to category)
+  - lastModifiedBy (user who last changed)
+- **ErpProgramHistory**: Change log tracking all modifications with timestamp and user
+
+### API Endpoints
+- `GET/POST/PATCH/DELETE /api/erp-categories` - Category management
+- `GET/POST/PATCH/DELETE /api/erp-programs` - Program CRUD operations
+- `GET /api/erp-programs/search?q=` - Full-text search across programs
+- `GET /api/erp-programs/:id/history` - View change history
+
+### Widget Features
+- List view with search and category filter
+- Detail view showing program information
+- Create/Edit form for managing programs
+- Change history display with timestamps
