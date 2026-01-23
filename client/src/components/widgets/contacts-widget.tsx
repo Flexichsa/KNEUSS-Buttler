@@ -284,7 +284,7 @@ export function ContactsWidget() {
                             <img 
                               src={formData.logoUrl} 
                               alt="Logo" 
-                              className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                              className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-200"
                             />
                             <button
                               onClick={() => setFormData({ ...formData, logoUrl: "" })}
@@ -373,7 +373,7 @@ export function ContactsWidget() {
                           Hinzufügen
                         </button>
                       </div>
-                      {selectedContact.persons.length === 0 ? (
+                      {(!selectedContact.persons || selectedContact.persons.length === 0) ? (
                         <div className="text-sm text-gray-400 py-2">Keine Ansprechpartner</div>
                       ) : (
                         <div className="space-y-2">
@@ -501,7 +501,7 @@ export function ContactsWidget() {
                             <img 
                               src={contact.logoUrl} 
                               alt={contact.name} 
-                              className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                              className="w-8 h-8 rounded-lg object-contain bg-gray-50 flex-shrink-0"
                             />
                           ) : (
                             <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -610,7 +610,7 @@ export function ContactsWidget() {
                       <img 
                         src={formData.logoUrl} 
                         alt="Logo Vorschau" 
-                        className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                        className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-200"
                       />
                       <button
                         onClick={() => setFormData({ ...formData, logoUrl: "" })}
