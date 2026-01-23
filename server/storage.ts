@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, passwords, csvUploads, guideCategories, guides, guideSteps, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, todoLabels, todoSections, todoAttachments, passwords, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory } from "@shared/schema";
 import { eq, and, lt, desc, isNull, asc, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
@@ -113,6 +113,26 @@ export interface IStorage {
   createGuideStep(step: InsertGuideStep): Promise<GuideStep>;
   updateGuideStep(id: number, step: Partial<InsertGuideStep>): Promise<GuideStep | undefined>;
   deleteGuideStep(id: number): Promise<void>;
+  
+  // ERP Categories
+  getErpCategories(): Promise<ErpCategory[]>;
+  getErpCategory(id: number): Promise<ErpCategory | undefined>;
+  createErpCategory(category: InsertErpCategory): Promise<ErpCategory>;
+  updateErpCategory(id: number, category: Partial<InsertErpCategory>): Promise<ErpCategory | undefined>;
+  deleteErpCategory(id: number): Promise<void>;
+  
+  // ERP Programs
+  getErpPrograms(): Promise<ErpProgramWithCategory[]>;
+  getErpProgramsByCategory(categoryId: number | null): Promise<ErpProgramWithCategory[]>;
+  searchErpPrograms(query: string): Promise<ErpProgramWithCategory[]>;
+  getErpProgram(id: number): Promise<ErpProgramWithCategory | undefined>;
+  getErpProgramByNumber(programNumber: string): Promise<ErpProgramWithCategory | undefined>;
+  createErpProgram(program: InsertErpProgram, changedBy: string): Promise<ErpProgram>;
+  updateErpProgram(id: number, program: Partial<InsertErpProgram>, changedBy: string): Promise<ErpProgram | undefined>;
+  deleteErpProgram(id: number, changedBy: string): Promise<void>;
+  
+  // ERP Program History
+  getErpProgramHistory(programId: number): Promise<ErpProgramHistory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -623,6 +643,140 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGuideStep(id: number): Promise<void> {
     await db.delete(guideSteps).where(eq(guideSteps.id, id));
+  }
+
+  // ERP Categories
+  async getErpCategories(): Promise<ErpCategory[]> {
+    return db.select().from(erpCategories).orderBy(asc(erpCategories.orderIndex), asc(erpCategories.name));
+  }
+
+  async getErpCategory(id: number): Promise<ErpCategory | undefined> {
+    const [category] = await db.select().from(erpCategories).where(eq(erpCategories.id, id));
+    return category;
+  }
+
+  async createErpCategory(category: InsertErpCategory): Promise<ErpCategory> {
+    const [newCategory] = await db.insert(erpCategories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateErpCategory(id: number, categoryUpdate: Partial<InsertErpCategory>): Promise<ErpCategory | undefined> {
+    const [updated] = await db.update(erpCategories).set(categoryUpdate).where(eq(erpCategories.id, id)).returning();
+    return updated;
+  }
+
+  async deleteErpCategory(id: number): Promise<void> {
+    await db.delete(erpCategories).where(eq(erpCategories.id, id));
+  }
+
+  // ERP Programs
+  private async enrichErpProgramsWithCategory(programs: ErpProgram[]): Promise<ErpProgramWithCategory[]> {
+    if (programs.length === 0) return [];
+    
+    const allCategories = await db.select().from(erpCategories);
+    
+    return programs.map(program => ({
+      ...program,
+      category: allCategories.find(c => c.id === program.categoryId)
+    }));
+  }
+
+  async getErpPrograms(): Promise<ErpProgramWithCategory[]> {
+    const allPrograms = await db.select().from(erpPrograms).orderBy(asc(erpPrograms.programNumber));
+    return this.enrichErpProgramsWithCategory(allPrograms);
+  }
+
+  async getErpProgramsByCategory(categoryId: number | null): Promise<ErpProgramWithCategory[]> {
+    let programsList: ErpProgram[];
+    if (categoryId === null) {
+      programsList = await db.select().from(erpPrograms).where(isNull(erpPrograms.categoryId)).orderBy(asc(erpPrograms.programNumber));
+    } else {
+      programsList = await db.select().from(erpPrograms).where(eq(erpPrograms.categoryId, categoryId)).orderBy(asc(erpPrograms.programNumber));
+    }
+    return this.enrichErpProgramsWithCategory(programsList);
+  }
+
+  async searchErpPrograms(query: string): Promise<ErpProgramWithCategory[]> {
+    const searchPattern = `%${query}%`;
+    const results = await db.select().from(erpPrograms).where(
+      or(
+        ilike(erpPrograms.programNumber, searchPattern),
+        ilike(erpPrograms.title, searchPattern),
+        ilike(erpPrograms.description, searchPattern)
+      )
+    ).orderBy(asc(erpPrograms.programNumber));
+    return this.enrichErpProgramsWithCategory(results);
+  }
+
+  async getErpProgram(id: number): Promise<ErpProgramWithCategory | undefined> {
+    const [program] = await db.select().from(erpPrograms).where(eq(erpPrograms.id, id));
+    if (!program) return undefined;
+    
+    const enriched = await this.enrichErpProgramsWithCategory([program]);
+    return enriched[0];
+  }
+
+  async getErpProgramByNumber(programNumber: string): Promise<ErpProgramWithCategory | undefined> {
+    const [program] = await db.select().from(erpPrograms).where(eq(erpPrograms.programNumber, programNumber));
+    if (!program) return undefined;
+    
+    const enriched = await this.enrichErpProgramsWithCategory([program]);
+    return enriched[0];
+  }
+
+  async createErpProgram(program: InsertErpProgram, changedBy: string): Promise<ErpProgram> {
+    const [newProgram] = await db.insert(erpPrograms).values({
+      ...program,
+      lastModifiedBy: changedBy
+    }).returning();
+    
+    await db.insert(erpProgramHistory).values({
+      programId: newProgram.id,
+      changedBy,
+      changeType: 'created',
+      newValues: newProgram
+    });
+    
+    return newProgram;
+  }
+
+  async updateErpProgram(id: number, programUpdate: Partial<InsertErpProgram>, changedBy: string): Promise<ErpProgram | undefined> {
+    const [oldProgram] = await db.select().from(erpPrograms).where(eq(erpPrograms.id, id));
+    if (!oldProgram) return undefined;
+    
+    const [updated] = await db
+      .update(erpPrograms)
+      .set({ ...programUpdate, lastModifiedBy: changedBy, updatedAt: new Date() })
+      .where(eq(erpPrograms.id, id))
+      .returning();
+    
+    await db.insert(erpProgramHistory).values({
+      programId: id,
+      changedBy,
+      changeType: 'updated',
+      oldValues: oldProgram,
+      newValues: updated
+    });
+    
+    return updated;
+  }
+
+  async deleteErpProgram(id: number, changedBy: string): Promise<void> {
+    const [oldProgram] = await db.select().from(erpPrograms).where(eq(erpPrograms.id, id));
+    if (oldProgram) {
+      await db.insert(erpProgramHistory).values({
+        programId: id,
+        changedBy,
+        changeType: 'deleted',
+        oldValues: oldProgram
+      });
+    }
+    await db.delete(erpPrograms).where(eq(erpPrograms.id, id));
+  }
+
+  // ERP Program History
+  async getErpProgramHistory(programId: number): Promise<ErpProgramHistory[]> {
+    return db.select().from(erpProgramHistory).where(eq(erpProgramHistory.programId, programId)).orderBy(desc(erpProgramHistory.changedAt));
   }
 }
 
