@@ -42,6 +42,16 @@ The server acts as a proxy for external services (Microsoft Graph, OpenAI) and m
 
 Schema validation uses Zod via drizzle-zod for type-safe insert operations.
 
+### File Storage (Object Storage)
+- **Provider**: Replit Object Storage (Google Cloud Storage backend)
+- **Purpose**: Persistent storage for uploaded files that survives server restarts
+- **Used for**:
+  - Company logos (contacts widget)
+  - Todo attachments (any file type)
+- **Location**: `server/replit_integrations/object_storage/`
+- **URLs**: Files are served via `/objects/...` paths
+- **Deletion**: Files are automatically deleted from Object Storage when records are deleted
+
 ### Authentication & External Services
 - **Microsoft Integration**: OAuth2 via Replit Connectors for Outlook access
 - **Outlook Client**: Microsoft Graph API client (`@microsoft/microsoft-graph-client`)
