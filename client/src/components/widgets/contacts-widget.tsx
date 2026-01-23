@@ -66,6 +66,7 @@ export function ContactsWidget() {
   const [editMode, setEditMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [failedLogos, setFailedLogos] = useState<Set<number>>(new Set());
   const logoInputRef = useRef<HTMLInputElement>(null);
   const editLogoInputRef = useRef<HTMLInputElement>(null);
 
@@ -245,13 +246,18 @@ export function ContactsWidget() {
               >
                 <ChevronLeft className="w-5 h-5 text-gray-500" />
               </button>
-              {selectedContact.logoUrl && selectedContact.type === "company" && (
+              {selectedContact.logoUrl && selectedContact.type === "company" && !failedLogos.has(selectedContact.id) ? (
                 <img 
                   src={selectedContact.logoUrl} 
                   alt={selectedContact.name} 
                   className="w-10 h-10 rounded-lg object-contain bg-gray-50 border border-gray-200 flex-shrink-0"
+                  onError={() => setFailedLogos(prev => new Set(prev).add(selectedContact.id))}
                 />
-              )}
+              ) : selectedContact.type === "company" ? (
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 border border-gray-200">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                </div>
+              ) : null}
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 truncate">{selectedContact.name}</h3>
                 <span className="text-xs text-gray-500">{selectedContact.type === "company" ? "Firma" : "Person"}</span>
@@ -607,11 +613,12 @@ export function ContactsWidget() {
                           className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
                           data-testid={`contact-${contact.id}`}
                         >
-                          {contact.logoUrl ? (
+                          {contact.logoUrl && !failedLogos.has(contact.id) ? (
                             <img 
                               src={contact.logoUrl} 
                               alt={contact.name} 
                               className="w-8 h-8 rounded-lg object-contain bg-gray-50 flex-shrink-0"
+                              onError={() => setFailedLogos(prev => new Set(prev).add(contact.id))}
                             />
                           ) : (
                             <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
