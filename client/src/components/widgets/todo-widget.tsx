@@ -108,15 +108,14 @@ const TodoItem = memo(function TodoItem({
         <button
           onClick={() => onToggle(todo.id, todo.completed)}
           className={cn(
-            "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all hover:scale-110",
+            "mt-0.5 w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-colors",
             todo.completed 
-              ? "border-green-500 bg-green-500" 
-              : cn(priority.border, "hover:bg-slate-50")
+              ? "border-slate-300 bg-slate-200" 
+              : priority.border
           )}
           data-testid={`btn-toggle-${todo.id}`}
-          title={todo.completed ? "Als unerledigt markieren" : "Als erledigt markieren"}
         >
-          {todo.completed && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+          {todo.completed && <Check className="h-2.5 w-2.5 text-slate-500" />}
         </button>
         
         <div className="flex-1 min-w-0">
@@ -141,6 +140,10 @@ const TodoItem = memo(function TodoItem({
                 todo.completed ? "text-slate-400 line-through" : "text-slate-700 hover:text-slate-900"
               )}
               onClick={() => onOpenModal(todo)}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                onStartEdit(todo);
+              }}
               data-testid={`todo-text-${todo.id}`}
             >
               {todo.text}

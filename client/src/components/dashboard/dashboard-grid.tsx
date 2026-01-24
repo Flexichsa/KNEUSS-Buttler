@@ -360,7 +360,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     
     return (
       <button
-        onClick={(e) => handleIconWidgetClick(widgetId, e)}
+        onDoubleClick={(e) => handleIconWidgetClick(widgetId, e)}
         className={cn(
           "w-full h-full flex flex-col items-center justify-center cursor-pointer relative",
           "bg-gradient-to-br text-white rounded-2xl transition-all hover:scale-105",
@@ -434,6 +434,11 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
               )}
               data-size-mode={sizeMode}
               onMouseDown={handleMouseDown}
+              onDoubleClick={(e) => {
+                if (canExpandWidget(widgetId)) {
+                  handleWidgetExpand(widgetId, e);
+                }
+              }}
             >
               {/* Save feedback indicator */}
               <AnimatePresence>
@@ -465,51 +470,41 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
               {iconMode ? (
                 <div className="relative w-full h-full">
                   {renderIconWidget(widgetId)}
-                  <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div 
-                      className="widget-drag-handle w-5 h-5 cursor-move flex items-center justify-center rounded bg-black/40 hover:bg-black/60 shadow-sm"
-                      title="Verschieben"
-                    >
-                      <GripVertical className="h-3 w-3 text-white" />
-                    </div>
-                    <div className="flex items-center gap-0.5">
-                      {canHaveSettings(widgetId) && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSettingsWidgetId(widgetId); }}
-                          className="w-5 h-5 cursor-pointer flex items-center justify-center rounded bg-black/40 hover:bg-black/60 text-white shadow-sm"
-                          data-testid={`button-settings-icon-widget-${widgetId}`}
-                          title="Einstellungen"
-                        >
-                          <Settings2 className="h-3 w-3" />
-                        </button>
-                      )}
-                      {onRemoveWidget && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onRemoveWidget(widgetId); }}
-                          className="w-5 h-5 cursor-pointer flex items-center justify-center rounded bg-black/40 hover:bg-red-500 text-white shadow-sm"
-                          data-testid={`button-remove-icon-widget-${widgetId}`}
-                          title="Entfernen"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
+                  <div className="widget-drag-handle absolute top-1 left-1 w-5 h-5 cursor-move z-20 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 hover:bg-black/50">
+                    <GripVertical className="h-3 w-3 text-white" />
+                  </div>
+                  <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {canHaveSettings(widgetId) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSettingsWidgetId(widgetId); }}
+                        className="w-5 h-5 cursor-pointer flex items-center justify-center rounded bg-black/30 hover:bg-black/50 text-white"
+                        data-testid={`button-settings-icon-widget-${widgetId}`}
+                      >
+                        <Settings2 className="h-3 w-3" />
+                      </button>
+                    )}
+                    {onRemoveWidget && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRemoveWidget(widgetId); }}
+                        className="w-5 h-5 cursor-pointer flex items-center justify-center rounded bg-black/30 hover:bg-red-500 text-white"
+                        data-testid={`button-remove-icon-widget-${widgetId}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
                 <>
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl border border-white/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-white/70 group-hover:scale-[1.01] z-0" />
-                  <div className="absolute top-2 right-2 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 backdrop-blur-sm rounded-lg px-1.5 py-1 shadow-md border border-gray-200/50">
-                    <div 
-                      className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-md bg-gray-100 hover:bg-gray-200 transition-colors"
-                      title="Verschieben"
-                    >
-                      <GripVertical className="h-4 w-4 text-gray-600" />
+                  <div className="absolute top-3 left-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-lg bg-black/5 hover:bg-black/10">
+                      <GripVertical className="h-4 w-4 text-muted-foreground" />
                     </div>
                     {canExpandWidget(widgetId) && (
                       <button
                         onClick={(e) => handleWidgetExpand(widgetId, e)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-md bg-gray-100 hover:bg-blue-500 hover:text-white text-gray-600 transition-all"
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-blue-500 hover:text-white text-muted-foreground transition-all"
                         data-testid={`button-expand-widget-${widgetId}`}
                         title="Vollansicht öffnen"
                       >
@@ -519,9 +514,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                     {canHaveSettings(widgetId) && (
                       <button
                         onClick={() => setSettingsWidgetId(widgetId)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-all"
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground transition-all"
                         data-testid={`button-settings-widget-${widgetId}`}
-                        title="Einstellungen"
                       >
                         <Settings2 className="h-4 w-4" />
                       </button>
@@ -529,9 +523,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                     {onRemoveWidget && (
                       <button
                         onClick={() => onRemoveWidget(widgetId)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-md bg-gray-100 hover:bg-red-500 hover:text-white text-gray-600 transition-all"
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
                         data-testid={`button-remove-widget-${widgetId}`}
-                        title="Entfernen"
                       >
                         <X className="h-4 w-4" />
                       </button>

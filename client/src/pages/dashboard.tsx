@@ -289,8 +289,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Scrollable Content Area - Standard browser scrollbar for visibility */}
-      <div className="flex-1 overflow-y-auto bg-secondary/30 scrollbar-visible">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto bg-secondary/30">
         {/* Priority 1 Tasks Reminder */}
         {activeTab === "dashboard" && (
           <PriorityReminderBanner />
