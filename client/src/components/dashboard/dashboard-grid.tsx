@@ -360,7 +360,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     
     return (
       <button
-        onDoubleClick={(e) => handleIconWidgetClick(widgetId, e)}
+        onClick={(e) => handleIconWidgetClick(widgetId, e)}
         className={cn(
           "w-full h-full flex flex-col items-center justify-center cursor-pointer relative",
           "bg-gradient-to-br text-white rounded-2xl transition-all hover:scale-105",
@@ -434,11 +434,6 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
               )}
               data-size-mode={sizeMode}
               onMouseDown={handleMouseDown}
-              onDoubleClick={(e) => {
-                if (canExpandWidget(widgetId)) {
-                  handleWidgetExpand(widgetId, e);
-                }
-              }}
             >
               {/* Save feedback indicator */}
               <AnimatePresence>
