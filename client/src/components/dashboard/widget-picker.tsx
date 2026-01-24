@@ -52,16 +52,16 @@ export const DEFAULT_SIZE_OPTIONS: WidgetSizeOption[] = [
     name: "Kompakt",
     description: "Minimale Ansicht",
     icon: <Square className="h-4 w-4" />,
-    gridSize: { w: 3, h: 3 },
-    minSize: { w: 3, h: 3 },
+    gridSize: { w: 2, h: 2 },
+    minSize: { w: 2, h: 2 },
   },
   {
     mode: "standard",
     name: "Standard",
     description: "Normale Ansicht",
     icon: <SquareStack className="h-4 w-4" />,
-    gridSize: { w: 4, h: 4 },
-    minSize: { w: 3, h: 3 },
+    gridSize: { w: 4, h: 3 },
+    minSize: { w: 3, h: 2 },
   },
   {
     mode: "large",
@@ -69,7 +69,7 @@ export const DEFAULT_SIZE_OPTIONS: WidgetSizeOption[] = [
     description: "Erweiterte Ansicht",
     icon: <Maximize2 className="h-4 w-4" />,
     gridSize: { w: 6, h: 5 },
-    minSize: { w: 4, h: 4 },
+    minSize: { w: 4, h: 3 },
   },
 ];
 
@@ -89,7 +89,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Outlook Termine und Ereignisse",
     icon: <Calendar className="h-5 w-5" />, 
     defaultSize: { w: 6, h: 4 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-orange-400 to-red-500",
     category: "microsoft",
     previewContent: (
@@ -110,7 +110,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "To-Do Liste verwalten",
     icon: <CheckSquare className="h-5 w-5" />, 
     defaultSize: { w: 6, h: 4 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-green-400 to-emerald-600",
     category: "productivity",
     previewContent: (
@@ -134,7 +134,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Outlook Posteingang",
     icon: <Mail className="h-5 w-5" />, 
     defaultSize: { w: 8, h: 4 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-blue-400 to-indigo-600",
     category: "microsoft",
     previewContent: (
@@ -156,7 +156,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "GPT-Chat für Hilfe",
     icon: <MessageSquare className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 6 }, 
-    minSize: { w: 3, h: 4 },
+    minSize: { w: 1, h: 2 },
     previewGradient: "from-violet-500 to-purple-700",
     category: "tools",
     previewContent: (
@@ -176,7 +176,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Bitcoin, Ethereum & mehr",
     icon: <Coins className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-slate-800 via-purple-900 to-slate-900",
     category: "finance",
     previewContent: (
@@ -202,7 +202,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Ein Coin im iOS-Stil",
     icon: <Bitcoin className="h-5 w-5" />, 
     defaultSize: { w: 3, h: 3 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-orange-500 to-amber-600",
     category: "finance",
     previewContent: (
@@ -222,7 +222,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Aktuelle Wetterdaten",
     icon: <Cloud className="h-5 w-5" />, 
     defaultSize: { w: 5, h: 4 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-sky-400 via-blue-500 to-blue-600",
     category: "info",
     previewContent: (
@@ -247,7 +247,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Digital oder Analog",
     icon: <Clock className="h-5 w-5" />, 
     defaultSize: { w: 3, h: 3 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-slate-700 to-slate-900",
     category: "tools",
     previewContent: (
@@ -283,7 +283,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Datum und Uhrzeit kombiniert",
     icon: <CalendarDays className="h-5 w-5" />, 
     defaultSize: { w: 3, h: 3 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-indigo-600 to-purple-700",
     category: "info",
     previewContent: (
@@ -300,7 +300,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Deine Microsoft To Do Aufgaben",
     icon: <ListTodo className="h-5 w-5" />, 
     defaultSize: { w: 5, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-blue-600 to-blue-800",
     category: "microsoft",
     previewContent: (
@@ -326,7 +326,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Deine Dateien und Dokumente",
     icon: <HardDrive className="h-5 w-5" />, 
     defaultSize: { w: 5, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-sky-500 to-blue-700",
     category: "microsoft",
     previewContent: (
@@ -352,7 +352,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Dokumente automatisch benennen",
     icon: <Upload className="h-5 w-5" />, 
     defaultSize: { w: 5, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 1, h: 2 },
     previewGradient: "from-emerald-500 to-teal-700",
     category: "tools",
     previewContent: (
@@ -429,7 +429,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Firmen und Ansprechpartner verwalten",
     icon: <Building2 className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-blue-500 to-indigo-600",
     category: "productivity",
     previewContent: (
@@ -454,8 +454,8 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     name: "Webseiten-Link", 
     description: "Schnellzugriff auf Webseiten",
     icon: <Globe className="h-5 w-5" />, 
-    defaultSize: { w: 3, h: 3 }, 
-    minSize: { w: 3, h: 3 },
+    defaultSize: { w: 2, h: 2 }, 
+    minSize: { w: 1, h: 1 },
     previewGradient: "from-cyan-500 to-blue-600",
     category: "tools",
     previewContent: (
@@ -477,7 +477,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Sicherer Passwortmanager",
     icon: <Key className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-purple-500 to-indigo-600",
     category: "tools",
     previewContent: (
@@ -503,7 +503,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "ERP Anleitungen & Guides",
     icon: <BookOpen className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-emerald-500 to-teal-600",
     category: "productivity",
     previewContent: (
@@ -529,7 +529,7 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     description: "Dokumentation aller ERP-Programme",
     icon: <Terminal className="h-5 w-5" />, 
     defaultSize: { w: 4, h: 5 }, 
-    minSize: { w: 3, h: 3 },
+    minSize: { w: 2, h: 2 },
     previewGradient: "from-indigo-500 to-purple-600",
     category: "productivity",
     previewContent: (
