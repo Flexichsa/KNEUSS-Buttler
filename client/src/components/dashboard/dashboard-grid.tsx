@@ -186,10 +186,22 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     return config.enabledWidgets
       .map((widgetId) => {
         const existingLayout = config.layouts.find((l) => l.i === widgetId);
-        if (existingLayout) return existingLayout;
-
         const widgetType = getWidgetType(widgetId, config.widgetInstances);
         const widgetDef = AVAILABLE_WIDGETS.find((w) => w.id === widgetType);
+        
+        if (existingLayout) {
+          // Ensure existing widgets meet minimum size requirements
+          const minW = widgetDef?.minSize?.w ?? existingLayout.minW ?? 1;
+          const minH = widgetDef?.minSize?.h ?? existingLayout.minH ?? 1;
+          return {
+            ...existingLayout,
+            w: Math.max(existingLayout.w, minW),
+            h: Math.max(existingLayout.h, minH),
+            minW,
+            minH,
+          };
+        }
+
         if (!widgetDef) return null;
 
         const maxY = config.layouts.reduce((max, l) => Math.max(max, l.y + l.h), 0);
