@@ -1,0 +1,160 @@
+Login‑Vorgang
+
+Die Login‑Seite akzeptiert Anmeldedaten, bleibt aber manchmal auf der gleichen Seite, auch wenn ein Erfolgshinweis erscheint; der Nutzer muss manuell zum Root‑Pfad zurück navigieren
+digital-butler--kneuss.replit.app
+. Dies verwirrt Erstnutzer.
+
+Navigation & Layout
+
+Das Übersicht‑Dashboard verwendet ein eigenes Raster mit einer dünnen vertikalen Scrollleiste. Nutzende haben Schwierigkeiten, diese zu erkennen und zu ziehen; erst durch Drücken der Bild‑Ab‑Taste bewegt sich der Inhalt
+digital-butler--kneuss.replit.app
+. Das Scrollen ist dadurch unintuitiv.
+
+Viele Interaktionen erfordern einen Doppelklick statt eines einfachen Klicks (z. B. Öffnen des Widgets‑Dialogs und Markieren von Aufgaben). Nutzende könnten dieses Verhalten nicht entdecken. 
+digital-butler--kneuss.replit.app
+ zeigt das Widget‑Panel, das nach einem Doppelklick geöffnet wurde.
+
+Widgets
+
+Dringende Aufgaben & Eingang: Aufgaben müssen doppelt geklickt werden, um als erledigt markiert zu werden. Es gibt keine sichtbare „Checkbox“, die intuitiver wäre. Das Eingabefeld zum Hinzufügen verlangt das Drücken der Enter-Taste; der „Hinzufügen“-Button ist vorhanden, aber funktionslos
+digital-butler--kneuss.replit.app
+. Beim Bearbeiten von Aufgaben sind die Speicher-/Abbrechen‑Buttons nicht immer ohne Scrollen sichtbar
+digital-butler--kneuss.replit.app
+.
+
+Projekte: Im Projekt‑Bearbeitungsmodal können Phasen und Status über Dropdowns geändert werden, aber deren Beschriftung ist nur sichtbar, wenn das Dropdown geöffnet ist, was unklar macht, welches Feld gemeint ist
+digital-butler--kneuss.replit.app
+. Es fehlen Feldvalidierung und erklärende Tooltips, und Prioritätsbeschriftungen erscheinen nur auf Deutsch, während andere Teile zweisprachig sind【338736296608064†screenshot】.
+
+Schnell‑Links: Jede Kachel öffnet eine externe Website in einem neuen Browser‑Tab, wodurch der Browser schnell überladen wird. Es gibt keine Bestätigung oder die Möglichkeit, im gleichen Tab zu öffnen.
+
+ERP‑Programme: Das Modul erlaubt das Hinzufügen, Bearbeiten und Löschen von Programmen. Die Funktionssymbole (Bearbeiten, Löschen) sind jedoch nicht beschriftet; das Formular für neue Programme bietet keine Hinweise zu Pflichtfeldern
+digital-butler--kneuss.replit.app
+.
+
+OneDrive: Das Mini‑Widget zeigt Ordner und Dateien, aber das Anklicken einer Datei führt außerhalb des Assistenten zu SharePoint‑Seiten, die möglicherweise aufgrund von Domain‑Beschränkungen nicht zugänglich sind
+kneussgueggell-my.sharepoint.com
+. Es gibt keine Vorschau oder integrierte Dateiansicht.
+
+Kontakte: Das Kontakt‑Widget erscheint als kompakte Karte mit einer Anzahl an Einträgen und einem Plus‑Button. Nach dem Hinzufügen des Widgets entfernte ein Klick auf die Karte (versehentlich) das Widget komplett ohne Warnung
+digital-butler--kneuss.replit.app
+. Es gibt keine Möglichkeit, vorhandene Kontakte zu sehen; beim Plus‑Symbol wird nur ein Erstellungsformular angezeigt【759991361767717†screenshot】.
+
+Kalender: Das Kalender‑Widget zeigt anfangs „0 Termine“ und ein Plus‑Symbol. Beim Hinzufügen eines Termins erscheint ein Formular, es gibt aber keine Integration mit Aufgaben oder Erinnerungen.
+
+Verschiedenes: Einige Widgets, wie der Bitcoin‑Preis oder der AI‑Assistent, können nicht vergrößert werden; sie bleiben statisch und bieten wenig Informationen. Das Widgets‑Panel listet viele Widgets auf, aber ohne Beschreibungen oder eine Vorschau, wodurch die Auswahl dem Zufall überlassen bleibt
+digital-butler--kneuss.replit.app
+.
+
+Gesamtdesign & Konsistenz
+
+Mehrere Modale (Aufgaben, Projekte, ERP‑Programme, Kontakte) öffnen sich als Vollbild‑Overlays. Das Kreuzsymbol schließt sie, aber in einigen Fällen (Kontakte‑Widget) entfernte ein Klick außerhalb oder auf dem Widget dieses komplett
+digital-butler--kneuss.replit.app
+.
+
+Sprachmischung: Die Oberfläche wechselt zwischen Deutsch (z. B. Aufgabe bearbeiten, Speichern, Abbrechen) und Englisch (z. B. “Delete”, “High priority”). Konsistente Lokalisierung ist notwendig.
+
+Vorgeschlagene Lösung & Anforderungen
+1. Konsistente Navigation & UI‑Verhalten
+
+Einfach‑Klick‑Interaktionen: Alle Hauptaktionen (Öffnen von Widgets, Umschalten von Aufgaben, Hinzufügen von Widgets) müssen auf einfache Klicks reagieren. Entfernen Sie die Doppelklick‑Anforderung, um die Bedienung zu erleichtern.
+
+Sichtbare Scrollleiste: Ersetzen Sie die dünne benutzerdefinierte Scrollleiste durch eine Standard‑Scrollleiste oder fügen Sie Pfeile bzw. eine Mini‑Map hinzu, damit Nutzende wissen, dass es mehr Inhalt gibt. Alternativ sollte die ganze Seite (nicht nur das Raster) normal scrollbar sein.
+
+Persistente Weiterleitung nach Login: Nach erfolgreichem Login sollen Nutzende automatisch zum Dashboard weitergeleitet werden. Bei Fehlversuchen sollte eine klare Rückmeldung erfolgen.
+
+2. Verbesserungen bei der Aufgabenverwaltung
+
+Checkbox zum Abschließen: Ersetzen Sie den versteckten Doppelklick‑Mechanismus durch eine sichtbare Checkbox oder einen Schalter neben jeder Aufgabe in den Widgets „Dringende Aufgaben“ und „Eingang“. Beim Anklicken soll die Aufgabe als erledigt markiert und in den Abschnitt „Erledigt“ verschoben werden
+digital-butler--kneuss.replit.app
+.
+
+Funktionaler Hinzufügen‑Button: Der Button „Hinzufügen“ sollte beim Anklicken eine Aufgabe erstellen. Es sollte eine Validierung erfolgen (z. B. keine leeren Aufgaben erlauben).
+
+Verbessertes Bearbeiten‑Modal: Im Aufgaben‑Bearbeitungsmodal sollten die Buttons „Speichern/Abbrechen“ immer sichtbar oder am unteren Rand fixiert sein; verwenden Sie einen Stepper oder Labels für Datum, Priorität und Anhänge. Bieten Sie Standard‑Vorschläge für Fälligkeitsdatum/-zeit (z. B. morgen um 9:00 Uhr).
+
+3. Projekte & ERP‑Programme
+
+Klar beschriftete Felder: Fügen Sie Platzhalter und Labels für jedes Feld in den Projekt‑ und ERP‑Formularen hinzu. Kennzeichnen Sie Pflichtfelder und bieten Sie Tooltips, die jedes Dropdown (Phase, Status, Priorität) erklären. Verwenden Sie konsistente Sprachen.
+
+Inline‑Editing statt Modal: Erwägen Sie kleinere Pop‑ups oder Inline‑Bearbeitung für schnelle Änderungen, anstatt immer Vollbild‑Modale zu öffnen.
+
+Bestätigungsdialoge: Beim Löschen eines Programms oder Projekts sollte ein Bestätigungsdialog erscheinen, um versehentliches Löschen zu verhindern.
+
+4. Kontakte & Kalender
+
+Vollständige Kontaktliste: Ein Klick auf das Kontakte‑Widget sollte eine Liste bestehender Kontakte mit Such‑ und Sortierfunktionen sowie Optionen zum Bearbeiten oder Löschen öffnen. Das Widget sollte nicht standardmäßig entfernt werden. Eine Bestätigung vor dem Entfernen ist erforderlich.
+
+Verbesserungen im Kontaktformular: Das Modal „Neuer Kontakt“ sollte E‑Mail‑ und Telefonnummernformate validieren und optionale vs. erforderliche Felder kennzeichnen【759991361767717†screenshot】. Bieten Sie separate Registerkarten oder Abschnitte für Firma vs. Person.
+
+Kalenderintegration: Das Kalender‑Widget sollte Nutzenden ermöglichen, Termine mit Datum, Uhrzeit und Beschreibung zu setzen. Aufgaben mit Fälligkeitsdatum sollten automatisch im Kalender angezeigt werden.
+
+5. OneDrive & Dateien
+
+In‑App‑Dateivorschau: Statt auf SharePoint weiterzuleiten, sollte eine integrierte Vorschau (für PDFs, Bilder, Office‑Dokumente) bereitgestellt oder eine entsprechende Nachricht angezeigt werden, wenn keine Vorschau verfügbar ist
+kneussgueggell-my.sharepoint.com
+.
+
+Navigationselemente: Fügen Sie eine Breadcrumb‑Navigation innerhalb des OneDrive‑Widgets hinzu und stellen Sie sicher, dass der Zurück‑Pfeil klar sichtbar ist. Zeigen Sie Ladeindikatoren an, wenn Dateilisten abgerufen werden.
+
+6. Schnell‑Links & externe Seiten
+
+Optionen zum Öffnen von Links: Bieten Sie eine Option, Schnell‑Links im gleichen Tab (mit Warnung) oder in einem neuen Tab zu öffnen. Markieren Sie, welcher Link wie geöffnet wird, um Tab‑Chaos zu vermeiden.
+
+Anpassbare Schnell‑Links: Erlauben Sie Nutzenden, Schnell‑Links hinzuzufügen, zu bearbeiten oder zu entfernen und sie nach Kategorien zu gruppieren.
+
+7. Verbesserungen im Widget‑Panel
+
+Beschreibungen & Vorschauen: Im Modal „Widget hinzufügen“ sollte eine kurze Beschreibung und eventuell eine kleine Vorschau jeder Widget‑Funktion angezeigt werden
+digital-butler--kneuss.replit.app
+. Dies hilft bei der Auswahl.
+
+Suche & Filter: Das Suchfeld sollte Auto‑Vorschläge liefern. Die Kategorien‑Tabs sollten die Anzahl der verfügbaren Widgets anzeigen. Zeigen Sie eine Meldung, wenn keine Widgets dem Suchbegriff entsprechen.
+
+8. Lokalisierung & Barrierefreiheit
+
+Konsistente Sprache: Stellen Sie einen Sprachumschalter (Deutsch/Englisch) bereit und sorgen Sie dafür, dass alle Labels, Tooltips und Meldungen konsistent übersetzt sind.
+
+Barrierefreiheit: Die Komponenten sollten per Tastatur (Tab‑Reihenfolge) bedienbar sein, Bildschirmlesern (via aria‑Labels) unterstützen und ausreichenden Farbkontrast bieten. Größere Touch‑Flächen für mobile Geräte vorsehen.
+
+9. Performance & Responsiveness
+
+Lazy Loading: Implementieren Sie Lazy Loading für Widgets, die externe Daten abrufen (z. B. OneDrive, Bitcoin), um die Ladezeit des Dashboards zu verbessern. Zeigen Sie Skeleton‑Loader während des Abrufs.
+
+Responsives Design: Stellen Sie sicher, dass sich das Dashboard‑Layout an verschiedene Bildschirmgrößen anpasst. Auf kleineren Bildschirmen sollten Widgets vertikal gestapelt und leicht umsortiert werden können.
+
+10. Reporting & Analytics
+
+Stellen Sie Administratoren Nutzungsanalysen zur Verfügung (z. B. Anzahl erledigter Aufgaben, meistgenutzte Widgets, Login‑Aktivitäten). Diese Daten helfen, Funktionen zu optimieren.
+
+Nichtfunktionale Anforderungen
+
+Sicherheit: Nutzen Sie HTTPS für alle Verbindungen. Validieren und bereinigen Sie alle Eingaben, um Injections zu vermeiden. Erzwingen Sie starke Passwörter und Multi‑Faktor‑Authentifizierung bei sensiblen Aktionen.
+
+Datenschutz: Erfüllen Sie die schweizerischen und europäischen Datenschutzbestimmungen (DSGVO). Holen Sie die Einwilligung der Nutzenden zur Datenerfassung ein und erklären Sie transparent die Datennutzung.
+
+Zuverlässigkeit: Gewährleisten Sie 99,9 % Verfügbarkeit. Stellen Sie klare Fehlermeldungen und Offline‑Behandlung bei Netzwerkproblemen bereit.
+
+Zukünftige Überlegungen
+
+Mobile App: Entwickeln Sie eventuell eine mobile Begleit‑ oder Progressive Web App für die Verwaltung von Aufgaben und Terminen unterwegs.
+
+Integrationen: Integrieren Sie Outlook/Exchange für E‑Mails und Kalender, Teams für Kommunikation sowie Slack oder andere Kollaborationsplattformen.
+
+AI‑Assistent: Das AI‑Widget könnte beim Zusammenfassen von Aufgaben oder beim automatischen Vorschlagen von Prioritäten helfen; eine Integration mit Sprachmodellen sollte den Datenschutzrichtlinien folgen.
+
+Akzeptanzkriterien
+
+Verbesserter Login: Nach Eingabe gültiger Anmeldedaten wird der Nutzende ohne manuelle URL‑Änderung zur Übersichtsseite weitergeleitet.
+
+Einfach‑Klick‑Interaktionen: Alle interaktiven Elemente reagieren auf einfache Klicks (Aufgaben, Widget‑Panel usw.).
+
+Aufgabenabschlüsse: Aufgaben zeigen eine Checkbox; ein Klick darauf markiert die Aufgabe als erledigt und verschiebt sie in den Erledigt‑Bereich.
+
+Kontaktverwaltung: Das Kontakt‑Widget erlaubt das Anzeigen, Bearbeiten und Löschen von Kontakten, ohne das Widget zu entfernen. Beim Erstellen werden E‑Mail/Telefonnummern validiert.
+
+Widget‑Panel: Widget‑Beschreibungen und ‑Vorschauen helfen bei der Auswahl; das Panel öffnet sich mit einem Klick und die Suche liefert relevante Ergebnisse.
+
+Lokalisierung: Nutzende können die Sprache wechseln; alle UI‑Texte und Meldungen sind in der gewählten Sprache konsistent.
+
+Scrollen: Das Dashboard nutzt eine standardisierte oder klar sichtbare Scrollleiste; die gesamte Seite lässt sich natürlich scrollen.
