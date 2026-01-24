@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,18 +25,14 @@ async function loginWithPassword(data: { email: string; password: string }) {
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const loginMutation = useMutation({
     mutationFn: loginWithPassword,
-    onSuccess: async () => {
+    onSuccess: () => {
       toast({ title: "Willkommen zurück!", description: "Anmeldung erfolgreich" });
-      // Invalidate and refetch user data to update auth state
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      // Force navigation to dashboard
-      window.location.href = "/";
+      setLocation("/");
     },
     onError: (error: Error) => {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });

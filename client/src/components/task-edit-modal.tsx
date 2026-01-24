@@ -270,14 +270,14 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-slate-800">
             Aufgabe bearbeiten
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-5 py-2">
+        <div className="space-y-5 py-2">
           <div>
             <Input
               value={text}
@@ -532,7 +532,7 @@ export function TaskEditModal({ todo, open, onOpenChange }: TaskEditModalProps) 
           )}
         </div>
 
-        <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t bg-white sticky bottom-0">
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
