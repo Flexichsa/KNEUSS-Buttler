@@ -109,3 +109,82 @@ export function useDeletePassword() {
     onError: handleAuthError,
   });
 }
+
+// Password Categories
+export interface PasswordCategory {
+  id: number;
+  userId: string;
+  name: string;
+  color: string;
+  icon: string;
+  isDefault: boolean | null;
+  sortOrder: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreatePasswordCategoryInput {
+  name: string;
+  color: string;
+  icon: string;
+  sortOrder?: number;
+}
+
+interface UpdatePasswordCategoryInput {
+  name?: string;
+  color?: string;
+  icon?: string;
+  sortOrder?: number;
+}
+
+export function usePasswordCategories() {
+  return useQuery<PasswordCategory[]>({
+    queryKey: ["/api/password-categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/password-categories", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch password categories");
+      return res.json();
+    },
+  });
+}
+
+export function useCreatePasswordCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreatePasswordCategoryInput) => {
+      const res = await apiRequest("POST", "/api/password-categories", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/password-categories"] });
+    },
+    onError: handleAuthError,
+  });
+}
+
+export function useUpdatePasswordCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: number } & UpdatePasswordCategoryInput) => {
+      const res = await apiRequest("PATCH", `/api/password-categories/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/password-categories"] });
+    },
+    onError: handleAuthError,
+  });
+}
+
+export function useDeletePasswordCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/password-categories/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/password-categories"] });
+    },
+    onError: handleAuthError,
+  });
+}

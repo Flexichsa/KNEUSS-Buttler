@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertContactDetailSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema, insertErpCategorySchema, insertErpProgramSchema, updateErpProgramSchema } from "@shared/schema";
+import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertContactDetailSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema, insertPasswordCategorySchema, updatePasswordCategorySchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema, insertErpCategorySchema, insertErpProgramSchema, updateErpProgramSchema } from "@shared/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
@@ -1718,6 +1718,101 @@ export async function registerRoutes(
       res.status(204).send();
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to delete password" });
+    }
+  });
+
+  // Password Categories API
+  app.get("/api/password-categories", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      // Initialize default categories if none exist
+      await storage.initializeDefaultPasswordCategories(userId);
+      const categories = await storage.getPasswordCategories(userId);
+      res.json(categories);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch password categories" });
+    }
+  });
+
+  app.post("/api/password-categories", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const validatedData = insertPasswordCategorySchema.parse({ ...req.body, userId });
+      const created = await storage.createPasswordCategory(validatedData);
+      res.status(201).json(created);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to create password category" });
+    }
+  });
+
+  app.patch("/api/password-categories/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const id = parseInt(req.params.id);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      // Get the old category to check for name change
+      const oldCategory = await storage.getPasswordCategory(id, userId);
+      if (!oldCategory) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      
+      // Validate input with Zod schema
+      const validatedData = updatePasswordCategorySchema.parse(req.body);
+      
+      const updated = await storage.updatePasswordCategory(id, userId, validatedData);
+      if (!updated) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      
+      // If category name changed, update all passwords using this category
+      if (validatedData.name && validatedData.name !== oldCategory.name) {
+        await storage.updatePasswordsCategory(userId, oldCategory.name, validatedData.name);
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to update password category" });
+    }
+  });
+
+  app.delete("/api/password-categories/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const id = parseInt(req.params.id);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      // Don't allow deleting the default category
+      const category = await storage.getPasswordCategory(id, userId);
+      if (!category) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      if (category.isDefault) {
+        return res.status(400).json({ error: "Cannot delete the default category" });
+      }
+      
+      // Get default category to move passwords to
+      const allCategories = await storage.getPasswordCategories(userId);
+      const defaultCategory = allCategories.find(c => c.isDefault);
+      const defaultCategoryName = defaultCategory?.name || "Allgemein";
+      
+      // Move all passwords in this category to the default category
+      await storage.updatePasswordsCategory(userId, category.name, defaultCategoryName);
+      
+      // Now delete the category
+      await storage.deletePasswordCategory(id, userId);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to delete password category" });
     }
   });
 

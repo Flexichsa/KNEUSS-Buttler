@@ -395,6 +395,36 @@ export const insertPasswordSchema = createInsertSchema(passwords).omit({
 export type InsertPassword = z.infer<typeof insertPasswordSchema>;
 export type Password = typeof passwords.$inferSelect;
 
+// Password Categories - user-defined categories for organizing passwords
+export const passwordCategories = pgTable("password_categories", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("gray"),
+  icon: text("icon").notNull().default("key"),
+  isDefault: boolean("is_default").default(false),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertPasswordCategorySchema = createInsertSchema(passwordCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updatePasswordCategorySchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  color: z.enum(["gray", "blue", "red", "green", "orange", "purple", "indigo", "pink", "cyan", "yellow"]).optional(),
+  icon: z.enum(["key", "user", "mail", "wallet", "shopping-bag", "briefcase", "gamepad-2", "heart", "plane", "tag", "globe", "lock", "credit-card"]).optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export type InsertPasswordCategory = z.infer<typeof insertPasswordCategorySchema>;
+export type UpdatePasswordCategory = z.infer<typeof updatePasswordCategorySchema>;
+export type PasswordCategory = typeof passwordCategories.$inferSelect;
+
 export const csvUploads = pgTable("csv_uploads", {
   id: serial("id").primaryKey(),
   filename: text("filename"),
