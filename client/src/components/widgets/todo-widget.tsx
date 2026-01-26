@@ -545,22 +545,24 @@ export function TodoWidget() {
                     <CalendarIcon className="h-3.5 w-3.5" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <div className="p-2 border-b space-y-1">
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedDate(new Date()); setCalendarOpen(false); }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-slate-100 rounded"
-                    >
-                      <Sun className="h-3.5 w-3.5 text-amber-500" /> Heute
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedDate(addDays(new Date(), 1)); setCalendarOpen(false); }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-slate-100 rounded"
-                    >
-                      <CalendarDays className="h-3.5 w-3.5 text-orange-500" /> Morgen
-                    </button>
+                <PopoverContent className="w-auto p-0 shadow-xl border-0 rounded-xl overflow-hidden" align="end">
+                  <div className="p-3 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedDate(new Date()); setCalendarOpen(false); }}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 rounded-lg border border-amber-200 transition-all duration-200 hover:shadow-sm"
+                      >
+                        <Sun className="h-4 w-4" /> Heute
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedDate(addDays(new Date(), 1)); setCalendarOpen(false); }}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-orange-50 text-orange-700 hover:bg-orange-100 rounded-lg border border-orange-200 transition-all duration-200 hover:shadow-sm"
+                      >
+                        <CalendarDays className="h-4 w-4" /> Morgen
+                      </button>
+                    </div>
                   </div>
                   <Calendar
                     mode="single"
