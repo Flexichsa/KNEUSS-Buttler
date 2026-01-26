@@ -1,12 +1,30 @@
 import { useState, useMemo } from "react";
-import { Key, Plus, Search, Eye, EyeOff, Copy, Pencil, Trash2, Globe, User, ChevronRight, ChevronLeft, Loader2, Lock, RefreshCw, Check } from "lucide-react";
+import { Key, Plus, Search, Eye, EyeOff, Copy, Pencil, Trash2, Globe, User, ChevronRight, ChevronLeft, Loader2, Lock, RefreshCw, Check, Tag, Filter, CreditCard, Mail, Briefcase, Gamepad2, ShoppingBag, Wallet, Heart, Plane } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { usePasswords, useCreatePassword, useUpdatePassword, useDeletePassword, decryptPassword } from "@/hooks/use-passwords";
 import { useToast } from "@/hooks/use-toast";
+
+const CATEGORIES = [
+  { value: "general", label: "Allgemein", color: "bg-gray-100 text-gray-700", icon: Key },
+  { value: "social", label: "Social Media", color: "bg-blue-100 text-blue-700", icon: User },
+  { value: "email", label: "E-Mail", color: "bg-red-100 text-red-700", icon: Mail },
+  { value: "finance", label: "Finanzen", color: "bg-green-100 text-green-700", icon: Wallet },
+  { value: "shopping", label: "Shopping", color: "bg-orange-100 text-orange-700", icon: ShoppingBag },
+  { value: "work", label: "Arbeit", color: "bg-purple-100 text-purple-700", icon: Briefcase },
+  { value: "gaming", label: "Gaming", color: "bg-indigo-100 text-indigo-700", icon: Gamepad2 },
+  { value: "streaming", label: "Streaming", color: "bg-pink-100 text-pink-700", icon: Heart },
+  { value: "travel", label: "Reisen", color: "bg-cyan-100 text-cyan-700", icon: Plane },
+  { value: "other", label: "Sonstiges", color: "bg-yellow-100 text-yellow-700", icon: Tag },
+] as const;
+
+const getCategoryInfo = (categoryValue: string | null) => {
+  return CATEGORIES.find(c => c.value === categoryValue) || CATEGORIES[0];
+};
 
 interface Password {
   id: number;
@@ -39,6 +57,7 @@ export function PasswordWidget() {
   const [selectedPassword, setSelectedPassword] = useState<Password | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [showPassword, setShowPassword] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -55,14 +74,43 @@ export function PasswordWidget() {
   });
 
   const filteredPasswords = useMemo(() => {
-    if (!searchQuery.trim()) return passwords;
-    const query = searchQuery.toLowerCase();
-    return passwords.filter(p => 
-      p.name.toLowerCase().includes(query) ||
-      p.username?.toLowerCase().includes(query) ||
-      p.url?.toLowerCase().includes(query)
-    );
-  }, [passwords, searchQuery]);
+    let result = passwords;
+    
+    if (categoryFilter !== "all") {
+      result = result.filter(p => (p.category || "general") === categoryFilter);
+    }
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(query) ||
+        p.username?.toLowerCase().includes(query) ||
+        p.url?.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  }, [passwords, searchQuery, categoryFilter]);
+
+  const groupedPasswords = useMemo(() => {
+    const groups: Record<string, Password[]> = {};
+    
+    filteredPasswords.forEach(password => {
+      const category = password.category || "general";
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(password);
+    });
+    
+    const sortedCategories = CATEGORIES.map(c => c.value).filter(cat => groups[cat]);
+    
+    return sortedCategories.map(cat => ({
+      category: cat,
+      info: getCategoryInfo(cat),
+      passwords: groups[cat]
+    }));
+  }, [filteredPasswords]);
 
   const handleCopy = async (text: string, field: string) => {
     try {
@@ -121,6 +169,7 @@ export function PasswordWidget() {
       password: formData.password || undefined,
       url: formData.url || undefined,
       notes: formData.notes || undefined,
+      category: formData.category,
     }, {
       onSuccess: () => {
         setEditMode(false);
@@ -306,6 +355,24 @@ export function PasswordWidget() {
                     autoComplete="off"
                     data-testid="input-edit-url"
                   />
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">Kategorie</label>
+                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                      <SelectTrigger data-testid="select-edit-category">
+                        <SelectValue placeholder="Kategorie wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map(cat => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            <div className="flex items-center gap-2">
+                              <cat.icon className="w-4 h-4" />
+                              {cat.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex gap-2">
                     <Button onClick={handleUpdatePassword} disabled={updatePassword.isPending} className="flex-1" data-testid="btn-save-password">
                       {updatePassword.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Speichern"}
@@ -400,6 +467,21 @@ export function PasswordWidget() {
                     </div>
                   )}
 
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Kategorie</div>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const catInfo = getCategoryInfo(selectedPassword.category);
+                        return (
+                          <span className={cn("px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2", catInfo.color)} data-testid="detail-category-badge">
+                            <catInfo.icon className="w-4 h-4" />
+                            {catInfo.label}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
                   {selectedPassword.notes && (
                     <div className="bg-gray-50 rounded-xl p-3">
                       <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Notizen</div>
@@ -437,7 +519,7 @@ export function PasswordWidget() {
               </button>
             </div>
 
-            <div className="px-4 py-2 border-b border-gray-100">
+            <div className="px-4 py-2 border-b border-gray-100 space-y-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -447,6 +529,25 @@ export function PasswordWidget() {
                   className="pl-9 h-8 text-sm"
                   data-testid="input-search-passwords"
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-400" />
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="h-7 text-xs flex-1" data-testid="select-category-filter">
+                    <SelectValue placeholder="Kategorie filtern" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Kategorien</SelectItem>
+                    {CATEGORIES.map(cat => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        <div className="flex items-center gap-2">
+                          <cat.icon className="w-3 h-3" />
+                          {cat.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -466,32 +567,51 @@ export function PasswordWidget() {
                   )}
                 </div>
               ) : (
-                <div className="p-2 space-y-1">
-                  {filteredPasswords.map((password) => (
-                    <button
-                      key={password.id}
-                      onClick={() => handleSelectPassword(password)}
-                      className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
-                      data-testid={`password-${password.id}`}
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                        {password.url ? (
-                          <Globe className="w-4 h-4 text-purple-600" />
-                        ) : (
-                          <Key className="w-4 h-4 text-purple-600" />
-                        )}
+                <div className="p-2 space-y-2">
+                  {groupedPasswords.map((group) => (
+                    <div key={group.category}>
+                      <div className="flex items-center gap-2 px-2 py-1.5 sticky top-0 bg-white/95 backdrop-blur-sm">
+                        <group.info.icon className="w-3.5 h-3.5 text-gray-500" />
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          {group.info.label}
+                        </span>
+                        <span className="text-xs text-gray-400">({group.passwords.length})</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-gray-900 truncate">{password.name}</div>
-                        {password.username && (
-                          <div className="text-xs text-gray-500 truncate flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            {password.username}
-                          </div>
-                        )}
+                      <div className="space-y-1">
+                        {group.passwords.map((password) => {
+                          const catInfo = getCategoryInfo(password.category);
+                          return (
+                            <button
+                              key={password.id}
+                              onClick={() => handleSelectPassword(password)}
+                              className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                              data-testid={`password-${password.id}`}
+                            >
+                              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", catInfo.color.split(" ")[0])}>
+                                {password.url ? (
+                                  <Globe className={cn("w-4 h-4", catInfo.color.split(" ")[1])} />
+                                ) : (
+                                  <catInfo.icon className={cn("w-4 h-4", catInfo.color.split(" ")[1])} />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm text-gray-900 truncate">{password.name}</div>
+                                {password.username && (
+                                  <div className="text-xs text-gray-500 truncate flex items-center gap-1">
+                                    <User className="w-3 h-3" />
+                                    {password.username}
+                                  </div>
+                                )}
+                              </div>
+                              <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0", catInfo.color)} data-testid={`badge-category-${password.id}`}>
+                                {catInfo.label}
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            </button>
+                          );
+                        })}
                       </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -556,6 +676,24 @@ export function PasswordWidget() {
               autoComplete="off"
               data-testid="input-password-url"
             />
+            <div>
+              <label className="text-sm text-gray-600 mb-1 block">Kategorie</label>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <SelectTrigger data-testid="select-password-category">
+                  <SelectValue placeholder="Kategorie wählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      <div className="flex items-center gap-2">
+                        <cat.icon className="w-4 h-4" />
+                        {cat.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Input
               placeholder="Notizen (optional)"
               value={formData.notes}
