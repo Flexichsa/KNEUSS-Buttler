@@ -185,12 +185,19 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const layoutItems = useMemo(() => {
     return config.enabledWidgets
       .map((widgetId) => {
-        const existingLayout = config.layouts.find((l) => l.i === widgetId);
-        if (existingLayout) return existingLayout;
-
         const widgetType = getWidgetType(widgetId, config.widgetInstances);
         const widgetDef = AVAILABLE_WIDGETS.find((w) => w.id === widgetType);
         if (!widgetDef) return null;
+
+        const existingLayout = config.layouts.find((l) => l.i === widgetId);
+        if (existingLayout) {
+          // Always apply minW/minH from widget definition to enable proper resizing
+          return {
+            ...existingLayout,
+            minW: widgetDef.minSize?.w || 1,
+            minH: widgetDef.minSize?.h || 1,
+          };
+        }
 
         const maxY = config.layouts.reduce((max, l) => Math.max(max, l.y + l.h), 0);
         return {
@@ -199,8 +206,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
           y: maxY,
           w: widgetDef.defaultSize.w,
           h: widgetDef.defaultSize.h,
-          minW: widgetDef.minSize?.w,
-          minH: widgetDef.minSize?.h,
+          minW: widgetDef.minSize?.w || 1,
+          minH: widgetDef.minSize?.h || 1,
           sizeMode: "standard" as WidgetSizeMode,
         };
       })
