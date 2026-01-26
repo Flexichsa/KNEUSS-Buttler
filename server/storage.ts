@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, contactDetails, todoLabels, todoSections, todoAttachments, passwords, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, erpProgramAttachments, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type ContactDetail, type InsertContactDetail, type ContactPersonWithDetails, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory, type ErpProgramAttachment, type InsertErpProgramAttachment } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, contactDetails, todoLabels, todoSections, todoAttachments, passwords, passwordCategories, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, erpProgramAttachments, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type ContactDetail, type InsertContactDetail, type ContactPersonWithDetails, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type PasswordCategory, type InsertPasswordCategory, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory, type ErpProgramAttachment, type InsertErpProgramAttachment } from "@shared/schema";
 import { eq, and, lt, desc, isNull, asc, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
@@ -93,6 +93,15 @@ export interface IStorage {
   createPassword(password: InsertPassword): Promise<Password>;
   updatePassword(id: number, userId: string, password: Partial<InsertPassword>): Promise<Password | undefined>;
   deletePassword(id: number, userId: string): Promise<void>;
+  
+  // Password Categories
+  getPasswordCategories(userId: string): Promise<PasswordCategory[]>;
+  getPasswordCategory(id: number, userId: string): Promise<PasswordCategory | undefined>;
+  createPasswordCategory(category: InsertPasswordCategory): Promise<PasswordCategory>;
+  updatePasswordCategory(id: number, userId: string, category: Partial<InsertPasswordCategory>): Promise<PasswordCategory | undefined>;
+  deletePasswordCategory(id: number, userId: string): Promise<void>;
+  initializeDefaultPasswordCategories(userId: string): Promise<void>;
+  updatePasswordsCategory(userId: string, oldCategory: string, newCategory: string): Promise<void>;
   
   // CSV Uploads
   getLatestCsvUpload(): Promise<CsvUpload | undefined>;
@@ -573,6 +582,65 @@ export class DatabaseStorage implements IStorage {
 
   async deletePassword(id: number, userId: string): Promise<void> {
     await db.delete(passwords).where(and(eq(passwords.id, id), eq(passwords.userId, userId)));
+  }
+
+  // Password Categories
+  async getPasswordCategories(userId: string): Promise<PasswordCategory[]> {
+    return db.select().from(passwordCategories).where(eq(passwordCategories.userId, userId)).orderBy(asc(passwordCategories.sortOrder), asc(passwordCategories.name));
+  }
+
+  async getPasswordCategory(id: number, userId: string): Promise<PasswordCategory | undefined> {
+    const [category] = await db.select().from(passwordCategories).where(
+      and(eq(passwordCategories.id, id), eq(passwordCategories.userId, userId))
+    );
+    return category;
+  }
+
+  async createPasswordCategory(category: InsertPasswordCategory): Promise<PasswordCategory> {
+    const [newCategory] = await db.insert(passwordCategories).values(category).returning();
+    return newCategory;
+  }
+
+  async updatePasswordCategory(id: number, userId: string, categoryUpdate: Partial<InsertPasswordCategory>): Promise<PasswordCategory | undefined> {
+    const [updated] = await db
+      .update(passwordCategories)
+      .set({ ...categoryUpdate, updatedAt: new Date() })
+      .where(and(eq(passwordCategories.id, id), eq(passwordCategories.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deletePasswordCategory(id: number, userId: string): Promise<void> {
+    await db.delete(passwordCategories).where(and(eq(passwordCategories.id, id), eq(passwordCategories.userId, userId)));
+  }
+
+  async initializeDefaultPasswordCategories(userId: string): Promise<void> {
+    const existing = await this.getPasswordCategories(userId);
+    if (existing.length > 0) return;
+    
+    const defaultCategories = [
+      { userId, name: "Allgemein", color: "gray", icon: "key", isDefault: true, sortOrder: 0 },
+      { userId, name: "Social Media", color: "blue", icon: "user", isDefault: false, sortOrder: 1 },
+      { userId, name: "E-Mail", color: "red", icon: "mail", isDefault: false, sortOrder: 2 },
+      { userId, name: "Finanzen", color: "green", icon: "wallet", isDefault: false, sortOrder: 3 },
+      { userId, name: "Shopping", color: "orange", icon: "shopping-bag", isDefault: false, sortOrder: 4 },
+      { userId, name: "Arbeit", color: "purple", icon: "briefcase", isDefault: false, sortOrder: 5 },
+      { userId, name: "Gaming", color: "indigo", icon: "gamepad-2", isDefault: false, sortOrder: 6 },
+      { userId, name: "Streaming", color: "pink", icon: "heart", isDefault: false, sortOrder: 7 },
+      { userId, name: "Reisen", color: "cyan", icon: "plane", isDefault: false, sortOrder: 8 },
+      { userId, name: "Sonstiges", color: "yellow", icon: "tag", isDefault: false, sortOrder: 9 },
+    ];
+    
+    for (const cat of defaultCategories) {
+      await db.insert(passwordCategories).values(cat);
+    }
+  }
+
+  async updatePasswordsCategory(userId: string, oldCategory: string, newCategory: string): Promise<void> {
+    await db
+      .update(passwords)
+      .set({ category: newCategory, updatedAt: new Date() })
+      .where(and(eq(passwords.userId, userId), eq(passwords.category, oldCategory)));
   }
 
   // CSV Uploads
