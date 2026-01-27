@@ -549,7 +549,7 @@ export function ErpProgramsWidget() {
                             onClick={() => setPreviewAttachment(att)}
                           >
                             <img 
-                              src={`/api/erp-attachments/${att.id}/download`}
+                              src={`/api/erp-attachments/${att.id}/preview`}
                               alt={att.originalName}
                               className="w-full h-full object-cover"
                               loading="lazy"
@@ -1196,24 +1196,22 @@ export function ErpProgramsWidget() {
 
       {/* Preview Modal */}
       <Dialog open={!!previewAttachment} onOpenChange={(open) => !open && setPreviewAttachment(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] p-0 overflow-hidden flex flex-col">
           {previewAttachment && (
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-                <div className="flex items-center gap-3 min-w-0">
-                  {getFileIcon(previewAttachment.mimeType)}
-                  <div className="min-w-0">
-                    <div className="font-medium text-gray-900 truncate">{previewAttachment.originalName}</div>
-                    <div className="text-xs text-gray-500 flex items-center gap-2">
-                      <span>{formatFileSize(previewAttachment.size)}</span>
-                      <span>•</span>
-                      <span>{formatAttachmentDate(previewAttachment.createdAt)}</span>
-                    </div>
+            <>
+              <div className="flex items-center gap-3 p-4 pr-12 border-b bg-gray-50">
+                {getFileIcon(previewAttachment.mimeType)}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-900 truncate">{previewAttachment.originalName}</div>
+                  <div className="text-xs text-gray-500 flex items-center gap-2">
+                    <span>{formatFileSize(previewAttachment.size)}</span>
+                    <span>•</span>
+                    <span>{formatAttachmentDate(previewAttachment.createdAt)}</span>
                   </div>
                 </div>
                 <a
                   href={`/api/erp-attachments/${previewAttachment.id}/download`}
-                  className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium flex-shrink-0"
                   data-testid="btn-download-preview"
                 >
                   <Download className="w-4 h-4" />
@@ -1221,17 +1219,17 @@ export function ErpProgramsWidget() {
                 </a>
               </div>
               
-              <div className="flex-1 overflow-auto bg-gray-100 flex items-center justify-center p-4">
+              <div className="flex-1 overflow-auto bg-gray-100 flex items-center justify-center p-4 min-h-[300px]">
                 {previewAttachment.mimeType.startsWith('image/') ? (
                   <img
-                    src={`/api/erp-attachments/${previewAttachment.id}/download`}
+                    src={`/api/erp-attachments/${previewAttachment.id}/preview`}
                     alt={previewAttachment.originalName}
-                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                    className="max-w-full max-h-[65vh] object-contain rounded-lg shadow-lg"
                   />
                 ) : previewAttachment.mimeType === 'application/pdf' ? (
                   <iframe
-                    src={`/api/erp-attachments/${previewAttachment.id}/download`}
-                    className="w-full h-[70vh] rounded-lg shadow-lg bg-white"
+                    src={`/api/erp-attachments/${previewAttachment.id}/preview`}
+                    className="w-full h-[65vh] rounded-lg shadow-lg bg-white"
                     title={previewAttachment.originalName}
                   />
                 ) : (
@@ -1241,7 +1239,7 @@ export function ErpProgramsWidget() {
                   </div>
                 )}
               </div>
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
