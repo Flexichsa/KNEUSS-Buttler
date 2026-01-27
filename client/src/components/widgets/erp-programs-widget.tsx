@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from "react";
-import { Terminal, Search, ChevronRight, Loader2, Plus, Edit2, Trash2, ExternalLink, History, X, Save, MoreHorizontal, Folder, FolderPlus, Paperclip, Upload, FileText, Image, Download } from "lucide-react";
+import { Terminal, Search, ChevronRight, Loader2, Plus, Edit2, Trash2, ExternalLink, History, X, Save, MoreHorizontal, Folder, FolderPlus, Paperclip, Upload, FileText, Image, Download, Eye, FileSpreadsheet, File, FileImage, FileVideo, FileAudio, Calendar } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ export function ErpProgramsWidget() {
   const [categoryFormData, setCategoryFormData] = useState<Partial<ErpCategory>>({});
   const [hoveredCategoryId, setHoveredCategoryId] = useState<number | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<ErpProgramAttachment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const queryClient = useQueryClient();
@@ -227,9 +229,32 @@ export function ErpProgramsWidget() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.startsWith('image/')) return <Image className="w-4 h-4 text-purple-500" />;
-    return <FileText className="w-4 h-4 text-blue-500" />;
+  const getFileIcon = (mimeType: string, size: "sm" | "lg" = "sm") => {
+    const iconClass = size === "lg" ? "w-8 h-8" : "w-4 h-4";
+    
+    if (mimeType.startsWith('image/')) return <FileImage className={`${iconClass} text-purple-500`} />;
+    if (mimeType === 'application/pdf') return <FileText className={`${iconClass} text-red-500`} />;
+    if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType === 'text/csv') 
+      return <FileSpreadsheet className={`${iconClass} text-green-600`} />;
+    if (mimeType.includes('word') || mimeType.includes('document')) 
+      return <FileText className={`${iconClass} text-blue-600`} />;
+    if (mimeType.startsWith('video/')) return <FileVideo className={`${iconClass} text-orange-500`} />;
+    if (mimeType.startsWith('audio/')) return <FileAudio className={`${iconClass} text-pink-500`} />;
+    if (mimeType === 'application/zip' || mimeType.includes('compressed')) 
+      return <File className={`${iconClass} text-yellow-600`} />;
+    return <File className={`${iconClass} text-gray-500`} />;
+  };
+
+  const isPreviewable = (mimeType: string) => {
+    return mimeType.startsWith('image/') || mimeType === 'application/pdf';
+  };
+
+  const formatAttachmentDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   const filteredPrograms = useMemo(() => {
@@ -511,29 +536,76 @@ export function ErpProgramsWidget() {
                     Keine Anhänge vorhanden
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 gap-2">
                     {attachments.map((att) => (
                       <div 
                         key={att.id} 
-                        className="flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-100 hover:border-gray-200 transition-colors group"
+                        className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group"
                         data-testid={`attachment-${att.id}`}
                       >
-                        {getFileIcon(att.mimeType)}
+                        {att.mimeType.startsWith('image/') ? (
+                          <div 
+                            className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-indigo-300 transition-all"
+                            onClick={() => setPreviewAttachment(att)}
+                          >
+                            <img 
+                              src={`/api/erp-attachments/${att.id}/download`}
+                              alt={att.originalName}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div 
+                            className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              isPreviewable(att.mimeType) ? 'cursor-pointer hover:ring-2 hover:ring-indigo-300' : ''
+                            } ${
+                              att.mimeType === 'application/pdf' ? 'bg-red-50' :
+                              att.mimeType.includes('spreadsheet') || att.mimeType.includes('excel') ? 'bg-green-50' :
+                              att.mimeType.includes('word') || att.mimeType.includes('document') ? 'bg-blue-50' :
+                              'bg-gray-50'
+                            }`}
+                            onClick={() => isPreviewable(att.mimeType) && setPreviewAttachment(att)}
+                          >
+                            {getFileIcon(att.mimeType, "lg")}
+                          </div>
+                        )}
+                        
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm text-gray-700 truncate">{att.originalName}</div>
-                          <div className="text-xs text-gray-400">{formatFileSize(att.size)}</div>
+                          <div className="text-sm font-medium text-gray-800 truncate">{att.originalName}</div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+                            <span>{formatFileSize(att.size)}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {formatAttachmentDate(att.createdAt)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        
+                        <div className="flex gap-1">
+                          {isPreviewable(att.mimeType) && (
+                            <button
+                              onClick={() => setPreviewAttachment(att)}
+                              className="p-2 hover:bg-indigo-50 rounded-lg transition-colors"
+                              title="Vorschau"
+                              data-testid={`btn-preview-${att.id}`}
+                            >
+                              <Eye className="w-4 h-4 text-indigo-500" />
+                            </button>
+                          )}
                           <a
                             href={`/api/erp-attachments/${att.id}/download`}
-                            className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Herunterladen"
                             data-testid={`btn-download-${att.id}`}
                           >
                             <Download className="w-4 h-4 text-gray-500" />
                           </a>
                           <button
                             onClick={() => deleteAttachmentMutation.mutate(att.id)}
-                            className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
+                            className="p-2 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                            title="Löschen"
                             data-testid={`btn-delete-attachment-${att.id}`}
                           >
                             <Trash2 className="w-4 h-4 text-red-400" />
@@ -1121,6 +1193,58 @@ export function ErpProgramsWidget() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Preview Modal */}
+      <Dialog open={!!previewAttachment} onOpenChange={(open) => !open && setPreviewAttachment(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+          {previewAttachment && (
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+                <div className="flex items-center gap-3 min-w-0">
+                  {getFileIcon(previewAttachment.mimeType)}
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-900 truncate">{previewAttachment.originalName}</div>
+                    <div className="text-xs text-gray-500 flex items-center gap-2">
+                      <span>{formatFileSize(previewAttachment.size)}</span>
+                      <span>•</span>
+                      <span>{formatAttachmentDate(previewAttachment.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+                <a
+                  href={`/api/erp-attachments/${previewAttachment.id}/download`}
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  data-testid="btn-download-preview"
+                >
+                  <Download className="w-4 h-4" />
+                  Herunterladen
+                </a>
+              </div>
+              
+              <div className="flex-1 overflow-auto bg-gray-100 flex items-center justify-center p-4">
+                {previewAttachment.mimeType.startsWith('image/') ? (
+                  <img
+                    src={`/api/erp-attachments/${previewAttachment.id}/download`}
+                    alt={previewAttachment.originalName}
+                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                  />
+                ) : previewAttachment.mimeType === 'application/pdf' ? (
+                  <iframe
+                    src={`/api/erp-attachments/${previewAttachment.id}/download`}
+                    className="w-full h-[70vh] rounded-lg shadow-lg bg-white"
+                    title={previewAttachment.originalName}
+                  />
+                ) : (
+                  <div className="text-center text-gray-500 py-12">
+                    <File className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                    <p>Vorschau nicht verfügbar</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
