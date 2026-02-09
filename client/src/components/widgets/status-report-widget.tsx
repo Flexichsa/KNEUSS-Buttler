@@ -110,10 +110,10 @@ function SortableProjectRow({
       style={style}
       onClick={() => onSelect(project)}
       className={cn(
-        "flex items-center gap-1.5 px-2 py-2 cursor-pointer transition-all duration-150 border-l-2",
+        "flex items-center gap-1.5 px-3 py-2.5 cursor-pointer transition-all duration-150 border-l-2 border-b border-white/5",
         isDragging ? "opacity-50" : "opacity-100",
         isSelected
-          ? "bg-indigo-500/20 border-l-indigo-500"
+          ? "bg-indigo-500/15 border-l-indigo-400 shadow-sm shadow-indigo-500/10"
           : "border-l-transparent hover:bg-white/5",
         isSubproject && "pl-8"
       )}
@@ -126,7 +126,7 @@ function SortableProjectRow({
         className="cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-white/10 text-white/30 hover:text-white/60 transition-colors touch-none shrink-0"
         data-testid={`drag-handle-${project.id}`}
       >
-        <GripVertical className="h-3.5 w-3.5" />
+        <GripVertical className="h-4 w-4" />
       </button>
 
       {!isSubproject && subprojects.length > 0 ? (
@@ -136,9 +136,9 @@ function SortableProjectRow({
           data-testid={`toggle-expand-${project.id}`}
         >
           {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 text-white/50" />
+            <ChevronDown className="h-4 w-4 text-white/50" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-white/50" />
+            <ChevronRight className="h-4 w-4 text-white/50" />
           )}
         </button>
       ) : !isSubproject ? (
@@ -146,7 +146,7 @@ function SortableProjectRow({
       ) : null}
 
       <span className={cn(
-        "flex-1 min-w-0 truncate text-xs",
+        "flex-1 min-w-0 truncate text-sm",
         isSubproject ? "text-white/70" : "text-white font-semibold"
       )}>
         {project.name}
@@ -154,7 +154,7 @@ function SortableProjectRow({
 
       {statusConfig && (
         <span className={cn(
-          "text-[9px] font-medium px-1.5 py-0.5 rounded-full shrink-0 whitespace-nowrap",
+          "text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 whitespace-nowrap",
           statusConfig.bgColor,
           statusConfig.color
         )}>
@@ -163,19 +163,19 @@ function SortableProjectRow({
       )}
 
       {project.assignee && (
-        <span className="text-[10px] text-white/40 truncate max-w-[60px] shrink-0 hidden sm:inline">
+        <span className="text-[11px] text-white/40 truncate max-w-[60px] shrink-0 hidden sm:inline">
           {project.assignee}
         </span>
       )}
 
-      <div className="flex items-center gap-1 shrink-0 w-[50px]">
-        <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
+      <div className="flex items-center gap-1 shrink-0 w-[60px]">
+        <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full transition-all duration-300"
             style={{ width: `${displayProgress}%` }}
           />
         </div>
-        <span className="text-[9px] text-white/40 w-[22px] text-right">{displayProgress}%</span>
+        <span className="text-[10px] text-white/40 w-[22px] text-right">{displayProgress}%</span>
       </div>
     </div>
   );
@@ -548,14 +548,14 @@ export function StatusReportWidget() {
       <div className="flex-1 flex relative z-10 overflow-hidden">
         {/* LEFT PANE - Project List */}
         <div className="w-[40%] flex flex-col border-r border-white/10 min-w-0">
-          <div className="px-3 pr-12 py-2.5 flex items-center justify-between border-b border-white/10 bg-white/5 backdrop-blur-sm shrink-0">
+          <div className="px-3 pr-12 py-3 flex items-center justify-between border-b border-white/10 bg-white/5 backdrop-blur-sm shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shrink-0">
                 <ClipboardList className="h-3.5 w-3.5 text-white" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-xs font-bold text-white leading-tight">Projekte</h3>
-                <span className="text-[9px] text-white/50">{projects.length} Einträge</span>
+                <h3 className="text-sm font-bold text-white leading-tight">Projekte</h3>
+                <span className="text-[10px] text-white/50">{projects.length} Einträge</span>
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
@@ -563,7 +563,7 @@ export function StatusReportWidget() {
                 size="icon"
                 variant="ghost"
                 onClick={() => setViewMode(viewMode === "overview" ? "table" : "overview")}
-                className="h-6 w-6 rounded-md bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/10"
+                className="h-7 w-7 rounded-md bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/10"
                 title={viewMode === "overview" ? "Tabellenansicht" : "Listenansicht"}
                 data-testid="button-toggle-view"
               >
@@ -573,7 +573,7 @@ export function StatusReportWidget() {
                 size="icon"
                 variant="ghost"
                 onClick={handleExport}
-                className="h-6 w-6 rounded-md bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/10"
+                className="h-7 w-7 rounded-md bg-white/5 hover:bg-white/15 text-white/70 hover:text-white border border-white/10"
                 title="Als CSV exportieren"
                 data-testid="button-export-csv"
               >
@@ -584,7 +584,7 @@ export function StatusReportWidget() {
                 variant="ghost"
                 onClick={() => setShowAddForm(!showAddForm)}
                 className={cn(
-                  "h-6 w-6 rounded-md border border-white/10 transition-colors",
+                  "h-7 w-7 rounded-md border border-white/10 transition-colors",
                   showAddForm
                     ? "bg-indigo-500/50 text-white"
                     : "bg-white/5 hover:bg-white/15 text-white/70 hover:text-white"
@@ -621,7 +621,7 @@ export function StatusReportWidget() {
                       exit={{ opacity: 0, height: 0 }}
                       className="border-b border-white/10 bg-white/5"
                     >
-                      <div className="p-2 flex items-center gap-1.5" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+                      <div className="p-2.5 flex items-center gap-1.5" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
                         <Input
                           placeholder="Projektname"
                           value={newProject.name}
@@ -633,7 +633,7 @@ export function StatusReportWidget() {
                               createMutation.mutate(newProject);
                             }
                           }}
-                          className="h-7 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 flex-1"
+                          className="h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 flex-1"
                           data-testid="input-project-name"
                         />
                         <div onMouseDown={stopPropagation} onTouchStart={stopPropagation} className="w-[120px] shrink-0">
@@ -641,7 +641,7 @@ export function StatusReportWidget() {
                             value={newProject.parentProjectId?.toString() || "none"}
                             onValueChange={(v) => setNewProject({ ...newProject, parentProjectId: v === "none" ? null : parseInt(v) })}
                           >
-                            <SelectTrigger className="h-7 text-[10px] bg-white/10 border-white/20 text-white" data-testid="select-parent-project">
+                            <SelectTrigger className="h-8 text-[10px] bg-white/10 border-white/20 text-white" data-testid="select-parent-project">
                               <SelectValue placeholder="Oberprojekt" />
                             </SelectTrigger>
                             <SelectContent>
@@ -658,7 +658,7 @@ export function StatusReportWidget() {
                           size="sm"
                           onClick={() => createMutation.mutate(newProject)}
                           disabled={!newProject.name || createMutation.isPending}
-                          className="h-7 text-[10px] px-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0"
+                          className="h-8 text-[10px] px-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0"
                           data-testid="button-save-project"
                         >
                           {createMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
@@ -780,7 +780,7 @@ export function StatusReportWidget() {
           {selectedProject && editingProject ? (
             <>
               <div className="flex-1 overflow-y-auto" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                <div className="p-4 space-y-5">
+                <div className="p-5 space-y-6">
                   {/* Header */}
                   <div className="flex items-start gap-2">
                     <input
@@ -788,21 +788,21 @@ export function StatusReportWidget() {
                       onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
                       onMouseDown={stopPropagation}
                       onTouchStart={stopPropagation}
-                      className="flex-1 bg-transparent text-lg font-bold text-white border-none outline-none placeholder:text-white/30 min-w-0"
+                      className="flex-1 bg-transparent text-xl font-bold text-white border-none outline-none placeholder:text-white/30 min-w-0 py-1"
                       placeholder="Projektname"
                       data-testid="detail-input-name"
                     />
                     <button
                       onClick={() => selectedProject && deleteMutation.mutate(selectedProject.id)}
                       disabled={deleteMutation.isPending}
-                      className="p-1.5 rounded-lg hover:bg-rose-500/20 text-white/40 hover:text-rose-400 transition-colors shrink-0"
+                      className="p-2 rounded-lg hover:bg-rose-500/20 text-white/40 hover:text-rose-400 transition-colors shrink-0"
                       data-testid="detail-button-delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => { setSelectedProject(null); setEditingProject(null); }}
-                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0"
+                      className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0"
                       data-testid="detail-button-close"
                     >
                       <X className="h-4 w-4" />
@@ -810,14 +810,14 @@ export function StatusReportWidget() {
                   </div>
 
                   {/* Metadata Grid */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-4">
                     <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                      <label className="text-[10px] text-white/40 mb-1 block uppercase tracking-wider font-medium">Status</label>
+                      <label className="text-[11px] text-white/50 mb-1.5 block uppercase tracking-wider font-medium">Status</label>
                       <Select
                         value={editingProject.status || ""}
                         onValueChange={(v) => setEditingProject({ ...editingProject, status: v })}
                       >
-                        <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="detail-select-status">
+                        <SelectTrigger className="h-9 text-sm rounded-lg bg-white/10 border-white/20 text-white" data-testid="detail-select-status">
                           <SelectValue placeholder="Status wählen" />
                         </SelectTrigger>
                         <SelectContent>
@@ -831,12 +831,12 @@ export function StatusReportWidget() {
                     </div>
 
                     <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                      <label className="text-[10px] text-white/40 mb-1 block uppercase tracking-wider font-medium">Phase</label>
+                      <label className="text-[11px] text-white/50 mb-1.5 block uppercase tracking-wider font-medium">Phase</label>
                       <Select
                         value={editingProject.phase || ""}
                         onValueChange={(v) => setEditingProject({ ...editingProject, phase: v })}
                       >
-                        <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="detail-select-phase">
+                        <SelectTrigger className="h-9 text-sm rounded-lg bg-white/10 border-white/20 text-white" data-testid="detail-select-phase">
                           <SelectValue placeholder="Phase wählen" />
                         </SelectTrigger>
                         <SelectContent>
@@ -850,12 +850,12 @@ export function StatusReportWidget() {
                     </div>
 
                     <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                      <label className="text-[10px] text-white/40 mb-1 block uppercase tracking-wider font-medium">Priorität</label>
+                      <label className="text-[11px] text-white/50 mb-1.5 block uppercase tracking-wider font-medium">Priorität</label>
                       <Select
                         value={editingProject.priority || "medium"}
                         onValueChange={(v) => setEditingProject({ ...editingProject, priority: v })}
                       >
-                        <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="detail-select-priority">
+                        <SelectTrigger className="h-9 text-sm rounded-lg bg-white/10 border-white/20 text-white" data-testid="detail-select-priority">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -872,33 +872,33 @@ export function StatusReportWidget() {
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-white/40 mb-1 block uppercase tracking-wider font-medium">Verantwortlich</label>
+                      <label className="text-[11px] text-white/50 mb-1.5 block uppercase tracking-wider font-medium">Verantwortlich</label>
                       <Input
                         value={editingProject.assignee || ""}
                         onChange={(e) => setEditingProject({ ...editingProject, assignee: e.target.value })}
                         onMouseDown={stopPropagation}
                         onTouchStart={stopPropagation}
-                        className="h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                        className="h-9 text-sm rounded-lg bg-white/10 border-white/20 text-white placeholder:text-white/40"
                         placeholder="Name"
                         data-testid="detail-input-assignee"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-white/40 mb-1 block uppercase tracking-wider font-medium">Kosten (CHF)</label>
+                      <label className="text-[11px] text-white/50 mb-1.5 block uppercase tracking-wider font-medium">Kosten (CHF)</label>
                       <Input
                         value={editingProject.costs || ""}
                         onChange={(e) => setEditingProject({ ...editingProject, costs: e.target.value })}
                         onMouseDown={stopPropagation}
                         onTouchStart={stopPropagation}
-                        className="h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                        className="h-9 text-sm rounded-lg bg-white/10 border-white/20 text-white placeholder:text-white/40"
                         placeholder="z.B. 5'000"
                         data-testid="detail-input-costs"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-white/40 mb-1 block uppercase tracking-wider font-medium">Fortschritt</label>
+                      <label className="text-[11px] text-white/50 mb-1.5 block uppercase tracking-wider font-medium">Fortschritt</label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -908,26 +908,26 @@ export function StatusReportWidget() {
                           onChange={(e) => setEditingProject({ ...editingProject, progress: parseInt(e.target.value) || 0 })}
                           onMouseDown={stopPropagation}
                           onTouchStart={stopPropagation}
-                          className="h-8 text-xs bg-white/10 border-white/20 text-white w-16"
+                          className="h-9 text-sm rounded-lg bg-white/10 border-white/20 text-white w-20"
                           data-testid="detail-input-progress"
                         />
-                        <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full transition-all duration-300"
                             style={{ width: `${editingProject.progress || 0}%` }}
                           />
                         </div>
-                        <span className="text-[10px] text-white/50 w-[28px] text-right">{editingProject.progress || 0}%</span>
+                        <span className="text-xs text-white/50 w-[28px] text-right">{editingProject.progress || 0}%</span>
                       </div>
                     </div>
 
                     <div onMouseDown={stopPropagation} onTouchStart={stopPropagation} className="col-span-2">
-                      <label className="text-[10px] text-white/40 mb-1 block uppercase tracking-wider font-medium">Oberprojekt</label>
+                      <label className="text-[11px] text-white/50 mb-1.5 block uppercase tracking-wider font-medium">Oberprojekt</label>
                       <Select
                         value={editingProject.parentProjectId?.toString() || "none"}
                         onValueChange={(v) => setEditingProject({ ...editingProject, parentProjectId: v === "none" ? null : parseInt(v) })}
                       >
-                        <SelectTrigger className="h-8 text-xs bg-white/10 border-white/20 text-white" data-testid="detail-select-parent">
+                        <SelectTrigger className="h-9 text-sm rounded-lg bg-white/10 border-white/20 text-white" data-testid="detail-select-parent">
                           <SelectValue placeholder="Oberprojekt wählen" />
                         </SelectTrigger>
                         <SelectContent>
@@ -944,13 +944,13 @@ export function StatusReportWidget() {
 
                   {/* Description */}
                   <div>
-                    <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider font-medium">Beschreibung</label>
+                    <label className="text-[11px] text-white/50 mb-2 block uppercase tracking-wider font-medium">Beschreibung</label>
                     <Textarea
                       value={editingProject.description || ""}
                       onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
                       onMouseDown={stopPropagation}
                       onTouchStart={stopPropagation}
-                      className="bg-white/10 border-white/20 text-white text-xs placeholder:text-white/40 min-h-[100px] resize-y focus:border-indigo-500/50"
+                      className="bg-white/10 border-white/20 text-white text-sm rounded-lg placeholder:text-white/40 min-h-[100px] resize-y focus:border-indigo-500/50"
                       placeholder="Projektbeschreibung..."
                       data-testid="detail-input-description"
                     />
@@ -958,13 +958,13 @@ export function StatusReportWidget() {
 
                   {/* Next Steps */}
                   <div>
-                    <label className="text-[10px] text-white/40 mb-1.5 block uppercase tracking-wider font-medium">Nächste Schritte</label>
+                    <label className="text-[11px] text-white/50 mb-2 block uppercase tracking-wider font-medium">Nächste Schritte</label>
                     <Textarea
                       value={editingProject.nextSteps || ""}
                       onChange={(e) => setEditingProject({ ...editingProject, nextSteps: e.target.value })}
                       onMouseDown={stopPropagation}
                       onTouchStart={stopPropagation}
-                      className="bg-white/10 border-white/20 text-white text-xs placeholder:text-white/40 min-h-[200px] resize-y focus:border-indigo-500/50"
+                      className="bg-white/10 border-white/20 text-white text-sm rounded-lg placeholder:text-white/40 min-h-[200px] resize-y focus:border-indigo-500/50"
                       placeholder="Was sind die nächsten Schritte?"
                       data-testid="detail-input-next-steps"
                     />
@@ -973,9 +973,9 @@ export function StatusReportWidget() {
                   {/* Attachments */}
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <label className="text-[10px] text-white/40 uppercase tracking-wider font-medium">Anhänge</label>
+                      <label className="text-[11px] text-white/50 uppercase tracking-wider font-medium">Anhänge</label>
                       {attachments.length > 0 && (
-                        <span className="text-[9px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-full" data-testid="text-attachment-count">
+                        <span className="text-[10px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded-full" data-testid="text-attachment-count">
                           {attachments.length}
                         </span>
                       )}
@@ -987,15 +987,15 @@ export function StatusReportWidget() {
                       onDragLeave={() => setIsDraggingFile(false)}
                       onDrop={handleFileDrop}
                       className={cn(
-                        "border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all",
+                        "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all",
                         isDraggingFile
                           ? "border-indigo-500 bg-indigo-500/10"
                           : "border-white/20 hover:border-white/30 hover:bg-white/5"
                       )}
                       data-testid="dropzone-attachments"
                     >
-                      <Upload className="h-5 w-5 text-white/30 mx-auto mb-1" />
-                      <p className="text-[10px] text-white/40">Dateien hierher ziehen oder klicken</p>
+                      <Upload className="h-6 w-6 text-white/30 mx-auto mb-1" />
+                      <p className="text-xs text-white/40">Dateien hierher ziehen oder klicken</p>
                       {uploadMutation.isPending && (
                         <Loader2 className="h-4 w-4 animate-spin text-indigo-400 mx-auto mt-2" />
                       )}
@@ -1017,27 +1017,27 @@ export function StatusReportWidget() {
                           return (
                             <div
                               key={att.id}
-                              className="flex items-center gap-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
+                              className="flex items-center gap-2 p-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group"
                               data-testid={`attachment-${att.id}`}
                             >
                               {isImage ? (
                                 <img
                                   src={`/api/project-attachments/${att.id}/preview`}
                                   alt={att.originalName}
-                                  className="w-8 h-8 rounded object-cover shrink-0"
+                                  className="w-10 h-10 rounded object-cover shrink-0"
                                 />
                               ) : isPdf ? (
-                                <div className="w-8 h-8 rounded bg-red-500/20 flex items-center justify-center shrink-0">
+                                <div className="w-10 h-10 rounded bg-red-500/20 flex items-center justify-center shrink-0">
                                   <FileText className="h-4 w-4 text-red-400" />
                                 </div>
                               ) : (
-                                <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center shrink-0">
+                                <div className="w-10 h-10 rounded bg-white/10 flex items-center justify-center shrink-0">
                                   <FileIcon className="h-4 w-4 text-white/50" />
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <p className="text-[11px] text-white truncate">{att.originalName}</p>
-                                <p className="text-[9px] text-white/40">{formatFileSize(att.size)}</p>
+                                <p className="text-xs text-white truncate">{att.originalName}</p>
+                                <p className="text-[10px] text-white/40">{formatFileSize(att.size)}</p>
                               </div>
                               <a
                                 href={`/api/project-attachments/${att.id}/download`}
@@ -1067,11 +1067,11 @@ export function StatusReportWidget() {
               </div>
 
               {/* Sticky Save Button */}
-              <div className="p-3 border-t border-white/10 bg-white/5 backdrop-blur-sm shrink-0">
+              <div className="p-4 border-t border-white/10 bg-white/5 backdrop-blur-sm shrink-0">
                 <Button
                   onClick={handleSaveProject}
                   disabled={updateMutation.isPending}
-                  className="w-full h-9 text-sm bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0"
+                  className="w-full h-10 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0 shadow-lg shadow-indigo-500/20"
                   data-testid="detail-button-save"
                 >
                   {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
@@ -1081,10 +1081,10 @@ export function StatusReportWidget() {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-                <ClipboardList className="h-7 w-7 text-white/20" />
+              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+                <ClipboardList className="h-8 w-8 text-white/20" />
               </div>
-              <p className="text-sm text-white/40">Wähle ein Projekt aus der Liste</p>
+              <p className="text-base text-white/40">Wähle ein Projekt aus der Liste</p>
             </div>
           )}
         </div>
