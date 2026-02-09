@@ -780,7 +780,7 @@ export function StatusReportWidget() {
           {selectedProject && editingProject ? (
             <>
               <div className="flex-1 overflow-y-auto" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                <div className="p-5 space-y-6">
+                <div className="p-5 space-y-6 flex flex-col min-h-full">
                   {/* Header */}
                   <div className="flex items-start gap-2">
                     <input
@@ -957,14 +957,14 @@ export function StatusReportWidget() {
                   </div>
 
                   {/* Next Steps */}
-                  <div>
+                  <div className="flex-1 flex flex-col">
                     <label className="text-[11px] text-white/50 mb-2 block uppercase tracking-wider font-medium">Nächste Schritte</label>
                     <Textarea
                       value={editingProject.nextSteps || ""}
                       onChange={(e) => setEditingProject({ ...editingProject, nextSteps: e.target.value })}
                       onMouseDown={stopPropagation}
                       onTouchStart={stopPropagation}
-                      className="bg-white/10 border-white/20 text-white text-sm rounded-lg placeholder:text-white/40 min-h-[200px] resize-y focus:border-indigo-500/50"
+                      className="bg-white/10 border-white/20 text-white text-sm rounded-lg placeholder:text-white/40 flex-1 min-h-[200px] resize-y focus:border-indigo-500/50"
                       placeholder="Was sind die nächsten Schritte?"
                       data-testid="detail-input-next-steps"
                     />
