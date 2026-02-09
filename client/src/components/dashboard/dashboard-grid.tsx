@@ -574,10 +574,15 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
       </Dialog>
 
       <Dialog open={!!expandedWidgetId} onOpenChange={(open) => !open && setExpandedWidgetId(null)}>
-        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogContent className={cn(
+          "overflow-hidden flex flex-col p-0",
+          expandedWidgetId && getWidgetType(expandedWidgetId, config.widgetInstances) === "statusreport"
+            ? "sm:max-w-[95vw] w-[95vw] max-h-[95vh] h-[95vh]"
+            : "sm:max-w-4xl max-h-[85vh]"
+        )}>
           {expandedWidgetId && (
             <>
-              <DialogHeader className="px-6 pt-6 pb-4 border-b">
+              <DialogHeader className="px-6 pt-4 pb-3 border-b shrink-0">
                 <DialogTitle className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
                     {getWidgetInfo(expandedWidgetId)?.icon}
@@ -588,7 +593,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                   </div>
                 </DialogTitle>
               </DialogHeader>
-              <div className="flex-1 overflow-auto min-h-[500px]">
+              <div className="flex-1 overflow-auto min-h-0">
                 {renderWidget(expandedWidgetId)}
               </div>
             </>
