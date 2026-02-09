@@ -593,3 +593,23 @@ export const insertErpProgramAttachmentSchema = createInsertSchema(erpProgramAtt
 
 export type InsertErpProgramAttachment = z.infer<typeof insertErpProgramAttachmentSchema>;
 export type ErpProgramAttachment = typeof erpProgramAttachments.$inferSelect;
+
+// Projekt Anhänge
+export const projectAttachments = pgTable("project_attachments", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  path: text("path").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertProjectAttachmentSchema = createInsertSchema(projectAttachments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProjectAttachment = z.infer<typeof insertProjectAttachmentSchema>;
+export type ProjectAttachment = typeof projectAttachments.$inferSelect;
