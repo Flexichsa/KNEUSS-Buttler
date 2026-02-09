@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, contactDetails, todoLabels, todoSections, todoAttachments, passwords, passwordCategories, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, erpProgramAttachments, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type ContactDetail, type InsertContactDetail, type ContactPersonWithDetails, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type PasswordCategory, type InsertPasswordCategory, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory, type ErpProgramAttachment, type InsertErpProgramAttachment } from "@shared/schema";
+import { users, todos, notes, oauthTokens, oauthStates, dashboardLayouts, projects, contacts, contactPersons, contactDetails, todoLabels, todoSections, todoAttachments, passwords, passwordCategories, csvUploads, guideCategories, guides, guideSteps, erpCategories, erpPrograms, erpProgramHistory, erpProgramAttachments, type User, type InsertUser, type Todo, type InsertTodo, type Note, type InsertNote, type OAuthToken, type InsertOAuthToken, type OAuthState, type InsertOAuthState, type DashboardConfig, type DashboardLayout, type Project, type InsertProject, type Contact, type InsertContact, type ContactPerson, type InsertContactPerson, type ContactWithPersons, type ContactDetail, type InsertContactDetail, type ContactPersonWithDetails, type TodoLabel, type InsertTodoLabel, type TodoSection, type InsertTodoSection, type TodoWithSubtasks, type TodoAttachment, type InsertTodoAttachment, type Password, type InsertPassword, type PasswordCategory, type InsertPasswordCategory, type CsvUpload, type InsertCsvUpload, type GuideCategory, type InsertGuideCategory, type Guide, type InsertGuide, type GuideStep, type InsertGuideStep, type GuideWithSteps, type ErpCategory, type InsertErpCategory, type ErpProgram, type InsertErpProgram, type ErpProgramHistory, type InsertErpProgramHistory, type ErpProgramWithCategory, type ErpProgramAttachment, type InsertErpProgramAttachment, projectAttachments, type ProjectAttachment, type InsertProjectAttachment } from "@shared/schema";
 import { eq, and, lt, desc, isNull, asc, gte, lte, ilike, or } from "drizzle-orm";
 
 export interface IStorage {
@@ -155,6 +155,12 @@ export interface IStorage {
   getErpProgramAttachment(id: number): Promise<ErpProgramAttachment | undefined>;
   createErpProgramAttachment(attachment: InsertErpProgramAttachment): Promise<ErpProgramAttachment>;
   deleteErpProgramAttachment(id: number): Promise<ErpProgramAttachment | undefined>;
+
+  // Project Attachments
+  getProjectAttachments(projectId: number): Promise<ProjectAttachment[]>;
+  getProjectAttachment(id: number): Promise<ProjectAttachment | undefined>;
+  createProjectAttachment(attachment: InsertProjectAttachment): Promise<ProjectAttachment>;
+  deleteProjectAttachment(id: number): Promise<ProjectAttachment | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -917,6 +923,26 @@ export class DatabaseStorage implements IStorage {
 
   async deleteErpProgramAttachment(id: number): Promise<ErpProgramAttachment | undefined> {
     const [deleted] = await db.delete(erpProgramAttachments).where(eq(erpProgramAttachments.id, id)).returning();
+    return deleted;
+  }
+
+  // Project Attachments
+  async getProjectAttachments(projectId: number): Promise<ProjectAttachment[]> {
+    return db.select().from(projectAttachments).where(eq(projectAttachments.projectId, projectId)).orderBy(projectAttachments.createdAt);
+  }
+
+  async getProjectAttachment(id: number): Promise<ProjectAttachment | undefined> {
+    const [attachment] = await db.select().from(projectAttachments).where(eq(projectAttachments.id, id));
+    return attachment;
+  }
+
+  async createProjectAttachment(attachment: InsertProjectAttachment): Promise<ProjectAttachment> {
+    const [newAttachment] = await db.insert(projectAttachments).values(attachment).returning();
+    return newAttachment;
+  }
+
+  async deleteProjectAttachment(id: number): Promise<ProjectAttachment | undefined> {
+    const [deleted] = await db.delete(projectAttachments).where(eq(projectAttachments.id, id)).returning();
     return deleted;
   }
 }

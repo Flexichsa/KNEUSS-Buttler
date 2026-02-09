@@ -2453,5 +2453,136 @@ export async function registerRoutes(
     }
   });
 
+  // Project Attachments
+  app.get("/api/projects/:projectId/attachments", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ error: "Ungültige Projekt-ID" });
+      }
+      const attachments = await storage.getProjectAttachments(projectId);
+      res.json(attachments);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Laden der Anhänge" });
+    }
+  });
+
+  app.post("/api/projects/:projectId/attachments", isAuthenticatedCustom, upload.single('file'), async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ error: "Ungültige Projekt-ID" });
+      }
+      
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ error: "Keine Datei hochgeladen" });
+      }
+
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const fileBuffer = fs.readFileSync(file.path);
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: fileBuffer,
+        headers: { "Content-Type": file.mimetype },
+      });
+      
+      if (!uploadResponse.ok) {
+        fs.unlinkSync(file.path);
+        throw new Error("Fehler beim Hochladen in Object Storage");
+      }
+      
+      fs.unlinkSync(file.path);
+      
+      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+
+      const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+      const attachment = await storage.createProjectAttachment({
+        projectId,
+        filename: file.filename,
+        originalName: sanitizedOriginalName,
+        mimeType: file.mimetype,
+        size: file.size,
+        path: objectPath,
+      });
+
+      res.status(201).json(attachment);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Fehler beim Hochladen des Anhangs" });
+    }
+  });
+
+  app.get("/api/project-attachments/:id/download", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const attachment = await storage.getProjectAttachment(id);
+      
+      if (!attachment) {
+        return res.status(404).json({ error: "Anhang nicht gefunden" });
+      }
+
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(attachment.path);
+        res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
+        await objectStorageService.downloadObject(objectFile, res);
+      } catch (objError) {
+        if (objError instanceof ObjectNotFoundError) {
+          return res.status(404).json({ error: "Datei nicht gefunden" });
+        }
+        throw objError;
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Download des Anhangs" });
+    }
+  });
+
+  app.get("/api/project-attachments/:id/preview", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const attachment = await storage.getProjectAttachment(id);
+      
+      if (!attachment) {
+        return res.status(404).json({ error: "Anhang nicht gefunden" });
+      }
+
+      try {
+        const objectFile = await objectStorageService.getObjectEntityFile(attachment.path);
+        res.setHeader('Content-Type', attachment.mimeType);
+        await objectStorageService.downloadObject(objectFile, res);
+      } catch (objError) {
+        if (objError instanceof ObjectNotFoundError) {
+          return res.status(404).json({ error: "Datei nicht gefunden" });
+        }
+        throw objError;
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Fehler beim Vorschau des Anhangs" });
+    }
+  });
+
+  app.delete("/api/project-attachments/:id", isAuthenticatedCustom, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteProjectAttachment(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Anhang nicht gefunden" });
+      }
+
+      if (deleted.path && deleted.path.startsWith("/objects/")) {
+        try {
+          await objectStorageService.deleteObjectEntity(deleted.path);
+        } catch (deleteError) {
+          console.warn("[Project Attachment] Fehler beim Löschen aus Object Storage:", deleteError);
+        }
+      }
+
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Fehler beim Löschen des Anhangs" });
+    }
+  });
+
   return httpServer;
 }
