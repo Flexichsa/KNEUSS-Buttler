@@ -954,7 +954,7 @@ export function StatusReportWidget() {
       </div>
 
       <Dialog open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
-        <DialogContent className="max-w-lg bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-white/10 text-white" onPointerDownOutside={(e) => e.preventDefault()}>
+        <DialogContent className="max-w-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-white/10 text-white" onPointerDownOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
@@ -965,9 +965,9 @@ export function StatusReportWidget() {
           </DialogHeader>
           
           {editingProject && (
-            <div className="space-y-4" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
+            <div className="space-y-5 max-h-[85vh] overflow-y-auto" onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
               <div>
-                <label className="text-xs text-white/60 mb-1.5 block font-medium">Projektname</label>
+                <label className="text-sm text-white/60 mb-1.5 block font-medium">Projektname</label>
                 <Input
                   value={editingProject.name || ""}
                   onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
@@ -979,19 +979,19 @@ export function StatusReportWidget() {
               </div>
               
               <div>
-                <label className="text-xs text-white/60 mb-1.5 block font-medium">Beschreibung</label>
+                <label className="text-sm text-white/60 mb-1.5 block font-medium">Beschreibung</label>
                 <Textarea
                   value={editingProject.description || ""}
                   onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
                   onMouseDown={stopPropagation}
                   onTouchStart={stopPropagation}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 min-h-[80px] resize-none focus:border-indigo-500/50"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 min-h-[100px] resize-none focus:border-indigo-500/50"
                   data-testid="modal-input-description"
                 />
               </div>
 
               <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                <label className="text-xs text-white/60 mb-1.5 block font-medium">Oberprojekt</label>
+                <label className="text-sm text-white/60 mb-1.5 block font-medium">Oberprojekt</label>
                 <Select
                   value={editingProject.parentProjectId?.toString() || "none"}
                   onValueChange={(v) => setEditingProject({ ...editingProject, parentProjectId: v === "none" ? null : parseInt(v) })}
@@ -1010,9 +1010,15 @@ export function StatusReportWidget() {
                 </Select>
               </div>
 
+              <div className="flex items-center gap-2 pt-2">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Projektdetails</span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                  <label className="text-xs text-white/60 mb-1.5 block font-medium">Phase</label>
+                  <label className="text-sm text-white/60 mb-1.5 block font-medium">Phase</label>
                   <Select
                     value={editingProject.phase || ""}
                     onValueChange={(v) => setEditingProject({ ...editingProject, phase: v })}
@@ -1031,7 +1037,7 @@ export function StatusReportWidget() {
                 </div>
                 
                 <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                  <label className="text-xs text-white/60 mb-1.5 block font-medium">Status</label>
+                  <label className="text-sm text-white/60 mb-1.5 block font-medium">Status</label>
                   <Select
                     value={editingProject.status || ""}
                     onValueChange={(v) => setEditingProject({ ...editingProject, status: v })}
@@ -1052,7 +1058,7 @@ export function StatusReportWidget() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-white/60 mb-1.5 block font-medium">Kosten (CHF)</label>
+                  <label className="text-sm text-white/60 mb-1.5 block font-medium">Kosten (CHF)</label>
                   <Input
                     value={editingProject.costs || ""}
                     onChange={(e) => setEditingProject({ ...editingProject, costs: e.target.value })}
@@ -1065,7 +1071,7 @@ export function StatusReportWidget() {
                 </div>
                 
                 <div>
-                  <label className="text-xs text-white/60 mb-1.5 block font-medium">Verantwortlich</label>
+                  <label className="text-sm text-white/60 mb-1.5 block font-medium">Verantwortlich</label>
                   <Input
                     value={editingProject.assignee || ""}
                     onChange={(e) => setEditingProject({ ...editingProject, assignee: e.target.value })}
@@ -1079,7 +1085,7 @@ export function StatusReportWidget() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div onMouseDown={stopPropagation} onTouchStart={stopPropagation}>
-                  <label className="text-xs text-white/60 mb-1.5 block font-medium">Priorität</label>
+                  <label className="text-sm text-white/60 mb-1.5 block font-medium">Priorität</label>
                   <Select
                     value={editingProject.priority || "medium"}
                     onValueChange={(v) => setEditingProject({ ...editingProject, priority: v })}
@@ -1101,7 +1107,7 @@ export function StatusReportWidget() {
                 </div>
                 
                 <div>
-                  <label className="text-xs text-white/60 mb-1.5 block font-medium">Fortschritt (%)</label>
+                  <label className="text-sm text-white/60 mb-1.5 block font-medium">Fortschritt (%)</label>
                   <Input
                     type="number"
                     min={0}
@@ -1116,14 +1122,20 @@ export function StatusReportWidget() {
                 </div>
               </div>
 
+              <div className="flex items-center gap-2 pt-2">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Fortschritt & Planung</span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+
               <div>
-                <label className="text-xs text-white/60 mb-1.5 block font-medium">Nächste Schritte</label>
+                <label className="text-sm text-white/60 mb-1.5 block font-medium">Nächste Schritte</label>
                 <Textarea
                   value={editingProject.nextSteps || ""}
                   onChange={(e) => setEditingProject({ ...editingProject, nextSteps: e.target.value })}
                   onMouseDown={stopPropagation}
                   onTouchStart={stopPropagation}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 min-h-[80px] resize-none"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/40 min-h-[200px] resize-y"
                   placeholder="Was sind die nächsten Schritte?"
                   data-testid="modal-input-next-steps"
                 />

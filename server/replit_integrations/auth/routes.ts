@@ -7,6 +7,17 @@ export function registerAuthRoutes(app: Express): void {
   // Get current authenticated user - supports both Replit Auth and email/password login
   app.get("/api/auth/user", async (req: any, res) => {
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        if (!req.isAuthenticated() || !req.user) {
+          return res.json({
+            id: 'dev-user',
+            email: 'dev@localhost',
+            firstName: 'Dev',
+            lastName: 'User',
+          });
+        }
+      }
+
       // Check if user is authenticated at all
       if (!req.isAuthenticated() || !req.user) {
         return res.status(401).json({ message: "Unauthorized" });
