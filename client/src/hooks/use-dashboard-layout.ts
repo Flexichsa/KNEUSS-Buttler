@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import type { DashboardConfig, DashboardTab, WidgetLayout, WidgetSizeMode } from "@shared/schema";
 import { DEFAULT_CONFIG } from "@/components/dashboard/dashboard-config";
 import { AVAILABLE_WIDGETS, DEFAULT_SIZE_OPTIONS } from "@/components/dashboard/widget-picker";
@@ -137,6 +137,23 @@ export function useDashboardLayout() {
     widgetSettings: activeTab?.widgetSettings || {},
   }), [activeTab]);
 
+  // Debounce timer for layout saves (drag/resize)
+  const layoutSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingTabsRef = useRef<{ tabs: DashboardTab[]; activeTabId: string } | null>(null);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (layoutSaveTimerRef.current) {
+        clearTimeout(layoutSaveTimerRef.current);
+        // Flush pending save on unmount
+        if (pendingTabsRef.current) {
+          saveMutation.mutate(pendingTabsRef.current);
+        }
+      }
+    };
+  }, []);
+
   const saveCurrentState = (newTabs: DashboardTab[], newActiveTabId?: string) => {
     setTabs(newTabs);
     const tabId = newActiveTabId ?? activeTabId;
@@ -144,11 +161,26 @@ export function useDashboardLayout() {
     saveMutation.mutate({ tabs: newTabs, activeTabId: tabId });
   };
 
+  // Debounced save for layout changes (drag/resize) - 500ms delay
+  const saveDebouncedLayout = useCallback((newTabs: DashboardTab[]) => {
+    setTabs(newTabs);
+    pendingTabsRef.current = { tabs: newTabs, activeTabId };
+    if (layoutSaveTimerRef.current) {
+      clearTimeout(layoutSaveTimerRef.current);
+    }
+    layoutSaveTimerRef.current = setTimeout(() => {
+      if (pendingTabsRef.current) {
+        saveMutation.mutate(pendingTabsRef.current);
+        pendingTabsRef.current = null;
+      }
+    }, 500);
+  }, [activeTabId, saveMutation]);
+
   const updateLayouts = (layouts: WidgetLayout[]) => {
     const newTabs = tabs.map(tab =>
       tab.id === activeTabId ? { ...tab, layouts } : tab
     );
-    saveCurrentState(newTabs);
+    saveDebouncedLayout(newTabs);
   };
 
   const toggleWidget = (widgetId: string, enabled: boolean) => {

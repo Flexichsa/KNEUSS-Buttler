@@ -1,28 +1,39 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from "react";
 import GridLayout, { Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import { CalendarWidget } from "@/components/widgets/calendar-widget";
-import { MailWidget } from "@/components/widgets/mail-widget";
-import { TodoWidget } from "@/components/widgets/todo-widget";
-import { AssistantWidget } from "@/components/widgets/assistant-widget";
-import { BtcWidget } from "@/components/widgets/btc-widget";
-import { WeatherWidget } from "@/components/widgets/weather-widget";
-import { MsTodoWidget } from "@/components/widgets/mstodo-widget";
-import { OneDriveWidget } from "@/components/widgets/onedrive-widget";
-import { DocumentUploadWidget } from "@/components/widgets/document-upload-widget";
-import { ClockWidget } from "@/components/widgets/clock-widget";
-import { CalculatorWidget } from "@/components/widgets/calculator-widget";
-import { DateTimeWidget } from "@/components/widgets/datetime-widget";
-import { SingleCoinWidget } from "@/components/widgets/single-coin-widget";
-import { StatusReportWidget } from "@/components/widgets/status-report-widget";
-import { GainersLosersWidget } from "@/components/widgets/gainers-losers-widget";
-import { AsanaWidget } from "@/components/widgets/asana-widget";
-import { ContactsWidget } from "@/components/widgets/contacts-widget";
-import { WeblinkWidget } from "@/components/widgets/weblink-widget";
-import { PasswordWidget } from "@/components/widgets/password-widget";
-import { KnowledgeBaseWidget } from "@/components/widgets/knowledge-base-widget";
-import { ErpProgramsWidget } from "@/components/widgets/erp-programs-widget";
+import { Loader2 } from "lucide-react";
+
+// Lazy load all widgets to reduce initial bundle size
+const CalendarWidget = lazy(() => import("@/components/widgets/calendar-widget").then(m => ({ default: m.CalendarWidget })));
+const MailWidget = lazy(() => import("@/components/widgets/mail-widget").then(m => ({ default: m.MailWidget })));
+const TodoWidget = lazy(() => import("@/components/widgets/todo-widget").then(m => ({ default: m.TodoWidget })));
+const AssistantWidget = lazy(() => import("@/components/widgets/assistant-widget").then(m => ({ default: m.AssistantWidget })));
+const BtcWidget = lazy(() => import("@/components/widgets/btc-widget").then(m => ({ default: m.BtcWidget })));
+const WeatherWidget = lazy(() => import("@/components/widgets/weather-widget").then(m => ({ default: m.WeatherWidget })));
+const MsTodoWidget = lazy(() => import("@/components/widgets/mstodo-widget").then(m => ({ default: m.MsTodoWidget })));
+const OneDriveWidget = lazy(() => import("@/components/widgets/onedrive-widget").then(m => ({ default: m.OneDriveWidget })));
+const DocumentUploadWidget = lazy(() => import("@/components/widgets/document-upload-widget").then(m => ({ default: m.DocumentUploadWidget })));
+const ClockWidget = lazy(() => import("@/components/widgets/clock-widget").then(m => ({ default: m.ClockWidget })));
+const CalculatorWidget = lazy(() => import("@/components/widgets/calculator-widget").then(m => ({ default: m.CalculatorWidget })));
+const DateTimeWidget = lazy(() => import("@/components/widgets/datetime-widget").then(m => ({ default: m.DateTimeWidget })));
+const SingleCoinWidget = lazy(() => import("@/components/widgets/single-coin-widget").then(m => ({ default: m.SingleCoinWidget })));
+const StatusReportWidget = lazy(() => import("@/components/widgets/status-report-widget").then(m => ({ default: m.StatusReportWidget })));
+const GainersLosersWidget = lazy(() => import("@/components/widgets/gainers-losers-widget").then(m => ({ default: m.GainersLosersWidget })));
+const AsanaWidget = lazy(() => import("@/components/widgets/asana-widget").then(m => ({ default: m.AsanaWidget })));
+const ContactsWidget = lazy(() => import("@/components/widgets/contacts-widget").then(m => ({ default: m.ContactsWidget })));
+const WeblinkWidget = lazy(() => import("@/components/widgets/weblink-widget").then(m => ({ default: m.WeblinkWidget })));
+const PasswordWidget = lazy(() => import("@/components/widgets/password-widget").then(m => ({ default: m.PasswordWidget })));
+const KnowledgeBaseWidget = lazy(() => import("@/components/widgets/knowledge-base-widget").then(m => ({ default: m.KnowledgeBaseWidget })));
+const ErpProgramsWidget = lazy(() => import("@/components/widgets/erp-programs-widget").then(m => ({ default: m.ErpProgramsWidget })));
+
+function WidgetFallback() {
+  return (
+    <div className="flex items-center justify-center h-full w-full">
+      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import { getWidgetType } from "./dashboard-config";
 import type { DashboardConfig, WidgetLayout, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WeblinkSettings, WidgetSizeMode } from "@shared/schema";
@@ -31,6 +42,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { WidgetErrorBoundary } from "@/components/error-boundary";
 import { useTodos } from "@/hooks/use-todos";
 import { useOutlookEmails, useOutlookEvents } from "@/hooks/use-outlook";
 import { useQuery } from "@tanstack/react-query";
@@ -55,6 +67,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const dragTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const justDraggedRef = useRef(false);
   const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: todos = [] } = useTodos();
   const { data: emails = [] } = useOutlookEmails(50);
@@ -109,9 +122,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   useEffect(() => {
     const updateWidth = () => {
-      const container = document.getElementById("dashboard-grid-container");
-      if (container) {
-        setContainerWidth(container.offsetWidth);
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
       }
     };
 
@@ -401,7 +413,11 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         "h-full relative z-10 overflow-hidden rounded-2xl",
         sizeMode === "compact" && "compact-mode"
       )}>
-        {renderWidget(widgetId)}
+        <WidgetErrorBoundary widgetName={getWidgetType(widgetId, config.widgetInstances)}>
+          <Suspense fallback={<WidgetFallback />}>
+            {renderWidget(widgetId)}
+          </Suspense>
+        </WidgetErrorBoundary>
       </div>
     );
   };
@@ -409,7 +425,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const GridLayoutComponent = GridLayout as any;
 
   return (
-    <div id="dashboard-grid-container" className="w-full">
+    <div ref={containerRef} className="w-full">
       <GridLayoutComponent
         className="layout"
         layout={layoutItems}
@@ -503,15 +519,15 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 </div>
               ) : (
                 <>
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/80 to-white/40 backdrop-blur-xl border border-white/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-white/70 group-hover:scale-[1.01] z-0" />
-                  <div className="absolute top-3 left-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-lg bg-black/5 hover:bg-black/10">
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-border/70 group-hover:scale-[1.01] z-0" />
+                  <div className="absolute top-3 left-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch-device:opacity-100 transition-opacity">
+                    <div className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20">
                       <GripVertical className="h-4 w-4 text-muted-foreground" />
                     </div>
                     {canExpandWidget(widgetId) && (
                       <button
                         onClick={(e) => handleWidgetExpand(widgetId, e)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-blue-500 hover:text-white text-muted-foreground transition-all"
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-blue-500 hover:text-white text-muted-foreground transition-all"
                         data-testid={`button-expand-widget-${widgetId}`}
                         title="Vollansicht öffnen"
                       >
@@ -521,7 +537,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                     {canHaveSettings(widgetId) && (
                       <button
                         onClick={() => setSettingsWidgetId(widgetId)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground transition-all"
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-muted-foreground hover:text-foreground transition-all"
                         data-testid={`button-settings-widget-${widgetId}`}
                       >
                         <Settings2 className="h-4 w-4" />
@@ -530,7 +546,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                     {onRemoveWidget && (
                       <button
                         onClick={() => onRemoveWidget(widgetId)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
+                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
                         data-testid={`button-remove-widget-${widgetId}`}
                       >
                         <X className="h-4 w-4" />
@@ -566,7 +582,9 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 </DialogTitle>
               </DialogHeader>
               <div className="flex-1 overflow-auto min-h-[400px]">
-                {renderWidget(expandedIconWidgetId)}
+                <Suspense fallback={<WidgetFallback />}>
+                  {renderWidget(expandedIconWidgetId)}
+                </Suspense>
               </div>
             </>
           )}
@@ -594,7 +612,9 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 </DialogTitle>
               </DialogHeader>
               <div className="flex-1 overflow-auto min-h-0">
-                {renderWidget(expandedWidgetId)}
+                <Suspense fallback={<WidgetFallback />}>
+                  {renderWidget(expandedWidgetId)}
+                </Suspense>
               </div>
             </>
           )}
