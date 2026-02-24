@@ -5,6 +5,7 @@ import { CalendarWidget } from "@/components/widgets/calendar-widget";
 import { MailWidget } from "@/components/widgets/mail-widget";
 import { TodoWidget } from "@/components/widgets/todo-widget";
 import { AssistantWidget } from "@/components/widgets/assistant-widget";
+import { Calendar, Mail, CheckSquare, FileText, MessageSquare, LayoutDashboard, Settings, X } from "lucide-react";
 import { NotesView } from "@/components/views/notes-view";
 import { SettingsView } from "@/components/views/settings-view";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
@@ -40,8 +41,19 @@ export default function Dashboard() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => pathToTab[location] || "dashboard");
   const [recentlySavedWidgetId, setRecentlySavedWidgetId] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
+
+  const mobileMenuItems = [
+    { id: "dashboard", icon: LayoutDashboard, label: "Übersicht" },
+    { id: "calendar", icon: Calendar, label: "Kalender" },
+    { id: "mail", icon: Mail, label: "E-Mails" },
+    { id: "todos", icon: CheckSquare, label: "Aufgaben" },
+    { id: "notes", icon: FileText, label: "Notizen" },
+    { id: "assistant", icon: MessageSquare, label: "Assistent" },
+    { id: "settings", icon: Settings, label: "Einstellungen" },
+  ];
   const { 
     config, 
     tabs,
@@ -259,10 +271,45 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen bg-background text-foreground flex flex-col font-sans overflow-hidden">
+      {/* Mobile Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-64 bg-card border-r shadow-xl animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between px-4 py-4 border-b">
+              <span className="font-bold text-lg">Navigation</span>
+              <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg hover:bg-muted">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="px-3 py-4 space-y-1">
+              {mobileMenuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    handleTabChange(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === item.id
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+
       {/* Top Header - Fixed */}
-      <Header 
-        title="KNEUSS" 
+      <Header
+        title="KNEUSS"
         subtitle="Digital Assistant"
+        onMenuClick={() => setMobileMenuOpen(true)}
       />
 
       {/* Page Title Section - Fixed */}

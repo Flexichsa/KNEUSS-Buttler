@@ -173,7 +173,7 @@ export function OneDriveWidget() {
         )}
         <div className="flex items-center gap-1 text-sm overflow-x-auto">
           {folderPath.map((folder, index) => (
-            <div key={index} className="flex items-center flex-shrink-0">
+            <div key={folder.id || `folder-${index}`} className="flex items-center flex-shrink-0">
               {index > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground mx-1" />}
               <button
                 onClick={() => navigateToPathIndex(index)}

@@ -241,8 +241,8 @@ export function WeatherWidget({ widgetId = "weather-1", city, settings, onCityCh
               <div className="mt-auto pt-3 border-t border-white/20">
                 <div className="flex items-center justify-between gap-1">
                   {data.dailyForecast.slice(0, 5).map((day, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={day.date}
                       className="flex flex-col items-center flex-1 text-white/90"
                       data-testid={`daily-forecast-${index}`}
                     >

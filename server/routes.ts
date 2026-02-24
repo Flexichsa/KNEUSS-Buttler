@@ -1,9 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertTodoSchema, updateTodoSchema, insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertContactSchema, insertContactPersonSchema, insertContactDetailSchema, insertTodoLabelSchema, insertTodoSectionSchema, todoAttachments, insertPasswordSchema, insertPasswordCategorySchema, updatePasswordCategorySchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema, insertErpCategorySchema, insertErpProgramSchema, updateErpProgramSchema } from "@shared/schema";
-import { db } from "../db";
-import { eq } from "drizzle-orm";
+import { insertNoteSchema, insertProjectSchema, DashboardConfigSchema, insertGuideCategorySchema, insertGuideSchema, insertGuideStepSchema, insertErpCategorySchema, insertErpProgramSchema, updateErpProgramSchema } from "@shared/schema";
 import { getEmails, getTodayEvents, isOutlookConnected, getOutlookUserInfo, getEmailsForUser, getTodayEventsForUser, getOutlookUserInfoForUser, getTodoLists, getTodoTasks, getAllTodoTasks, isOneDriveConnected, getOneDriveFiles, getRecentOneDriveFiles } from "./outlook";
 import { chatCompletion, summarizeEmails, analyzeDocument } from "./openai";
 import { getAuthUrl, exchangeCodeForTokens, getMicrosoftUserInfo, isOAuthConfigured, createOAuthState, validateAndConsumeState } from "./oauth";
@@ -16,6 +14,11 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+
+// Route modules
+import todoRoutes from "./routes/todos";
+import contactRoutes from "./routes/contacts";
+import passwordRoutes from "./routes/passwords";
 
 const objectStorageService = new ObjectStorageService();
 
@@ -51,16 +54,18 @@ export async function registerRoutes(
   // Register Object Storage routes for persistent file storage
   registerObjectStorageRoutes(app);
 
+  // Mount modular route handlers
+  app.use("/api", todoRoutes);
+  app.use("/api", contactRoutes);
+  app.use("/api", passwordRoutes);
+
   // Custom Login/Register Endpoints
   app.post("/api/auth/register", async (req, res) => {
     try {
       const data = registerSchema.parse(req.body);
-      console.log("[Register] Attempting registration for:", data.email);
-      
+
       const existingUser = await findUserByEmail(data.email.toLowerCase().trim());
-      console.log("[Register] Existing user check result:", existingUser ? "FOUND" : "NOT FOUND");
       if (existingUser) {
-        console.log("[Register] Blocking registration - email exists:", existingUser.email);
         return res.status(400).json({ error: "E-Mail-Adresse wird bereits verwendet" });
       }
       
@@ -152,11 +157,6 @@ export async function registerRoutes(
       }
       
       const result = await createPasswordResetToken(email);
-      
-      // Log the token server-side for admin retrieval (not exposed in response)
-      if (result) {
-        console.log(`[Password Reset] Token generated for ${email}: ${result.token}`);
-      }
       
       // Always return success to prevent user enumeration - token is NOT exposed
       res.json({ 
@@ -499,335 +499,7 @@ export async function registerRoutes(
     }
   });
 
-  // Todo Labels CRUD
-  app.get("/api/todo-labels", async (req, res) => {
-    try {
-      const labels = await storage.getTodoLabels();
-      res.json(labels);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch labels" });
-    }
-  });
-
-  app.post("/api/todo-labels", async (req, res) => {
-    try {
-      const validatedData = insertTodoLabelSchema.parse(req.body);
-      const label = await storage.createTodoLabel(validatedData);
-      res.status(201).json(label);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Invalid label data" });
-    }
-  });
-
-  app.patch("/api/todo-labels/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertTodoLabelSchema.partial().parse(req.body);
-      const label = await storage.updateTodoLabel(id, validatedData);
-      if (!label) {
-        return res.status(404).json({ error: "Label not found" });
-      }
-      res.json(label);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to update label" });
-    }
-  });
-
-  app.delete("/api/todo-labels/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteTodoLabel(id);
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete label" });
-    }
-  });
-
-  // Todo Sections CRUD
-  app.get("/api/todo-sections", async (req, res) => {
-    try {
-      const projectId = req.query.projectId !== undefined 
-        ? req.query.projectId === 'null' ? null : parseInt(req.query.projectId as string)
-        : undefined;
-      const sections = await storage.getTodoSections(projectId);
-      res.json(sections);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch sections" });
-    }
-  });
-
-  app.post("/api/todo-sections", async (req, res) => {
-    try {
-      const validatedData = insertTodoSectionSchema.parse(req.body);
-      const section = await storage.createTodoSection(validatedData);
-      res.status(201).json(section);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Invalid section data" });
-    }
-  });
-
-  app.patch("/api/todo-sections/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertTodoSectionSchema.partial().parse(req.body);
-      const section = await storage.updateTodoSection(id, validatedData);
-      if (!section) {
-        return res.status(404).json({ error: "Section not found" });
-      }
-      res.json(section);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to update section" });
-    }
-  });
-
-  app.delete("/api/todo-sections/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteTodoSection(id);
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete section" });
-    }
-  });
-
-  // Todos CRUD
-  app.get("/api/todos", async (req, res) => {
-    try {
-      const todos = await storage.getTodos();
-      res.json(todos);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch todos" });
-    }
-  });
-
-  app.get("/api/todos/today", async (req, res) => {
-    try {
-      const todos = await storage.getTodosForToday();
-      res.json(todos);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch today's todos" });
-    }
-  });
-
-  app.get("/api/todos/upcoming", async (req, res) => {
-    try {
-      const days = parseInt(req.query.days as string) || 7;
-      const todos = await storage.getUpcomingTodos(days);
-      res.json(todos);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch upcoming todos" });
-    }
-  });
-
-  app.get("/api/todos/with-subtasks", async (req, res) => {
-    try {
-      const todos = await storage.getTodosWithSubtasks();
-      res.json(todos);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch todos" });
-    }
-  });
-
-  app.post("/api/todos", async (req, res) => {
-    try {
-      const validatedData = insertTodoSchema.parse(req.body);
-      const todo = await storage.createTodo(validatedData);
-      res.status(201).json(todo);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Invalid todo data" });
-    }
-  });
-
-  app.patch("/api/todos/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = updateTodoSchema.parse(req.body);
-      
-      const todo = await storage.updateTodo(id, validatedData);
-      if (!todo) {
-        return res.status(404).json({ error: "Todo not found" });
-      }
-      res.json(todo);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to update todo" });
-    }
-  });
-
-  app.post("/api/todos/reorder", async (req, res) => {
-    try {
-      const orderings = req.body as { id: number; orderIndex: number }[];
-      await storage.reorderTodos(orderings);
-      res.json({ success: true });
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to reorder todos" });
-    }
-  });
-
-  app.delete("/api/todos/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteTodo(id);
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete todo" });
-    }
-  });
-
-  // Todo Attachments - uses Object Storage for persistence
-  const attachmentUpload = multer({ 
-    dest: "/tmp/uploads",
-    limits: { fileSize: 20 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-      const allowedTypes = [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        'application/pdf',
-        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/plain', 'text/csv'
-      ];
-      if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error('Dateityp nicht erlaubt'));
-      }
-    }
-  });
-
-  app.get("/api/todos/:todoId/attachments", async (req, res) => {
-    try {
-      const todoId = parseInt(req.params.todoId);
-      if (isNaN(todoId)) {
-        return res.status(400).json({ error: "Invalid todo ID" });
-      }
-      const attachments = await storage.getTodoAttachments(todoId);
-      res.json(attachments);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch attachments" });
-    }
-  });
-
-  app.post("/api/todos/:todoId/attachments", attachmentUpload.single('file'), async (req, res) => {
-    try {
-      const todoId = parseInt(req.params.todoId);
-      if (isNaN(todoId)) {
-        return res.status(400).json({ error: "Invalid todo ID" });
-      }
-      
-      const file = req.file;
-      if (!file) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
-
-      // Upload to Object Storage for persistence
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      const fileBuffer = fs.readFileSync(file.path);
-      const uploadResponse = await fetch(uploadURL, {
-        method: "PUT",
-        body: fileBuffer,
-        headers: { "Content-Type": file.mimetype },
-      });
-      
-      if (!uploadResponse.ok) {
-        fs.unlinkSync(file.path);
-        throw new Error("Failed to upload to Object Storage");
-      }
-      
-      // Clean up temp file
-      fs.unlinkSync(file.path);
-      
-      // Get the normalized object path
-      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-
-      const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-
-      const attachment = await storage.createTodoAttachment({
-        todoId,
-        filename: file.filename,
-        originalName: sanitizedOriginalName,
-        mimeType: file.mimetype,
-        size: file.size,
-        path: objectPath,
-      });
-
-      res.status(201).json(attachment);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to upload attachment" });
-    }
-  });
-
-  app.get("/api/attachments/:id/download", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const [attachment] = await db.select().from(todoAttachments).where(eq(todoAttachments.id, id));
-      
-      if (!attachment) {
-        return res.status(404).json({ error: "Attachment not found" });
-      }
-
-      // Serve from Object Storage
-      try {
-        const objectFile = await objectStorageService.getObjectEntityFile(attachment.path);
-        res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
-        await objectStorageService.downloadObject(objectFile, res);
-      } catch (objError) {
-        if (objError instanceof ObjectNotFoundError) {
-          return res.status(404).json({ error: "File not found" });
-        }
-        throw objError;
-      }
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to download attachment" });
-    }
-  });
-
-  app.get("/api/attachments/:id/preview", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const [attachment] = await db.select().from(todoAttachments).where(eq(todoAttachments.id, id));
-      
-      if (!attachment) {
-        return res.status(404).json({ error: "Attachment not found" });
-      }
-
-      // Serve from Object Storage
-      try {
-        const objectFile = await objectStorageService.getObjectEntityFile(attachment.path);
-        await objectStorageService.downloadObject(objectFile, res);
-      } catch (objError) {
-        if (objError instanceof ObjectNotFoundError) {
-          return res.status(404).json({ error: "File not found" });
-        }
-        throw objError;
-      }
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to preview attachment" });
-    }
-  });
-
-  app.delete("/api/attachments/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const deleted = await storage.deleteTodoAttachment(id);
-      
-      if (!deleted) {
-        return res.status(404).json({ error: "Attachment not found" });
-      }
-
-      // Also delete from Object Storage
-      if (deleted.path && deleted.path.startsWith("/objects/")) {
-        try {
-          await objectStorageService.deleteObjectEntity(deleted.path);
-        } catch (deleteError) {
-          console.warn("[Attachment] Failed to delete from Object Storage:", deleteError);
-        }
-      }
-
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete attachment" });
-    }
-  });
+  // Todos, Labels, Sections & Attachments are handled by todoRoutes module
 
   // Notes CRUD
   app.get("/api/notes", async (req, res) => {
@@ -1305,8 +977,6 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Keine Datei hochgeladen" });
       }
       
-      console.log(`[Documents] Analyzing file: ${file.originalname}`);
-      
       let textContent = "";
       const ext = path.extname(file.originalname).toLowerCase();
       
@@ -1346,8 +1016,6 @@ export async function registerRoutes(
         filePath: file.path,
         suggestedName: suggestedNameWithExt,
       });
-      
-      console.log(`[Documents] Analysis complete: ${suggestedNameWithExt}`);
       
       res.json({
         fileId,
@@ -1436,385 +1104,7 @@ export async function registerRoutes(
     }
   });
 
-  // Contacts CRUD
-  app.get("/api/contacts", async (req, res) => {
-    try {
-      const contacts = await storage.getContacts();
-      res.json(contacts);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch contacts" });
-    }
-  });
-
-  app.get("/api/contacts/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const contact = await storage.getContact(id);
-      if (!contact) {
-        return res.status(404).json({ error: "Contact not found" });
-      }
-      res.json(contact);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch contact" });
-    }
-  });
-
-  app.post("/api/contacts", async (req, res) => {
-    try {
-      const validatedData = insertContactSchema.parse(req.body);
-      const contact = await storage.createContact(validatedData);
-      res.status(201).json(contact);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to create contact" });
-    }
-  });
-
-  app.patch("/api/contacts/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertContactSchema.partial().parse(req.body);
-      const contact = await storage.updateContact(id, validatedData);
-      if (!contact) {
-        return res.status(404).json({ error: "Contact not found" });
-      }
-      res.json(contact);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to update contact" });
-    }
-  });
-
-  app.delete("/api/contacts/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteContact(id);
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete contact" });
-    }
-  });
-
-  // Contact Persons CRUD
-  app.get("/api/contacts/:contactId/persons", async (req, res) => {
-    try {
-      const contactId = parseInt(req.params.contactId);
-      const persons = await storage.getContactPersons(contactId);
-      res.json(persons);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch contact persons" });
-    }
-  });
-
-  app.post("/api/contacts/:contactId/persons", async (req, res) => {
-    try {
-      const contactId = parseInt(req.params.contactId);
-      const validatedData = insertContactPersonSchema.omit({ contactId: true }).parse(req.body);
-      const person = await storage.createContactPerson({ ...validatedData, contactId });
-      res.status(201).json(person);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to create contact person" });
-    }
-  });
-
-  app.patch("/api/contact-persons/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const validatedData = insertContactPersonSchema.omit({ contactId: true }).partial().parse(req.body);
-      const person = await storage.updateContactPerson(id, validatedData);
-      if (!person) {
-        return res.status(404).json({ error: "Contact person not found" });
-      }
-      res.json(person);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to update contact person" });
-    }
-  });
-
-  app.delete("/api/contact-persons/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteContactPerson(id);
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete contact person" });
-    }
-  });
-
-  // Contact Details CRUD
-  app.get("/api/contacts/:contactId/details", async (req, res) => {
-    try {
-      const contactId = parseInt(req.params.contactId);
-      const details = await storage.getContactDetails(contactId);
-      res.json(details);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch contact details" });
-    }
-  });
-
-  app.get("/api/contact-persons/:personId/details", async (req, res) => {
-    try {
-      const personId = parseInt(req.params.personId);
-      const details = await storage.getPersonDetails(personId);
-      res.json(details);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch person details" });
-    }
-  });
-
-  app.post("/api/contact-details", async (req, res) => {
-    try {
-      const data = insertContactDetailSchema.parse(req.body);
-      const detail = await storage.createContactDetail(data);
-      res.status(201).json(detail);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to create contact detail" });
-    }
-  });
-
-  app.patch("/api/contact-details/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const data = insertContactDetailSchema.partial().parse(req.body);
-      const detail = await storage.updateContactDetail(id, data);
-      if (!detail) {
-        return res.status(404).json({ error: "Contact detail not found" });
-      }
-      res.json(detail);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to update contact detail" });
-    }
-  });
-
-  app.delete("/api/contact-details/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      await storage.deleteContactDetail(id);
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete contact detail" });
-    }
-  });
-
-  // Password Manager CRUD (requires authentication for user isolation)
-  app.get("/api/passwords", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      const passwords = await storage.getPasswords(userId);
-      res.json(passwords);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch passwords" });
-    }
-  });
-
-  app.get("/api/passwords/:id", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      const id = parseInt(req.params.id);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      const password = await storage.getPassword(id, userId);
-      if (!password) {
-        return res.status(404).json({ error: "Password not found" });
-      }
-      res.json(password);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch password" });
-    }
-  });
-
-  app.get("/api/passwords/:id/decrypt", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      const id = parseInt(req.params.id);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      const password = await storage.getPassword(id, userId);
-      if (!password) {
-        return res.status(404).json({ error: "Password not found" });
-      }
-      const { decryptPassword } = await import("./crypto");
-      const decrypted = decryptPassword(password.encryptedPassword);
-      res.json({ password: decrypted });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to decrypt password" });
-    }
-  });
-
-  app.post("/api/passwords", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      const { password, username, url, notes, ...rest } = req.body;
-      if (!password) {
-        return res.status(400).json({ error: "Password is required" });
-      }
-      const { encryptPassword } = await import("./crypto");
-      const encryptedPassword = encryptPassword(password);
-      const validatedData = insertPasswordSchema.parse({ 
-        ...rest, 
-        userId, 
-        encryptedPassword,
-        username: username?.trim() || null,
-        url: url?.trim() || null,
-        notes: notes?.trim() || null
-      });
-      const created = await storage.createPassword(validatedData);
-      res.status(201).json(created);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to create password" });
-    }
-  });
-
-  app.patch("/api/passwords/:id", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      const id = parseInt(req.params.id);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      const { password, username, url, notes, ...rest } = req.body;
-      let updateData: any = { ...rest };
-      
-      if (password) {
-        const { encryptPassword } = await import("./crypto");
-        updateData.encryptedPassword = encryptPassword(password);
-      }
-      
-      if (username !== undefined) {
-        updateData.username = username?.trim() || null;
-      }
-      if (url !== undefined) {
-        updateData.url = url?.trim() || null;
-      }
-      if (notes !== undefined) {
-        updateData.notes = notes?.trim() || null;
-      }
-      
-      const validatedData = insertPasswordSchema.partial().parse(updateData);
-      const updated = await storage.updatePassword(id, userId, validatedData);
-      if (!updated) {
-        return res.status(404).json({ error: "Password not found" });
-      }
-      res.json(updated);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to update password" });
-    }
-  });
-
-  app.delete("/api/passwords/:id", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      const id = parseInt(req.params.id);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      await storage.deletePassword(id, userId);
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete password" });
-    }
-  });
-
-  // Password Categories API
-  app.get("/api/password-categories", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      // Initialize default categories if none exist
-      await storage.initializeDefaultPasswordCategories(userId);
-      const categories = await storage.getPasswordCategories(userId);
-      res.json(categories);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch password categories" });
-    }
-  });
-
-  app.post("/api/password-categories", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      const validatedData = insertPasswordCategorySchema.parse({ ...req.body, userId });
-      const created = await storage.createPasswordCategory(validatedData);
-      res.status(201).json(created);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to create password category" });
-    }
-  });
-
-  app.patch("/api/password-categories/:id", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      const id = parseInt(req.params.id);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      
-      // Get the old category to check for name change
-      const oldCategory = await storage.getPasswordCategory(id, userId);
-      if (!oldCategory) {
-        return res.status(404).json({ error: "Category not found" });
-      }
-      
-      // Validate input with Zod schema
-      const validatedData = updatePasswordCategorySchema.parse(req.body);
-      
-      const updated = await storage.updatePasswordCategory(id, userId, validatedData);
-      if (!updated) {
-        return res.status(404).json({ error: "Category not found" });
-      }
-      
-      // If category name changed, update all passwords using this category
-      if (validatedData.name && validatedData.name !== oldCategory.name) {
-        await storage.updatePasswordsCategory(userId, oldCategory.name, validatedData.name);
-      }
-      
-      res.json(updated);
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to update password category" });
-    }
-  });
-
-  app.delete("/api/password-categories/:id", isAuthenticatedCustom, async (req, res) => {
-    try {
-      const userId = getUserId(req);
-      const id = parseInt(req.params.id);
-      if (!userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-      // Don't allow deleting the default category
-      const category = await storage.getPasswordCategory(id, userId);
-      if (!category) {
-        return res.status(404).json({ error: "Category not found" });
-      }
-      if (category.isDefault) {
-        return res.status(400).json({ error: "Cannot delete the default category" });
-      }
-      
-      // Get default category to move passwords to
-      const allCategories = await storage.getPasswordCategories(userId);
-      const defaultCategory = allCategories.find(c => c.isDefault);
-      const defaultCategoryName = defaultCategory?.name || "Allgemein";
-      
-      // Move all passwords in this category to the default category
-      await storage.updatePasswordsCategory(userId, category.name, defaultCategoryName);
-      
-      // Now delete the category
-      await storage.deletePasswordCategory(id, userId);
-      res.status(204).send();
-    } catch (error: any) {
-      res.status(400).json({ error: error.message || "Failed to delete password category" });
-    }
-  });
+  // Contacts & Contact Persons/Details are handled by contactRoutes module
 
   // General file upload API - for images (logos, etc.) - uses Object Storage for persistence
   app.post("/api/upload", upload.single("file"), async (req, res) => {
@@ -1910,7 +1200,7 @@ export async function registerRoutes(
         rowCount
       });
       
-      console.log(`[CSV Upload] Successfully received ${rowCount} rows from ${filename}`);
+      // CSV data received successfully
       
       res.status(201).json({
         success: true,
