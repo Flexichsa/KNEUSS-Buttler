@@ -101,9 +101,10 @@ export function WeatherWidget({ widgetId = "weather-1", city, settings, onCityCh
   }, [effectiveCity]);
 
   useEffect(() => {
+    // Update once per minute since the display format is H:mm (no seconds shown)
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 60000);
     return () => clearInterval(timer);
   }, []);
 

@@ -13,7 +13,7 @@ import { DashboardTabs } from "@/components/dashboard/dashboard-tabs";
 import { PriorityReminderBanner } from "@/components/priority-reminder-banner";
 import { useDashboardLayout } from "@/hooks/use-dashboard-layout";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const pathToTab: Record<string, string> = {
@@ -209,21 +209,42 @@ export default function Dashboard() {
         );
       case "calendar":
         return (
-          <div className="flex items-center justify-center h-[50vh] text-muted-foreground border-2 border-dashed rounded-lg">
-            <p>Vollständige Kalenderansicht - Kommt bald</p>
-          </div>
+          <motion.div
+            key="calendar"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-4xl mx-auto"
+          >
+            <CalendarWidget />
+          </motion.div>
         );
       case "mail":
         return (
-          <div className="flex items-center justify-center h-[50vh] text-muted-foreground border-2 border-dashed rounded-lg">
-            <p>Vollständiger E-Mail Client - Kommt bald</p>
-          </div>
+          <motion.div
+            key="mail"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-4xl mx-auto"
+          >
+            <MailWidget />
+          </motion.div>
         );
       case "todos":
         return (
-          <div className="flex items-center justify-center h-[50vh] text-muted-foreground border-2 border-dashed rounded-lg">
-            <p>Vollständige Aufgabenverwaltung - Kommt bald</p>
-          </div>
+          <motion.div
+            key="todos"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-4xl mx-auto"
+          >
+            <TodoWidget />
+          </motion.div>
         );
       case "assistant":
         return (
@@ -245,7 +266,7 @@ export default function Dashboard() {
       />
 
       {/* Page Title Section - Fixed */}
-      <div className="flex-shrink-0 px-6 py-6 border-b bg-white/80 backdrop-blur-sm">
+      <div className="flex-shrink-0 px-6 py-6 border-b bg-card/80 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
@@ -263,14 +284,6 @@ export default function Dashboard() {
                 onAddWidget={addWidget}
               />
             )}
-            <div className="relative group">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Suchen..." 
-                className="pl-9 pr-4 py-2 rounded-full bg-white border border-border shadow-sm w-64 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all placeholder:text-muted-foreground/50"
-              />
-            </div>
           </div>
         </div>
       </div>

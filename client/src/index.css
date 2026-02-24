@@ -215,3 +215,10 @@
 .widget-container[data-size-mode="compact"] {
   overflow: hidden !important;
 }
+
+/* Show widget controls on touch devices (no hover capability) */
+@media (hover: none) and (pointer: coarse) {
+  .widget-container .group-hover\:opacity-100 {
+    opacity: 0.7 !important;
+  }
+}

@@ -173,9 +173,9 @@ export async function registerRoutes(
     try {
       const { email, adminKey } = req.body;
       
-      // Simple admin key protection - should be replaced with proper admin auth
-      const expectedKey = "kneuss-admin-2026-temp";
-      if (adminKey !== expectedKey) {
+      // Admin key from environment variable
+      const expectedKey = process.env.ADMIN_RESET_KEY;
+      if (!expectedKey || adminKey !== expectedKey) {
         return res.status(403).json({ error: "Unauthorized" });
       }
       

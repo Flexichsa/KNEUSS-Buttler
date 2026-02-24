@@ -47,9 +47,9 @@ export function AppSidebar({ className, activeTab, setActiveTab }: SidebarProps)
                 variant={activeTab === item.id ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start gap-3 font-medium h-10",
-                  activeTab === item.id 
-                    ? "bg-white shadow-sm text-primary hover:bg-white" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+                  activeTab === item.id
+                    ? "bg-card shadow-sm text-primary hover:bg-card"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
                 )}
                 onClick={() => setActiveTab(item.id)}
                 data-testid={`btn-nav-${item.id}`}

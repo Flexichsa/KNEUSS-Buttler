@@ -73,7 +73,7 @@ export function DashboardTabs({
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 bg-white/90 backdrop-blur-md border-b border-border/50 overflow-x-auto" data-testid="dashboard-tabs">
+    <div className="flex items-center gap-2 px-4 py-3 bg-card/90 backdrop-blur-md border-b border-border/50 overflow-x-auto" data-testid="dashboard-tabs">
       {tabs.map((tab) => {
         const IconComponent = getIconComponent(tab.icon || "layout");
         const isActive = tab.id === activeTabId;
