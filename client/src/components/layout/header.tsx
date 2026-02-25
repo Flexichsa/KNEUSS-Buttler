@@ -15,13 +15,13 @@ export default function Header({
   actions,
 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/60 bg-card/80 backdrop-blur-md px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-[56px] items-center gap-4 border-b border-border/50 bg-background/80 backdrop-blur-xl px-4 sm:px-6">
       {/* Mobile menu button */}
       {onMenuClick && (
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden h-9 w-9 text-muted-foreground hover:text-foreground"
+          className="lg:hidden h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={onMenuClick}
           data-testid="btn-mobile-menu"
         >
@@ -31,11 +31,11 @@ export default function Header({
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-lg font-semibold text-foreground truncate leading-tight">
+        <h1 className="text-[15px] font-semibold text-foreground truncate leading-tight">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-xs text-muted-foreground truncate leading-tight">
+          <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
             {subtitle}
           </p>
         )}

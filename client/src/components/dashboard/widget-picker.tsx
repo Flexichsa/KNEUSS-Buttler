@@ -74,21 +74,21 @@ export const DEFAULT_SIZE_OPTIONS: WidgetSizeOption[] = [
 ];
 
 const CATEGORIES: { id: WidgetCategory; name: string; icon: React.ReactNode }[] = [
-  { id: "all", name: "Alle", icon: <LayoutGrid className="h-4 w-4" /> },
-  { id: "productivity", name: "Produktivität", icon: <CheckSquare className="h-4 w-4" /> },
-  { id: "finance", name: "Finanzen", icon: <Coins className="h-4 w-4" /> },
-  { id: "microsoft", name: "Microsoft", icon: <Mail className="h-4 w-4" /> },
-  { id: "tools", name: "Tools", icon: <Calculator className="h-4 w-4" /> },
-  { id: "info", name: "Info", icon: <Cloud className="h-4 w-4" /> },
+  { id: "all", name: "Alle", icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+  { id: "productivity", name: "Produktivität", icon: <CheckSquare className="h-3.5 w-3.5" /> },
+  { id: "finance", name: "Finanzen", icon: <Coins className="h-3.5 w-3.5" /> },
+  { id: "microsoft", name: "Microsoft", icon: <Mail className="h-3.5 w-3.5" /> },
+  { id: "tools", name: "Tools", icon: <Calculator className="h-3.5 w-3.5" /> },
+  { id: "info", name: "Info", icon: <Cloud className="h-3.5 w-3.5" /> },
 ];
 
 export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
-  { 
-    id: "calendar", 
-    name: "Kalender", 
+  {
+    id: "calendar",
+    name: "Kalender",
     description: "Outlook Termine und Ereignisse",
-    icon: <Calendar className="h-5 w-5" />, 
-    defaultSize: { w: 6, h: 4 }, 
+    icon: <Calendar className="h-5 w-5" />,
+    defaultSize: { w: 6, h: 4 },
     minSize: { w: 1, h: 1 },
     previewGradient: "from-orange-400 to-red-500",
     category: "microsoft",
@@ -104,12 +104,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "todo", 
-    name: "Aufgaben", 
+  {
+    id: "todo",
+    name: "Aufgaben",
     description: "To-Do Liste verwalten",
-    icon: <CheckSquare className="h-5 w-5" />, 
-    defaultSize: { w: 6, h: 4 }, 
+    icon: <CheckSquare className="h-5 w-5" />,
+    defaultSize: { w: 6, h: 4 },
     minSize: { w: 1, h: 1 },
     previewGradient: "from-green-400 to-emerald-600",
     category: "productivity",
@@ -128,12 +128,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "mail", 
-    name: "E-Mails", 
+  {
+    id: "mail",
+    name: "E-Mails",
     description: "Outlook Posteingang",
-    icon: <Mail className="h-5 w-5" />, 
-    defaultSize: { w: 8, h: 4 }, 
+    icon: <Mail className="h-5 w-5" />,
+    defaultSize: { w: 8, h: 4 },
     minSize: { w: 1, h: 1 },
     previewGradient: "from-blue-400 to-indigo-600",
     category: "microsoft",
@@ -150,12 +150,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "assistant", 
-    name: "AI Assistent", 
+  {
+    id: "assistant",
+    name: "AI Assistent",
     description: "GPT-Chat für Hilfe",
-    icon: <MessageSquare className="h-5 w-5" />, 
-    defaultSize: { w: 4, h: 6 }, 
+    icon: <MessageSquare className="h-5 w-5" />,
+    defaultSize: { w: 4, h: 6 },
     minSize: { w: 1, h: 2 },
     previewGradient: "from-violet-500 to-purple-700",
     category: "tools",
@@ -170,12 +170,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "btc", 
-    name: "Krypto Kurse", 
+  {
+    id: "btc",
+    name: "Krypto Kurse",
     description: "Bitcoin, Ethereum & mehr",
-    icon: <Coins className="h-5 w-5" />, 
-    defaultSize: { w: 4, h: 5 }, 
+    icon: <Coins className="h-5 w-5" />,
+    defaultSize: { w: 4, h: 5 },
     minSize: { w: 1, h: 1 },
     previewGradient: "from-slate-800 via-purple-900 to-slate-900",
     category: "finance",
@@ -196,12 +196,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "singlecoin", 
-    name: "Einzelner Coin", 
+  {
+    id: "singlecoin",
+    name: "Einzelner Coin",
     description: "Ein Coin im iOS-Stil",
-    icon: <Bitcoin className="h-5 w-5" />, 
-    defaultSize: { w: 3, h: 3 }, 
+    icon: <Bitcoin className="h-5 w-5" />,
+    defaultSize: { w: 3, h: 3 },
     minSize: { w: 2, h: 2 },
     previewGradient: "from-orange-500 to-amber-600",
     category: "finance",
@@ -216,12 +216,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "weather", 
-    name: "Wetter", 
+  {
+    id: "weather",
+    name: "Wetter",
     description: "Aktuelle Wetterdaten",
-    icon: <Cloud className="h-5 w-5" />, 
-    defaultSize: { w: 5, h: 4 }, 
+    icon: <Cloud className="h-5 w-5" />,
+    defaultSize: { w: 5, h: 4 },
     minSize: { w: 1, h: 1 },
     previewGradient: "from-sky-400 via-blue-500 to-blue-600",
     category: "info",
@@ -241,12 +241,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "clock", 
-    name: "Uhr", 
+  {
+    id: "clock",
+    name: "Uhr",
     description: "Digital oder Analog",
-    icon: <Clock className="h-5 w-5" />, 
-    defaultSize: { w: 3, h: 3 }, 
+    icon: <Clock className="h-5 w-5" />,
+    defaultSize: { w: 3, h: 3 },
     minSize: { w: 2, h: 2 },
     previewGradient: "from-slate-700 to-slate-900",
     category: "tools",
@@ -257,12 +257,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "calculator", 
-    name: "Taschenrechner", 
+  {
+    id: "calculator",
+    name: "Taschenrechner",
     description: "Schnelle Berechnungen",
-    icon: <Calculator className="h-5 w-5" />, 
-    defaultSize: { w: 3, h: 5 }, 
+    icon: <Calculator className="h-5 w-5" />,
+    defaultSize: { w: 3, h: 5 },
     minSize: { w: 3, h: 4 },
     previewGradient: "from-slate-800 to-slate-900",
     category: "tools",
@@ -277,12 +277,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "datetime", 
-    name: "Datum & Zeit", 
+  {
+    id: "datetime",
+    name: "Datum & Zeit",
     description: "Datum und Uhrzeit kombiniert",
-    icon: <CalendarDays className="h-5 w-5" />, 
-    defaultSize: { w: 3, h: 3 }, 
+    icon: <CalendarDays className="h-5 w-5" />,
+    defaultSize: { w: 3, h: 3 },
     minSize: { w: 2, h: 2 },
     previewGradient: "from-indigo-600 to-purple-700",
     category: "info",
@@ -294,12 +294,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "mstodo", 
-    name: "Microsoft To Do", 
+  {
+    id: "mstodo",
+    name: "Microsoft To Do",
     description: "Deine Microsoft To Do Aufgaben",
-    icon: <ListTodo className="h-5 w-5" />, 
-    defaultSize: { w: 5, h: 5 }, 
+    icon: <ListTodo className="h-5 w-5" />,
+    defaultSize: { w: 5, h: 5 },
     minSize: { w: 1, h: 1 },
     previewGradient: "from-blue-600 to-blue-800",
     category: "microsoft",
@@ -320,12 +320,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "onedrive", 
-    name: "OneDrive", 
+  {
+    id: "onedrive",
+    name: "OneDrive",
     description: "Deine Dateien und Dokumente",
-    icon: <HardDrive className="h-5 w-5" />, 
-    defaultSize: { w: 5, h: 5 }, 
+    icon: <HardDrive className="h-5 w-5" />,
+    defaultSize: { w: 5, h: 5 },
     minSize: { w: 1, h: 1 },
     previewGradient: "from-sky-500 to-blue-700",
     category: "microsoft",
@@ -346,12 +346,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "docupload", 
-    name: "Dokument Umbenenner", 
+  {
+    id: "docupload",
+    name: "Dokument Umbenenner",
     description: "Dokumente automatisch benennen",
-    icon: <Upload className="h-5 w-5" />, 
-    defaultSize: { w: 5, h: 5 }, 
+    icon: <Upload className="h-5 w-5" />,
+    defaultSize: { w: 5, h: 5 },
     minSize: { w: 1, h: 2 },
     previewGradient: "from-emerald-500 to-teal-700",
     category: "tools",
@@ -368,12 +368,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "statusreport", 
-    name: "Status-Bericht", 
+  {
+    id: "statusreport",
+    name: "Status-Bericht",
     description: "Projektstatus für den Chef",
-    icon: <ClipboardList className="h-5 w-5" />, 
-    defaultSize: { w: 6, h: 5 }, 
+    icon: <ClipboardList className="h-5 w-5" />,
+    defaultSize: { w: 6, h: 5 },
     minSize: { w: 3, h: 3 },
     previewGradient: "from-indigo-500 via-purple-500 to-pink-500",
     category: "productivity",
@@ -397,12 +397,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "asana", 
-    name: "Asana", 
+  {
+    id: "asana",
+    name: "Asana",
     description: "Projekte und Aufgaben aus Asana",
-    icon: <FolderKanban className="h-5 w-5" />, 
-    defaultSize: { w: 5, h: 5 }, 
+    icon: <FolderKanban className="h-5 w-5" />,
+    defaultSize: { w: 5, h: 5 },
     minSize: { w: 3, h: 3 },
     previewGradient: "from-pink-500 to-red-500",
     category: "productivity",
@@ -423,12 +423,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "contacts", 
-    name: "Kontakte", 
+  {
+    id: "contacts",
+    name: "Kontakte",
     description: "Firmen und Ansprechpartner verwalten",
-    icon: <Building2 className="h-5 w-5" />, 
-    defaultSize: { w: 4, h: 5 }, 
+    icon: <Building2 className="h-5 w-5" />,
+    defaultSize: { w: 4, h: 5 },
     minSize: { w: 2, h: 2 },
     previewGradient: "from-blue-500 to-indigo-600",
     category: "productivity",
@@ -449,12 +449,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "weblink", 
-    name: "Webseiten-Link", 
+  {
+    id: "weblink",
+    name: "Webseiten-Link",
     description: "Schnellzugriff auf Webseiten",
-    icon: <Globe className="h-5 w-5" />, 
-    defaultSize: { w: 2, h: 2 }, 
+    icon: <Globe className="h-5 w-5" />,
+    defaultSize: { w: 2, h: 2 },
     minSize: { w: 1, h: 1 },
     previewGradient: "from-cyan-500 to-blue-600",
     category: "tools",
@@ -471,12 +471,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "passwords", 
-    name: "Passwörter", 
+  {
+    id: "passwords",
+    name: "Passwörter",
     description: "Sicherer Passwortmanager",
-    icon: <Key className="h-5 w-5" />, 
-    defaultSize: { w: 4, h: 5 }, 
+    icon: <Key className="h-5 w-5" />,
+    defaultSize: { w: 4, h: 5 },
     minSize: { w: 2, h: 2 },
     previewGradient: "from-purple-500 to-indigo-600",
     category: "tools",
@@ -497,12 +497,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "knowledgebase", 
-    name: "Wissensdatenbank", 
+  {
+    id: "knowledgebase",
+    name: "Wissensdatenbank",
     description: "ERP Anleitungen & Guides",
-    icon: <BookOpen className="h-5 w-5" />, 
-    defaultSize: { w: 4, h: 5 }, 
+    icon: <BookOpen className="h-5 w-5" />,
+    defaultSize: { w: 4, h: 5 },
     minSize: { w: 2, h: 2 },
     previewGradient: "from-emerald-500 to-teal-600",
     category: "productivity",
@@ -644,25 +644,25 @@ function WidgetPreviewCard({ widget, onSelect }: { widget: WidgetDefinition; onS
     <button
       onClick={onSelect}
       className={cn(
-        "relative group rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer text-left w-full",
+        "relative group rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer text-left w-full",
         "bg-gradient-to-br", widget.previewGradient
       )}
       data-testid={`widget-preview-${widget.id}`}
     >
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-      <div className="p-4 h-[140px] flex flex-col">
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+      <div className="p-3.5 h-[130px] flex flex-col">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-white/20">
+            <div className="p-1 rounded-lg bg-white/15">
               {widget.icon}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">{widget.name}</h3>
-              <p className="text-[10px] text-white/70">{widget.description}</p>
+              <h3 className="text-[13px] font-semibold text-white">{widget.name}</h3>
+              <p className="text-[10px] text-white/60">{widget.description}</p>
             </div>
           </div>
-          <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Plus className="h-4 w-4 text-white" />
+          <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Plus className="h-3.5 w-3.5 text-white" />
           </div>
         </div>
         <div className="flex-1 flex items-center">
@@ -673,67 +673,67 @@ function WidgetPreviewCard({ widget, onSelect }: { widget: WidgetDefinition; onS
   );
 }
 
-function WidgetSizeSelector({ 
-  widget, 
-  onSelectSize, 
-  onBack 
-}: { 
-  widget: WidgetDefinition; 
+function WidgetSizeSelector({
+  widget,
+  onSelectSize,
+  onBack
+}: {
+  widget: WidgetDefinition;
   onSelectSize: (sizeMode: WidgetSizeMode, gridSize: { w: number; h: number }) => void;
   onBack: () => void;
 }) {
   const sizeOptions = widget.sizeOptions || DEFAULT_SIZE_OPTIONS;
-  
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 mb-4">
         <button
           onClick={onBack}
-          className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+          className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
           data-testid="button-back-to-widgets"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <div className={cn("p-2 rounded-xl bg-gradient-to-br text-white", widget.previewGradient)}>
+        <div className={cn("p-1.5 rounded-xl bg-gradient-to-br text-white", widget.previewGradient)}>
           {widget.icon}
         </div>
         <div>
-          <h3 className="font-semibold">{widget.name}</h3>
-          <p className="text-xs text-muted-foreground">Wähle eine Größe</p>
+          <h3 className="text-[14px] font-semibold">{widget.name}</h3>
+          <p className="text-[11px] text-muted-foreground">Wähle eine Größe</p>
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 gap-3">
+
+      <div className="grid grid-cols-2 gap-2.5">
         {sizeOptions.map((option) => (
           <button
             key={option.mode}
             onClick={() => onSelectSize(option.mode, option.gridSize)}
             className={cn(
-              "relative group rounded-xl border-2 border-border hover:border-primary transition-all p-4 text-left",
-              "hover:bg-muted/50"
+              "relative group rounded-xl border border-border hover:border-primary/50 transition-all p-3.5 text-left",
+              "hover:bg-muted/30"
             )}
             data-testid={`size-option-${option.mode}`}
           >
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center">
                 {option.icon}
               </div>
               <div>
-                <div className="font-medium text-sm">{option.name}</div>
+                <div className="font-medium text-[13px]">{option.name}</div>
                 <div className="text-[10px] text-muted-foreground">{option.gridSize.w}×{option.gridSize.h}</div>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">{option.description}</p>
-            
-            <div className="mt-3 flex justify-center">
-              <div 
+            <p className="text-[11px] text-muted-foreground">{option.description}</p>
+
+            <div className="mt-2.5 flex justify-center">
+              <div
                 className={cn(
                   "bg-gradient-to-br rounded-lg flex items-center justify-center text-white",
                   widget.previewGradient
                 )}
                 style={{
-                  width: option.mode === "icon" ? 32 : option.mode === "compact" ? 48 : option.mode === "standard" ? 72 : 96,
-                  height: option.mode === "icon" ? 32 : option.mode === "compact" ? 48 : option.mode === "standard" ? 54 : 72,
+                  width: option.mode === "icon" ? 28 : option.mode === "compact" ? 44 : option.mode === "standard" ? 64 : 88,
+                  height: option.mode === "icon" ? 28 : option.mode === "compact" ? 44 : option.mode === "standard" ? 48 : 64,
                 }}
               >
                 {option.mode === "icon" ? (
@@ -783,8 +783,8 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
   const filteredWidgets = AVAILABLE_WIDGETS.filter(w => {
     const matchesCategory = selectedCategory === "all" || w.category === selectedCategory;
     const searchLower = searchQuery.toLowerCase().trim();
-    const matchesSearch = searchLower === "" || 
-      w.name.toLowerCase().includes(searchLower) || 
+    const matchesSearch = searchLower === "" ||
+      w.name.toLowerCase().includes(searchLower) ||
       w.description.toLowerCase().includes(searchLower);
     return matchesCategory && matchesSearch;
   });
@@ -792,69 +792,69 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2" data-testid="button-open-widget-picker">
-          <LayoutGrid className="h-4 w-4" />
-          Widgets
+        <Button variant="outline" size="sm" className="gap-1.5 h-8 text-[12px]" data-testid="button-open-widget-picker">
+          <Plus className="h-3.5 w-3.5" />
+          Widget
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>
-            {selectedWidget ? `${selectedWidget.name} - Größe wählen` : "Widget hinzufügen"}
+          <DialogTitle className="text-[15px]">
+            {selectedWidget ? `${selectedWidget.name} — Größe wählen` : "Widget hinzufügen"}
           </DialogTitle>
-          <DialogDescription>
-            {selectedWidget 
+          <DialogDescription className="text-[12px]">
+            {selectedWidget
               ? "Wähle eine Ansichtsgröße für das Widget."
               : "Wähle ein Widget und dann die gewünschte Größe."
             }
           </DialogDescription>
         </DialogHeader>
-        
+
         {selectedWidget ? (
-          <WidgetSizeSelector 
-            widget={selectedWidget} 
-            onSelectSize={handleSelectSize} 
-            onBack={handleBack} 
+          <WidgetSizeSelector
+            widget={selectedWidget}
+            onSelectSize={handleSelectSize}
+            onBack={handleBack}
           />
         ) : (
           <>
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Widgets durchsuchen..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 h-9 text-[13px]"
                 data-testid="input-widget-search"
               />
             </div>
             <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as WidgetCategory)} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-6 h-auto p-1">
-              {CATEGORIES.map((cat) => (
-                <TabsTrigger
-                  key={cat.id}
-                  value={cat.id}
-                  className="flex flex-col gap-1 py-2 text-xs"
-                  data-testid={`tab-category-${cat.id}`}
-                >
-                  {cat.icon}
-                  <span className="hidden sm:inline">{cat.name}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            
-            <div className="flex-1 mt-4 overflow-y-auto max-h-[55vh] pr-2">
-              <div className="grid grid-cols-2 gap-4 pb-2">
-                {filteredWidgets.map((widget) => (
-                  <WidgetPreviewCard
-                    key={widget.id}
-                    widget={widget}
-                    onSelect={() => handleSelectWidget(widget)}
-                  />
+              <TabsList className="grid grid-cols-6 h-auto p-0.5">
+                {CATEGORIES.map((cat) => (
+                  <TabsTrigger
+                    key={cat.id}
+                    value={cat.id}
+                    className="flex flex-col gap-0.5 py-1.5 text-[11px]"
+                    data-testid={`tab-category-${cat.id}`}
+                  >
+                    {cat.icon}
+                    <span className="hidden sm:inline">{cat.name}</span>
+                  </TabsTrigger>
                 ))}
+              </TabsList>
+
+              <div className="flex-1 mt-3 overflow-y-auto max-h-[55vh] pr-1">
+                <div className="grid grid-cols-2 gap-3 pb-2">
+                  {filteredWidgets.map((widget) => (
+                    <WidgetPreviewCard
+                      key={widget.id}
+                      widget={widget}
+                      onSelect={() => handleSelectWidget(widget)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          </Tabs>
+            </Tabs>
           </>
         )}
       </DialogContent>

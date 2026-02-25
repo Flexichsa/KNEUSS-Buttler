@@ -150,20 +150,20 @@ export default function Dashboard() {
     }
   };
 
+  const pageTransition = {
+    initial: { opacity: 0, y: 6 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] },
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
         return (
-          <motion.div
-            key="dashboard"
-            className="pb-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-          >
+          <motion.div key="dashboard" className="pb-10" {...pageTransition}>
             {layoutLoading ? (
               <div className="flex items-center justify-center h-[50vh]">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <DashboardGrid
@@ -178,71 +178,37 @@ export default function Dashboard() {
         );
       case "notes":
         return (
-          <motion.div
-            key="notes"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
+          <motion.div key="notes" {...pageTransition}>
             <NotesView />
           </motion.div>
         );
       case "settings":
         return (
-          <motion.div
-            key="settings"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
+          <motion.div key="settings" {...pageTransition}>
             <SettingsView />
           </motion.div>
         );
       case "calendar":
         return (
-          <motion.div
-            key="calendar"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="max-w-4xl mx-auto"
-          >
+          <motion.div key="calendar" {...pageTransition} className="max-w-4xl mx-auto">
             <CalendarWidget />
           </motion.div>
         );
       case "mail":
         return (
-          <motion.div
-            key="mail"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="max-w-4xl mx-auto"
-          >
+          <motion.div key="mail" {...pageTransition} className="max-w-4xl mx-auto">
             <MailWidget />
           </motion.div>
         );
       case "todos":
         return (
-          <motion.div
-            key="todos"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="max-w-4xl mx-auto"
-          >
+          <motion.div key="todos" {...pageTransition} className="max-w-4xl mx-auto">
             <TodoWidget />
           </motion.div>
         );
       case "assistant":
         return (
-          <motion.div
-            key="assistant"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="max-w-3xl mx-auto"
-          >
+          <motion.div key="assistant" {...pageTransition} className="max-w-3xl mx-auto">
             <AssistantWidget />
           </motion.div>
         );
@@ -251,7 +217,6 @@ export default function Dashboard() {
     }
   };
 
-  // Header actions (contextual per tab)
   const headerActions = (
     <>
       {activeTab === "dashboard" && (
@@ -270,9 +235,9 @@ export default function Dashboard() {
         onCollapsedChange={setSidebarCollapsed}
       />
 
-      {/* Mobile Sidebar (Sheet overlay) */}
+      {/* Mobile Sidebar */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-[280px] p-0">
+        <SheetContent side="left" className="w-[260px] p-0">
           <AppSidebar
             activeTab={activeTab}
             onTabChange={handleTabChange}
@@ -293,7 +258,7 @@ export default function Dashboard() {
           actions={headerActions}
         />
 
-        {/* Dashboard Tabs - only shown on dashboard */}
+        {/* Dashboard Tabs */}
         {activeTab === "dashboard" && (
           <div className="flex-shrink-0">
             <DashboardTabs
@@ -309,11 +274,9 @@ export default function Dashboard() {
 
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto">
-          {/* Priority 1 Tasks Reminder */}
           {activeTab === "dashboard" && <PriorityReminderBanner />}
 
-          {/* Content */}
-          <div className="p-4 sm:p-6">
+          <div className="p-3 sm:p-5">
             <AnimatePresence mode="wait">{renderContent()}</AnimatePresence>
           </div>
         </div>
