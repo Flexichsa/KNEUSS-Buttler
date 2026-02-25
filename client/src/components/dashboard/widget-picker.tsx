@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink, Key, Search, BookOpen, Terminal } from "lucide-react";
+import { LayoutGrid, Calendar, Mail, CheckSquare, MessageSquare, Coins, Cloud, Plus, Sun, Wind, Droplets, ListTodo, HardDrive, File, Folder, Upload, FileText, Clock, Calculator, CalendarDays, Bitcoin, CircleDollarSign, TrendingUp, ClipboardList, ArrowUpDown, FolderKanban, Building2, Users, ChevronLeft, Maximize2, Minimize2, Square, SquareStack, Globe, ExternalLink, Key, Search, BookOpen, Terminal, Trophy, Timer, Newspaper } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -523,12 +523,12 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
       </div>
     )
   },
-  { 
-    id: "erpprograms", 
-    name: "ERP-Programme", 
+  {
+    id: "erpprograms",
+    name: "ERP-Programme",
     description: "Dokumentation aller ERP-Programme",
-    icon: <Terminal className="h-5 w-5" />, 
-    defaultSize: { w: 4, h: 5 }, 
+    icon: <Terminal className="h-5 w-5" />,
+    defaultSize: { w: 4, h: 5 },
     minSize: { w: 2, h: 2 },
     previewGradient: "from-indigo-500 to-purple-600",
     category: "productivity",
@@ -548,6 +548,86 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
           <Terminal className="w-3 h-3" />
           <span className="font-mono">PRG-003</span>
           <span>Rechnungen</span>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: "sports",
+    name: "Sport Live",
+    description: "Live-Ergebnisse & Spielstände",
+    icon: <Trophy className="h-5 w-5" />,
+    defaultSize: { w: 4, h: 5 },
+    minSize: { w: 3, h: 3 },
+    previewGradient: "from-emerald-600 via-teal-700 to-slate-800",
+    category: "info",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-center justify-between text-white text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-[8px] font-bold">B</div>
+            <span>Bayern</span>
+          </div>
+          <span className="font-bold">2</span>
+        </div>
+        <div className="flex items-center justify-between text-white text-xs">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-full bg-yellow-500 flex items-center justify-center text-[8px] font-bold">D</div>
+            <span>Dortmund</span>
+          </div>
+          <span className="font-bold">1</span>
+        </div>
+        <div className="flex items-center gap-1 mt-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-[10px] text-red-400 font-bold">LIVE · 67'</span>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: "pomodoro",
+    name: "Pomodoro Timer",
+    description: "Fokus-Timer für produktives Arbeiten",
+    icon: <Timer className="h-5 w-5" />,
+    defaultSize: { w: 3, h: 5 },
+    minSize: { w: 2, h: 3 },
+    previewGradient: "from-red-600 via-orange-600 to-amber-600",
+    category: "tools",
+    previewContent: (
+      <div className="flex flex-col items-center w-full">
+        <div className="text-2xl font-mono font-bold text-white">25:00</div>
+        <div className="text-[10px] text-white/60 mt-1">Fokus-Modus</div>
+        <div className="flex gap-1 mt-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+          <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+          <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+          <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+        </div>
+      </div>
+    )
+  },
+  {
+    id: "news",
+    name: "Nachrichten",
+    description: "Aktuelle Schlagzeilen & News",
+    icon: <Newspaper className="h-5 w-5" />,
+    defaultSize: { w: 4, h: 5 },
+    minSize: { w: 3, h: 3 },
+    previewGradient: "from-slate-800 via-blue-900 to-slate-900",
+    category: "info",
+    previewContent: (
+      <div className="flex flex-col gap-1.5 w-full">
+        <div className="flex items-start gap-2 text-white/90 text-xs">
+          <div className="w-4 h-4 rounded bg-blue-500/30 flex items-center justify-center text-[8px] font-bold text-blue-300 flex-shrink-0 mt-0.5">1</div>
+          <span className="line-clamp-2">Technologie-Branche mit starkem Wachstum</span>
+        </div>
+        <div className="flex items-start gap-2 text-white/70 text-xs">
+          <div className="w-4 h-4 rounded bg-white/10 flex items-center justify-center text-[8px] font-bold text-white/40 flex-shrink-0 mt-0.5">2</div>
+          <span className="line-clamp-2">Neue Klimaziele für 2030 beschlossen</span>
+        </div>
+        <div className="flex items-start gap-2 text-white/50 text-xs">
+          <div className="w-4 h-4 rounded bg-white/10 flex items-center justify-center text-[8px] font-bold text-white/30 flex-shrink-0 mt-0.5">3</div>
+          <span className="line-clamp-1">Wirtschaftsgipfel in Berlin</span>
         </div>
       </div>
     )
