@@ -100,12 +100,12 @@ function CoinCard({ coin }: { coin: CoinData }) {
   const displayName = DISPLAY_NAMES[coin.id] || coin.name;
 
   return (
-    <div 
-      className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex-shrink-0 min-w-[140px]"
+    <div
+      className="bg-card/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-border/50 flex-shrink-0 min-w-[140px] transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
       data-testid={`gainers-losers-coin-${coin.id}`}
     >
       <div className="flex items-start justify-between mb-2">
-        <div className={`w-10 h-10 rounded-full ${logoConfig.bg} flex items-center justify-center`}>
+        <div className={`w-10 h-10 rounded-full ${logoConfig.bg} flex items-center justify-center shadow-md`}>
           {logoConfig.icon}
         </div>
         <div className="h-8 w-16">
@@ -132,8 +132,8 @@ function CoinCard({ coin }: { coin: CoinData }) {
       </div>
       
       <div className="mt-3">
-        <div className="text-gray-900 font-semibold text-sm">{displayName}</div>
-        <div className="text-gray-500 text-xs mt-0.5">{formatPrice(coin.price)}</div>
+        <div className="text-foreground font-semibold text-sm">{displayName}</div>
+        <div className="text-muted-foreground text-xs mt-0.5">{formatPrice(coin.price)}</div>
       </div>
       
       <div className="mt-2 flex items-center gap-1">
@@ -170,23 +170,23 @@ export function GainersLosersWidget() {
   return (
     <div className="h-full p-5 pr-14 flex flex-col" data-testid="gainers-losers-widget">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-gray-900">Gainers & Losers</h2>
-        <button 
-          className="text-sm text-blue-500 font-medium hover:text-blue-600 transition-colors"
+        <h2 className="text-lg font-bold text-foreground">Gainers & Losers</h2>
+        <button
+          className="text-sm text-primary font-medium hover:text-primary/80 transition-colors"
           data-testid="button-see-all-crypto"
         >
-          See All
+          Alle anzeigen
         </button>
       </div>
 
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : error ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <AlertCircle className="h-8 w-8 text-gray-400 mb-2" />
-          <p className="text-sm text-gray-500">Nicht verfügbar</p>
+          <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Nicht verfügbar</p>
         </div>
       ) : sortedCoins.length > 0 ? (
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
@@ -197,7 +197,7 @@ export function GainersLosersWidget() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+        <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
           Keine Daten
         </div>
       )}
