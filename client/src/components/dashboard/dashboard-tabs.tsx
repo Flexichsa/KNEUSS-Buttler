@@ -73,7 +73,7 @@ export function DashboardTabs({
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 bg-card/90 backdrop-blur-md border-b border-border/50 overflow-x-auto" data-testid="dashboard-tabs">
+    <div className="flex items-center gap-1.5 px-3 sm:px-5 py-2 bg-background border-b border-border/40 overflow-x-auto" data-testid="dashboard-tabs">
       {tabs.map((tab) => {
         const IconComponent = getIconComponent(tab.icon || "layout");
         const isActive = tab.id === activeTabId;
@@ -83,55 +83,49 @@ export function DashboardTabs({
           <div
             key={tab.id}
             className={cn(
-              "group relative flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer min-w-[100px]",
+              "group relative flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all duration-200 cursor-pointer min-w-[90px]",
               isActive
-                ? "bg-primary text-primary-foreground shadow-md"
-                : "hover:bg-secondary text-muted-foreground hover:text-foreground"
+                ? "bg-card text-foreground shadow-sm border border-border/50"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/50"
             )}
             onClick={() => !isEditing && onSwitchTab(tab.id)}
             data-testid={`tab-${tab.id}`}
           >
-            <IconComponent className="h-4 w-4 flex-shrink-0" />
-            
+            <IconComponent className="h-3.5 w-3.5 flex-shrink-0" />
+
             {isEditing ? (
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
-                  className="h-6 w-20 text-xs px-1"
+                  className="h-5 w-20 text-xs px-1 rounded"
                   autoFocus
                   data-testid="input-tab-name"
                 />
-                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={handleSaveEdit} data-testid="button-save-tab-name">
+                <Button size="sm" variant="ghost" className="h-5 w-5 p-0" onClick={handleSaveEdit} data-testid="button-save-tab-name">
                   <Check className="h-3 w-3" />
                 </Button>
               </div>
             ) : (
-              <span className="text-sm font-medium truncate max-w-[80px]">{tab.name}</span>
+              <span className="text-[12px] font-medium truncate max-w-[80px]">{tab.name}</span>
             )}
-            
+
             {!isEditing && isActive && tabs.length > 1 && (
-              <div className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 flex gap-0.5">
+              <div className="absolute right-0.5 top-0.5 opacity-0 group-hover:opacity-100 flex gap-0.5 transition-opacity">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStartEdit(tab);
-                  }}
-                  className="p-1 rounded hover:bg-white/20"
+                  onClick={(e) => { e.stopPropagation(); handleStartEdit(tab); }}
+                  className="p-0.5 rounded hover:bg-foreground/10 text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="button-edit-tab"
                 >
-                  <Pencil className="h-3 w-3" />
+                  <Pencil className="h-2.5 w-2.5" />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteTab(tab.id);
-                  }}
-                  className="p-1 rounded hover:bg-white/20"
+                  onClick={(e) => { e.stopPropagation(); onDeleteTab(tab.id); }}
+                  className="p-0.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                   data-testid="button-delete-tab"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-2.5 w-2.5" />
                 </button>
               </div>
             )}
@@ -144,50 +138,51 @@ export function DashboardTabs({
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 px-3 text-muted-foreground hover:text-foreground"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground text-[12px]"
             data-testid="button-add-tab"
           >
-            <Plus className="h-4 w-4 mr-1" />
-            Neue Ebene
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Neu
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Neue Dashboard-Ebene erstellen</DialogTitle>
+            <DialogTitle className="text-[15px]">Neue Dashboard-Ebene</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-3">
             <div>
-              <label className="text-sm font-medium mb-2 block">Name</label>
+              <label className="text-[12px] font-medium mb-1.5 block text-muted-foreground">Name</label>
               <Input
                 value={newTabName}
                 onChange={(e) => setNewTabName(e.target.value)}
                 placeholder="z.B. Arbeit, Privat, Finanzen..."
                 onKeyDown={(e) => e.key === "Enter" && handleCreateTab()}
+                className="h-9"
                 data-testid="input-new-tab-name"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">Symbol</label>
+              <label className="text-[12px] font-medium mb-1.5 block text-muted-foreground">Symbol</label>
               <div className="flex gap-2 flex-wrap">
                 {ICON_OPTIONS.map(({ id, icon: Icon, label }) => (
                   <button
                     key={id}
                     onClick={() => setNewTabIcon(id)}
                     className={cn(
-                      "p-3 rounded-lg border-2 transition-all",
+                      "p-2.5 rounded-lg border-2 transition-all",
                       newTabIcon === id
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/50"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40"
                     )}
                     title={label}
                     data-testid={`icon-option-${id}`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4" />
                   </button>
                 ))}
               </div>
             </div>
-            <Button onClick={handleCreateTab} className="w-full" data-testid="button-create-tab">
+            <Button onClick={handleCreateTab} className="w-full h-9 text-[13px]" data-testid="button-create-tab">
               Ebene erstellen
             </Button>
           </div>

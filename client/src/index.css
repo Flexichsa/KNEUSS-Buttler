@@ -38,121 +38,157 @@
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: 'Inter', sans-serif;
-  --radius: 0.5rem;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --radius: 0.75rem;
 }
 
+/* ─── Light Mode ───────────────────────────────────────────────── */
 :root {
-  /* Primary: Warm, approachable coral-rose */
-  --primary: 350 65% 55%;
+  /* Primary: Deep indigo-blue — professional, modern */
+  --primary: 235 65% 52%;
   --primary-foreground: 0 0% 100%;
 
-  /* Backgrounds: Clean, subtle warmth */
-  --background: 220 14% 97%;
-  --foreground: 220 15% 18%;
+  /* Backgrounds: Warm off-white with subtle blue undertone */
+  --background: 228 25% 97%;
+  --foreground: 230 25% 12%;
 
+  /* Cards: Pure white, clean surfaces */
   --card: 0 0% 100%;
-  --card-foreground: 220 15% 18%;
+  --card-foreground: 230 25% 12%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 220 15% 18%;
+  --popover-foreground: 230 25% 12%;
 
-  --secondary: 220 14% 95%;
-  --secondary-foreground: 220 15% 25%;
+  /* Secondary: Subtle blue-gray */
+  --secondary: 228 20% 95%;
+  --secondary-foreground: 230 20% 30%;
 
-  --muted: 220 14% 94%;
-  --muted-foreground: 220 10% 48%;
+  /* Muted: Lighter blue-gray */
+  --muted: 228 18% 93%;
+  --muted-foreground: 228 12% 50%;
 
-  --accent: 220 14% 95%;
-  --accent-foreground: 350 65% 50%;
+  /* Accent: Warm violet tint */
+  --accent: 250 25% 95%;
+  --accent-foreground: 250 50% 45%;
 
-  --destructive: 0 70% 55%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --ring: 350 65% 55%;
+  /* Borders: Very subtle, barely visible */
+  --border: 228 18% 90%;
+  --input: 228 18% 88%;
+  --ring: 235 65% 52%;
 
-  /* Sidebar */
-  --sidebar: 0 0% 100%;
-  --sidebar-foreground: 220 15% 18%;
-  --sidebar-primary: 350 65% 55%;
+  /* Sidebar: Slightly off-white, differentiated surface */
+  --sidebar: 228 25% 98%;
+  --sidebar-foreground: 230 25% 12%;
+  --sidebar-primary: 235 65% 52%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 14% 95%;
-  --sidebar-accent-foreground: 350 65% 50%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-ring: 350 65% 55%;
+  --sidebar-accent: 235 40% 96%;
+  --sidebar-accent-foreground: 235 60% 45%;
+  --sidebar-border: 228 18% 92%;
+  --sidebar-ring: 235 65% 52%;
 
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 }
 
+/* ─── Dark Mode ────────────────────────────────────────────────── */
 .dark {
-  --background: 220 15% 8%;
-  --foreground: 0 0% 97%;
+  /* Deeper, richer dark backgrounds */
+  --background: 230 20% 7%;
+  --foreground: 220 15% 95%;
 
-  --card: 220 15% 11%;
-  --card-foreground: 0 0% 97%;
+  /* Cards: Elevated surface */
+  --card: 230 18% 11%;
+  --card-foreground: 220 15% 95%;
 
-  --popover: 220 15% 11%;
-  --popover-foreground: 0 0% 97%;
+  --popover: 230 18% 12%;
+  --popover-foreground: 220 15% 95%;
 
-  --primary: 350 65% 55%;
-  --primary-foreground: 0 0% 98%;
+  /* Primary: Brighter in dark mode for contrast */
+  --primary: 235 75% 65%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 15% 14%;
-  --secondary-foreground: 0 0% 97%;
+  /* Secondary */
+  --secondary: 230 16% 15%;
+  --secondary-foreground: 220 15% 90%;
 
-  --muted: 220 15% 14%;
-  --muted-foreground: 220 10% 60%;
+  --muted: 230 16% 16%;
+  --muted-foreground: 228 10% 55%;
 
-  --accent: 220 15% 14%;
-  --accent-foreground: 0 0% 97%;
+  --accent: 250 20% 18%;
+  --accent-foreground: 250 50% 75%;
 
-  --destructive: 0 60% 45%;
+  --destructive: 0 62% 50%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 220 15% 18%;
-  --input: 220 15% 18%;
-  --ring: 350 65% 55%;
+  --border: 230 16% 17%;
+  --input: 230 16% 17%;
+  --ring: 235 75% 65%;
 
-  --sidebar: 220 15% 9%;
-  --sidebar-foreground: 0 0% 96%;
-  --sidebar-primary: 350 65% 55%;
+  /* Sidebar: Slightly lighter than background */
+  --sidebar: 230 18% 9%;
+  --sidebar-foreground: 220 15% 92%;
+  --sidebar-primary: 235 75% 65%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 15% 14%;
-  --sidebar-accent-foreground: 0 0% 96%;
-  --sidebar-border: 220 15% 18%;
-  --sidebar-ring: 350 65% 55%;
+  --sidebar-accent: 230 20% 14%;
+  --sidebar-accent-foreground: 220 15% 90%;
+  --sidebar-border: 230 16% 16%;
+  --sidebar-ring: 235 75% 65%;
 }
 
+/* ─── Base Styles ──────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border;
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply tracking-tight font-semibold;
   }
 }
 
-/* Scrollbar styling */
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
+/* ─── Scrollbar Styling ────────────────────────────────────────── */
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
 }
-.overflow-y-auto::-webkit-scrollbar-track {
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track {
   background: transparent;
 }
-.overflow-y-auto::-webkit-scrollbar-thumb {
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb {
   background-color: hsl(var(--border));
-  border-radius: 3px;
+  border-radius: 999px;
 }
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--muted-foreground));
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.4);
 }
 
-/* React Grid Layout Resize Handles */
+/* Thin scrollbar variant */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.08);
+  border-radius: 999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255,255,255,0.15);
+}
+
+/* ─── React Grid Layout ───────────────────────────────────────── */
 .react-grid-item > .react-resizable-handle {
   position: absolute;
   width: 20px;
@@ -163,18 +199,18 @@
 .react-grid-item > .react-resizable-handle::after {
   content: "";
   position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid rgba(0, 0, 0, 0.3);
-  border-bottom: 2px solid rgba(0, 0, 0, 0.3);
-  border-radius: 0 0 2px 0;
+  right: 4px;
+  bottom: 4px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid hsl(var(--muted-foreground) / 0.25);
+  border-bottom: 2px solid hsl(var(--muted-foreground) / 0.25);
+  border-radius: 0 0 1px 0;
   transition: all 0.2s ease;
 }
 
 .react-grid-item:hover > .react-resizable-handle::after {
-  border-color: rgba(0, 0, 0, 0.5);
+  border-color: hsl(var(--primary) / 0.5);
 }
 
 .react-grid-item > .react-resizable-handle.react-resizable-handle-se {
@@ -182,70 +218,61 @@
   right: 0;
   cursor: se-resize;
 }
-
 .react-grid-item > .react-resizable-handle.react-resizable-handle-sw {
   bottom: 0;
   left: 0;
   cursor: sw-resize;
 }
-
 .react-grid-item > .react-resizable-handle.react-resizable-handle-nw {
   top: 0;
   left: 0;
   cursor: nw-resize;
 }
-
 .react-grid-item > .react-resizable-handle.react-resizable-handle-ne {
   top: 0;
   right: 0;
   cursor: ne-resize;
 }
 
-/* Widget container styling */
+/* ─── Widget Container ─────────────────────────────────────────── */
 .widget-container {
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   overflow: visible !important;
 }
 
-/* Icon widget styling */
 .widget-container.icon-widget {
-  border-radius: 1rem;
+  border-radius: 1.25rem;
 }
 
-/* Compact mode widget styling */
 .widget-container[data-size-mode="compact"] .compact-mode {
   padding: 0.5rem;
 }
-
 .widget-container[data-size-mode="compact"] .compact-mode > * {
   transform-origin: top left;
 }
-
-/* Widget size mode adjustments */
 .widget-container[data-size-mode="icon"] {
   overflow: hidden !important;
 }
-
 .widget-container[data-size-mode="compact"] {
   overflow: hidden !important;
 }
 
-/* Show widget controls on touch devices (no hover capability) */
+/* Show controls on touch devices */
 @media (hover: none) and (pointer: coarse) {
   .widget-container .group-hover\:opacity-100 {
     opacity: 0.7 !important;
   }
 }
 
-/* Widget entrance animation */
+/* ─── Widget Entrance Animation ────────────────────────────────── */
 .widget-container {
-  animation: widgetFadeIn 0.4s ease-out both;
+  animation: widgetEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@keyframes widgetFadeIn {
+@keyframes widgetEnter {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translateY(12px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -253,32 +280,19 @@
   }
 }
 
-/* Stagger widget entrance - each widget appears slightly later */
-.widget-container:nth-child(1) { animation-delay: 0.05s; }
-.widget-container:nth-child(2) { animation-delay: 0.1s; }
-.widget-container:nth-child(3) { animation-delay: 0.15s; }
-.widget-container:nth-child(4) { animation-delay: 0.2s; }
-.widget-container:nth-child(5) { animation-delay: 0.25s; }
-.widget-container:nth-child(6) { animation-delay: 0.3s; }
-.widget-container:nth-child(7) { animation-delay: 0.35s; }
-.widget-container:nth-child(8) { animation-delay: 0.4s; }
+/* Staggered entrance */
+.widget-container:nth-child(1) { animation-delay: 0.04s; }
+.widget-container:nth-child(2) { animation-delay: 0.08s; }
+.widget-container:nth-child(3) { animation-delay: 0.12s; }
+.widget-container:nth-child(4) { animation-delay: 0.16s; }
+.widget-container:nth-child(5) { animation-delay: 0.20s; }
+.widget-container:nth-child(6) { animation-delay: 0.24s; }
+.widget-container:nth-child(7) { animation-delay: 0.28s; }
+.widget-container:nth-child(8) { animation-delay: 0.32s; }
+.widget-container:nth-child(9) { animation-delay: 0.36s; }
+.widget-container:nth-child(10) { animation-delay: 0.40s; }
 
-/* Smoother scrollbar for thin scrollbars */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
-}
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(255,255,255,0.1);
-  border-radius: 2px;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255,255,255,0.2);
-}
-
-/* Reduced motion preference */
+/* ─── Reduced Motion ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .widget-container {
     animation: none;

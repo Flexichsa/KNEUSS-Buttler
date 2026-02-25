@@ -4,7 +4,7 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { Loader2 } from "lucide-react";
 
-// Lazy load all widgets to reduce initial bundle size
+// Lazy load all widgets
 const CalendarWidget = lazy(() => import("@/components/widgets/calendar-widget").then(m => ({ default: m.CalendarWidget })));
 const MailWidget = lazy(() => import("@/components/widgets/mail-widget").then(m => ({ default: m.MailWidget })));
 const TodoWidget = lazy(() => import("@/components/widgets/todo-widget").then(m => ({ default: m.TodoWidget })));
@@ -33,10 +33,11 @@ const NewsWidget = lazy(() => import("@/components/widgets/news-widget").then(m 
 function WidgetFallback() {
   return (
     <div className="flex items-center justify-center h-full w-full">
-      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
     </div>
   );
 }
+
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import { getWidgetType } from "./dashboard-config";
 import type { DashboardConfig, WidgetLayout, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WeblinkSettings, WidgetSizeMode } from "@shared/schema";
@@ -129,7 +130,6 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         setContainerWidth(containerRef.current.offsetWidth);
       }
     };
-
     updateWidth();
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
@@ -154,21 +154,16 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const handleDragStart = useCallback(() => {
     isDraggingRef.current = true;
     justDraggedRef.current = true;
-    if (dragTimeoutRef.current) {
-      clearTimeout(dragTimeoutRef.current);
-    }
+    if (dragTimeoutRef.current) clearTimeout(dragTimeoutRef.current);
   }, []);
 
-  const handleDragStop = useCallback(
-    (layout: any) => {
-      onLayoutChange(convertLayout(layout));
-      isDraggingRef.current = false;
-      dragTimeoutRef.current = setTimeout(() => {
-        justDraggedRef.current = false;
-      }, 800);
-    },
-    [onLayoutChange, convertLayout]
-  );
+  const handleDragStop = useCallback((layout: any) => {
+    onLayoutChange(convertLayout(layout));
+    isDraggingRef.current = false;
+    dragTimeoutRef.current = setTimeout(() => {
+      justDraggedRef.current = false;
+    }, 800);
+  }, [onLayoutChange, convertLayout]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
@@ -181,21 +176,13 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     return dx > 5 || dy > 5;
   }, []);
 
-  const handleResizeStop = useCallback(
-    (layout: any) => {
-      onLayoutChange(convertLayout(layout));
-    },
-    [onLayoutChange, convertLayout]
-  );
+  const handleResizeStop = useCallback((layout: any) => {
+    onLayoutChange(convertLayout(layout));
+  }, [onLayoutChange, convertLayout]);
 
-  const handleSettingsChange = useCallback(
-    (widgetId: string, settings: any) => {
-      if (onSettingsChange) {
-        onSettingsChange(widgetId, settings);
-      }
-    },
-    [onSettingsChange]
-  );
+  const handleSettingsChange = useCallback((widgetId: string, settings: any) => {
+    if (onSettingsChange) onSettingsChange(widgetId, settings);
+  }, [onSettingsChange]);
 
   const layoutItems = useMemo(() => {
     return config.enabledWidgets
@@ -206,7 +193,6 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
         const existingLayout = config.layouts.find((l) => l.i === widgetId);
         if (existingLayout) {
-          // Always apply minW/minH from widget definition to enable proper resizing
           return {
             ...existingLayout,
             minW: widgetDef.minSize?.w || 1,
@@ -243,11 +229,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
       case "assistant":
         return <AssistantWidget />;
       case "btc":
-        return (
-          <BtcWidget
-            settings={settings as CryptoSettings}
-          />
-        );
+        return <BtcWidget settings={settings as CryptoSettings} />;
       case "weather":
         return (
           <WeatherWidget
@@ -311,13 +293,9 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     if (e) {
       e.stopPropagation();
       e.preventDefault();
-      if (wasDragged(e)) {
-        return;
-      }
+      if (wasDragged(e)) return;
     }
-    if (isDraggingRef.current || justDraggedRef.current) {
-      return;
-    }
+    if (isDraggingRef.current || justDraggedRef.current) return;
     setExpandedWidgetId(widgetId);
   }, [wasDragged]);
 
@@ -325,20 +303,16 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     if (e) {
       e.stopPropagation();
       e.preventDefault();
-      if (wasDragged(e)) {
-        return;
-      }
+      if (wasDragged(e)) return;
     }
-    if (isDraggingRef.current || justDraggedRef.current) {
-      return;
-    }
+    if (isDraggingRef.current || justDraggedRef.current) return;
     setExpandedIconWidgetId(widgetId);
   }, [wasDragged]);
 
   const getIconWidgetData = (widgetId: string): { text?: string; subtext?: string } | null => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
     const settings = config.widgetSettings?.[widgetId] || {};
-    
+
     switch (widgetType) {
       case "btc":
         if (cryptoError) return { text: "!", subtext: "Fehler" };
@@ -373,32 +347,28 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
   const renderIconWidget = (widgetId: string) => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
     const settings = config.widgetSettings?.[widgetId] || {};
-    
-    // For weblink widgets in icon mode, render the actual WeblinkWidget component
-    // which handles its own styling based on saved settings
+
     if (widgetType === "weblink") {
       return <WeblinkWidget settings={settings as WeblinkSettings} />;
     }
-    
+
     const widgetInfo = getWidgetInfo(widgetId);
     if (!widgetInfo) return null;
-    
+
     const badge = getWidgetBadge(widgetId);
     const iconData = getIconWidgetData(widgetId);
-    
+
     return (
       <button
         onDoubleClick={(e) => handleIconWidgetClick(widgetId, e)}
         className={cn(
           "w-full h-full flex flex-col items-center justify-center cursor-pointer relative",
-          "bg-gradient-to-br text-white rounded-2xl transition-all hover:scale-105",
+          "bg-gradient-to-br text-white rounded-[1.25rem] transition-all duration-200 hover:scale-105 hover:shadow-lg",
           widgetInfo.previewGradient
         )}
         data-testid={`icon-widget-${widgetId}`}
       >
-        <div className="p-1">
-          {widgetInfo.icon}
-        </div>
+        <div className="p-1">{widgetInfo.icon}</div>
         {iconData ? (
           <div className="flex flex-col items-center mt-1">
             <span className="text-xs font-bold leading-tight">{iconData.text}</span>
@@ -407,7 +377,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
             )}
           </div>
         ) : badge !== null ? (
-          <span className="absolute bottom-2 right-2 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full shadow-lg">
+          <span className="absolute bottom-2 right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full shadow-md">
             {badge > 99 ? "99+" : badge}
           </span>
         ) : null}
@@ -419,7 +389,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     const sizeMode = getWidgetSizeMode(widgetId);
     return (
       <div className={cn(
-        "h-full relative z-10 overflow-hidden rounded-2xl",
+        "h-full relative z-10 overflow-hidden rounded-[1.25rem]",
         sizeMode === "compact" && "compact-mode"
       )}>
         <WidgetErrorBoundary widgetName={getWidgetType(widgetId, config.widgetInstances)}>
@@ -450,16 +420,16 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         preventCollision={false}
         isResizable={true}
         isDraggable={true}
-        margin={[16, 16]}
+        margin={[14, 14]}
       >
         {config.enabledWidgets.map((widgetId) => {
           const iconMode = isIconMode(widgetId);
           const sizeMode = getWidgetSizeMode(widgetId);
           const isRecentlySaved = recentlySavedWidgetId === widgetId;
-          
+
           return (
-            <div 
-              key={widgetId} 
+            <div
+              key={widgetId}
               className={cn(
                 "widget-container relative group",
                 iconMode && "icon-widget"
@@ -467,12 +437,10 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
               data-size-mode={sizeMode}
               onMouseDown={handleMouseDown}
               onDoubleClick={(e) => {
-                if (canExpandWidget(widgetId)) {
-                  handleWidgetExpand(widgetId, e);
-                }
+                if (canExpandWidget(widgetId)) handleWidgetExpand(widgetId, e);
               }}
             >
-              {/* Save feedback indicator */}
+              {/* Save feedback */}
               <AnimatePresence>
                 {isRecentlySaved && (
                   <motion.div
@@ -484,32 +452,34 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                   >
                     <motion.div
                       initial={{ opacity: 0 }}
-                      animate={{ opacity: [0, 0.3, 0] }}
+                      animate={{ opacity: [0, 0.2, 0] }}
                       transition={{ duration: 0.6 }}
-                      className="absolute inset-0 rounded-2xl bg-green-500"
+                      className="absolute inset-0 rounded-[1.25rem] bg-green-500"
                     />
                     <motion.div
                       initial={{ scale: 0 }}
-                      animate={{ scale: [0, 1.2, 1] }}
+                      animate={{ scale: [0, 1.1, 1] }}
                       transition={{ duration: 0.4, delay: 0.1 }}
-                      className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center shadow-lg"
+                      className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shadow-lg"
                     >
-                      <Check className="h-6 w-6 text-white" strokeWidth={3} />
+                      <Check className="h-5 w-5 text-white" strokeWidth={3} />
                     </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
+
               {iconMode ? (
                 <div className="relative w-full h-full">
                   {renderIconWidget(widgetId)}
-                  <div className="widget-drag-handle absolute top-1 left-1 w-5 h-5 cursor-move z-20 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 hover:bg-black/50">
+                  {/* Icon mode controls */}
+                  <div className="widget-drag-handle absolute top-1 left-1 w-5 h-5 cursor-move z-20 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity bg-black/25 hover:bg-black/40">
                     <GripVertical className="h-3 w-3 text-white" />
                   </div>
                   <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
                     {canHaveSettings(widgetId) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setSettingsWidgetId(widgetId); }}
-                        className="w-5 h-5 cursor-pointer flex items-center justify-center rounded bg-black/30 hover:bg-black/50 text-white"
+                        className="w-5 h-5 cursor-pointer flex items-center justify-center rounded-md bg-black/25 hover:bg-black/40 text-white transition-colors"
                         data-testid={`button-settings-icon-widget-${widgetId}`}
                       >
                         <Settings2 className="h-3 w-3" />
@@ -518,7 +488,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                     {onRemoveWidget && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onRemoveWidget(widgetId); }}
-                        className="w-5 h-5 cursor-pointer flex items-center justify-center rounded bg-black/30 hover:bg-red-500 text-white"
+                        className="w-5 h-5 cursor-pointer flex items-center justify-center rounded-md bg-black/25 hover:bg-red-500/80 text-white transition-colors"
                         data-testid={`button-remove-icon-widget-${widgetId}`}
                       >
                         <X className="h-3 w-3" />
@@ -528,40 +498,44 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 </div>
               ) : (
                 <>
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-xl border border-border/40 shadow-lg shadow-black/5 transition-all duration-500 ease-out group-hover:shadow-2xl group-hover:shadow-black/15 group-hover:border-border/60 group-hover:scale-[1.008] group-hover:from-card/95 group-hover:to-card/60 z-0" />
-                  <div className="absolute top-3 left-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch-device:opacity-100 transition-opacity">
-                    <div className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20">
-                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  {/* Widget card background — Clean, modern surface */}
+                  <div className="absolute inset-0 rounded-[1.25rem] bg-card border border-border/50 shadow-sm transition-all duration-300 ease-out group-hover:shadow-md group-hover:border-border/70 z-0" />
+
+                  {/* Widget controls overlay */}
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200">
+                    <div className="widget-drag-handle w-6 h-6 cursor-move flex items-center justify-center rounded-lg bg-foreground/5 hover:bg-foreground/10 dark:bg-white/8 dark:hover:bg-white/15 transition-colors">
+                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                     {canExpandWidget(widgetId) && (
                       <button
                         onClick={(e) => handleWidgetExpand(widgetId, e)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-blue-500 hover:text-white text-muted-foreground transition-all"
+                        className="w-6 h-6 cursor-pointer flex items-center justify-center rounded-lg bg-foreground/5 hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-all"
                         data-testid={`button-expand-widget-${widgetId}`}
-                        title="Vollansicht öffnen"
+                        title="Vollansicht"
                       >
-                        <Maximize2 className="h-4 w-4" />
+                        <Maximize2 className="h-3.5 w-3.5" />
                       </button>
                     )}
                     {canHaveSettings(widgetId) && (
                       <button
                         onClick={() => setSettingsWidgetId(widgetId)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-muted-foreground hover:text-foreground transition-all"
+                        className="w-6 h-6 cursor-pointer flex items-center justify-center rounded-lg bg-foreground/5 hover:bg-foreground/10 dark:bg-white/8 dark:hover:bg-white/15 text-muted-foreground hover:text-foreground transition-all"
                         data-testid={`button-settings-widget-${widgetId}`}
                       >
-                        <Settings2 className="h-4 w-4" />
+                        <Settings2 className="h-3.5 w-3.5" />
                       </button>
                     )}
                     {onRemoveWidget && (
                       <button
                         onClick={() => onRemoveWidget(widgetId)}
-                        className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
+                        className="w-6 h-6 cursor-pointer flex items-center justify-center rounded-lg bg-foreground/5 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
                         data-testid={`button-remove-widget-${widgetId}`}
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
+
                   {renderCompactWidget(widgetId)}
                 </>
               )}
@@ -570,6 +544,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         })}
       </GridLayoutComponent>
 
+      {/* Settings Dialog */}
       {settingsWidgetId && (
         <WidgetSettingsDialog
           widgetId={settingsWidgetId}
@@ -580,12 +555,13 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         />
       )}
 
+      {/* Icon widget expanded dialog */}
       <Dialog open={!!expandedIconWidgetId} onOpenChange={(open) => !open && setExpandedIconWidgetId(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           {expandedIconWidgetId && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2 text-[15px]">
                   {getWidgetInfo(expandedIconWidgetId)?.icon}
                   {getWidgetInfo(expandedIconWidgetId)?.name}
                 </DialogTitle>
@@ -600,6 +576,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         </DialogContent>
       </Dialog>
 
+      {/* Full expanded widget dialog */}
       <Dialog open={!!expandedWidgetId} onOpenChange={(open) => !open && setExpandedWidgetId(null)}>
         <DialogContent className={cn(
           "overflow-hidden flex flex-col p-0",
@@ -609,14 +586,14 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         )}>
           {expandedWidgetId && (
             <>
-              <DialogHeader className="px-6 pt-4 pb-3 border-b shrink-0">
-                <DialogTitle className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
+              <DialogHeader className="px-5 pt-4 pb-3 border-b shrink-0">
+                <DialogTitle className="flex items-center gap-3 text-[15px]">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-white">
                     {getWidgetInfo(expandedWidgetId)?.icon}
                   </div>
                   <div>
                     <span className="block">{getWidgetInfo(expandedWidgetId)?.name}</span>
-                    <span className="text-sm font-normal text-muted-foreground">Vollansicht</span>
+                    <span className="text-xs font-normal text-muted-foreground">Vollansicht</span>
                   </div>
                 </DialogTitle>
               </DialogHeader>
