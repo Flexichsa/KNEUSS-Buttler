@@ -56,19 +56,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary/5 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <img src={logoUrl} alt="Logo" className="h-16 w-auto" />
-          </div>
-          <CardTitle className="text-2xl">Konto erstellen</CardTitle>
-          <CardDescription>
-            Erstellen Sie ein neues Konto für Ihren digitalen Assistenten
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center mb-8">
+          <img src={logoUrl} alt="Logo" className="h-14 w-auto mb-4" />
+          <h1 className="text-xl font-bold text-foreground">Konto erstellen</h1>
+          <p className="text-sm text-muted-foreground mt-1">Erstellen Sie ein neues Konto</p>
+        </div>
+      <Card className="shadow-lg border-border/60">
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">Vorname</Label>
@@ -134,10 +131,10 @@ export default function RegisterPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button 
-              type="submit" 
-              className="w-full" 
+          <CardFooter className="flex flex-col gap-3 pb-6">
+            <Button
+              type="submit"
+              className="w-full h-11"
               disabled={registerMutation.isPending}
               data-testid="button-register"
             >
@@ -148,20 +145,21 @@ export default function RegisterPage() {
               )}
               Konto erstellen
             </Button>
-            <div className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground mt-2">
               Bereits ein Konto?{" "}
-              <Button 
-                variant="link" 
-                className="p-0 h-auto" 
+              <Button
+                variant="link"
+                className="p-0 h-auto text-sm"
                 onClick={() => setLocation("/login")}
                 data-testid="link-login"
               >
                 Jetzt anmelden
               </Button>
-            </div>
+            </p>
           </CardFooter>
         </form>
       </Card>
+      </div>
     </div>
   );
 }
