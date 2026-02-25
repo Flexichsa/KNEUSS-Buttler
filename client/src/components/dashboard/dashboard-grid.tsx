@@ -26,6 +26,9 @@ const WeblinkWidget = lazy(() => import("@/components/widgets/weblink-widget").t
 const PasswordWidget = lazy(() => import("@/components/widgets/password-widget").then(m => ({ default: m.PasswordWidget })));
 const KnowledgeBaseWidget = lazy(() => import("@/components/widgets/knowledge-base-widget").then(m => ({ default: m.KnowledgeBaseWidget })));
 const ErpProgramsWidget = lazy(() => import("@/components/widgets/erp-programs-widget").then(m => ({ default: m.ErpProgramsWidget })));
+const SportsWidget = lazy(() => import("@/components/widgets/sports-widget").then(m => ({ default: m.SportsWidget })));
+const PomodoroWidget = lazy(() => import("@/components/widgets/pomodoro-widget").then(m => ({ default: m.PomodoroWidget })));
+const NewsWidget = lazy(() => import("@/components/widgets/news-widget").then(m => ({ default: m.NewsWidget })));
 
 function WidgetFallback() {
   return (
@@ -283,6 +286,12 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         return <KnowledgeBaseWidget />;
       case "erpprograms":
         return <ErpProgramsWidget />;
+      case "sports":
+        return <SportsWidget settings={settings} />;
+      case "pomodoro":
+        return <PomodoroWidget settings={settings} />;
+      case "news":
+        return <NewsWidget settings={settings} />;
       default:
         return <div className="p-4 text-muted-foreground">Widget nicht gefunden</div>;
     }
@@ -295,7 +304,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   const canExpandWidget = (widgetId: string) => {
     const widgetType = getWidgetType(widgetId, config.widgetInstances);
-    return ["contacts", "todo", "mail", "calendar", "asana", "mstodo", "onedrive", "docupload", "statusreport", "assistant", "passwords", "knowledgebase", "erpprograms"].includes(widgetType);
+    return ["contacts", "todo", "mail", "calendar", "asana", "mstodo", "onedrive", "docupload", "statusreport", "assistant", "passwords", "knowledgebase", "erpprograms", "sports", "news"].includes(widgetType);
   };
 
   const handleWidgetExpand = useCallback((widgetId: string, e?: React.MouseEvent) => {
@@ -519,7 +528,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 </div>
               ) : (
                 <>
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 shadow-lg shadow-black/5 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/10 group-hover:border-border/70 group-hover:scale-[1.01] z-0" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-xl border border-border/40 shadow-lg shadow-black/5 transition-all duration-500 ease-out group-hover:shadow-2xl group-hover:shadow-black/15 group-hover:border-border/60 group-hover:scale-[1.008] group-hover:from-card/95 group-hover:to-card/60 z-0" />
                   <div className="absolute top-3 left-3 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch-device:opacity-100 transition-opacity">
                     <div className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20">
                       <GripVertical className="h-4 w-4 text-muted-foreground" />

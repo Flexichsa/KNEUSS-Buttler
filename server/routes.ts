@@ -2584,5 +2584,253 @@ export async function registerRoutes(
     }
   });
 
+  // ==========================================
+  // Sports API - Free football/soccer data
+  // ==========================================
+  const sportsCache: Map<string, { data: any; timestamp: number }> = new Map();
+
+  app.get("/api/sports", async (req, res) => {
+    try {
+      const league = (req.query.league as string) || "all";
+      const cacheKey = `sports_${league}`;
+      const now = Date.now();
+      const cached = sportsCache.get(cacheKey);
+
+      if (cached && now - cached.timestamp < 60000) {
+        return res.json({ ...cached.data, cached: true });
+      }
+
+      // Try to fetch from free football API (api-football-data.org)
+      let matches: any[] = [];
+
+      try {
+        // Use the free football-data.org API for live/today's matches
+        const todayStr = new Date().toISOString().split("T")[0];
+        const response = await fetch(
+          `https://api.football-data.org/v4/matches?dateFrom=${todayStr}&dateTo=${todayStr}`,
+          {
+            headers: {
+              "X-Auth-Token": process.env.FOOTBALL_API_KEY || "",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          matches = (data.matches || []).slice(0, 15).map((m: any, i: number) => ({
+            id: `match-${m.id || i}`,
+            league: m.competition?.name || "Unbekannt",
+            status: m.status === "IN_PLAY" || m.status === "PAUSED"
+              ? "live"
+              : m.status === "FINISHED"
+                ? "finished"
+                : "upcoming",
+            minute: m.minute || (m.status === "IN_PLAY" ? 45 : undefined),
+            home: {
+              name: m.homeTeam?.name || "Heim",
+              shortName: m.homeTeam?.shortName || m.homeTeam?.tla || "HOM",
+              logo: m.homeTeam?.crest,
+              color: "#1a5276",
+            },
+            away: {
+              name: m.awayTeam?.name || "Gast",
+              shortName: m.awayTeam?.shortName || m.awayTeam?.tla || "AWY",
+              logo: m.awayTeam?.crest,
+              color: "#922b21",
+            },
+            homeScore: m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? 0,
+            awayScore: m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? 0,
+            startTime: m.utcDate
+              ? new Date(m.utcDate).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+              : undefined,
+            events: [],
+          }));
+        }
+      } catch (apiError) {
+        console.log("[Sports] External API not available, using demo data");
+      }
+
+      // If no data from API, provide demo/sample data
+      if (matches.length === 0) {
+        const now2 = new Date();
+        const hour = now2.getHours();
+
+        matches = [
+          {
+            id: "demo-1",
+            league: "Bundesliga",
+            status: "live" as const,
+            minute: 67,
+            home: { name: "Bayern München", shortName: "FCB", color: "#dc052d" },
+            away: { name: "Borussia Dortmund", shortName: "BVB", color: "#fde100" },
+            homeScore: 2,
+            awayScore: 1,
+            events: [
+              { minute: 12, type: "goal", team: "home", player: "Müller" },
+              { minute: 34, type: "goal", team: "away", player: "Brandt" },
+              { minute: 56, type: "yellowcard", team: "away", player: "Can" },
+              { minute: 61, type: "goal", team: "home", player: "Sané" },
+            ],
+          },
+          {
+            id: "demo-2",
+            league: "Bundesliga",
+            status: "live" as const,
+            minute: 43,
+            home: { name: "RB Leipzig", shortName: "RBL", color: "#dd0741" },
+            away: { name: "Bayer Leverkusen", shortName: "B04", color: "#e32221" },
+            homeScore: 0,
+            awayScore: 1,
+            events: [
+              { minute: 28, type: "goal", team: "away", player: "Wirtz" },
+            ],
+          },
+          {
+            id: "demo-3",
+            league: "Premier League",
+            status: "finished" as const,
+            home: { name: "Manchester City", shortName: "MCI", color: "#6cabdd" },
+            away: { name: "Arsenal FC", shortName: "ARS", color: "#ef0107" },
+            homeScore: 1,
+            awayScore: 1,
+            events: [
+              { minute: 22, type: "goal", team: "home", player: "Haaland" },
+              { minute: 78, type: "goal", team: "away", player: "Saka" },
+            ],
+          },
+          {
+            id: "demo-4",
+            league: "La Liga",
+            status: "upcoming" as const,
+            startTime: `${((hour + 2) % 24).toString().padStart(2, "0")}:30`,
+            home: { name: "FC Barcelona", shortName: "BAR", color: "#a50044" },
+            away: { name: "Real Madrid", shortName: "RMA", color: "#febe10" },
+            homeScore: 0,
+            awayScore: 0,
+            events: [],
+          },
+          {
+            id: "demo-5",
+            league: "Serie A",
+            status: "upcoming" as const,
+            startTime: `${((hour + 3) % 24).toString().padStart(2, "0")}:00`,
+            home: { name: "AC Milan", shortName: "ACM", color: "#fb090b" },
+            away: { name: "Inter Mailand", shortName: "INT", color: "#010e80" },
+            homeScore: 0,
+            awayScore: 0,
+            events: [],
+          },
+        ];
+      }
+
+      const result = {
+        matches,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      sportsCache.set(cacheKey, { data: result, timestamp: now });
+      res.json(result);
+    } catch (error: any) {
+      console.error("[Sports] Error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch sports data" });
+    }
+  });
+
+  // ==========================================
+  // News API - Current headlines
+  // ==========================================
+  const newsCache: Map<string, { data: any; timestamp: number }> = new Map();
+
+  app.get("/api/news", async (req, res) => {
+    try {
+      const category = (req.query.category as string) || "general";
+      const cacheKey = `news_${category}`;
+      const now = Date.now();
+      const cached = newsCache.get(cacheKey);
+
+      if (cached && now - cached.timestamp < 300000) {
+        return res.json({ ...cached.data, cached: true });
+      }
+
+      let articles: any[] = [];
+
+      // Try fetching from newsapi.org if API key is available
+      const newsApiKey = process.env.NEWS_API_KEY;
+      if (newsApiKey) {
+        try {
+          const response = await fetch(
+            `https://newsapi.org/v2/top-headlines?country=de&category=${category}&pageSize=15&apiKey=${newsApiKey}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            articles = (data.articles || []).map((a: any, i: number) => ({
+              id: `news-${i}-${Date.now()}`,
+              title: a.title,
+              description: a.description,
+              source: a.source?.name || "Unbekannt",
+              url: a.url,
+              imageUrl: a.urlToImage,
+              publishedAt: a.publishedAt,
+              category,
+            }));
+          }
+        } catch (apiError) {
+          console.log("[News] External API not available, using demo data");
+        }
+      }
+
+      // Provide demo data if no API key or API fails
+      if (articles.length === 0) {
+        const nowDate = new Date();
+        const demoArticles: Record<string, any[]> = {
+          general: [
+            { title: "Bundesregierung beschließt neue Klimaschutzmaßnahmen", description: "Das Kabinett hat ein umfassendes Paket zur CO₂-Reduktion verabschiedet, das ab 2027 in Kraft treten soll.", source: "tagesschau.de", category: "general" },
+            { title: "Technologiekonzerne investieren Milliarden in KI-Forschung", description: "Die großen Tech-Unternehmen haben im vergangenen Quartal ihre Investitionen in künstliche Intelligenz deutlich erhöht.", source: "Handelsblatt", category: "general" },
+            { title: "EU-Gipfel: Neue Strategie für digitale Souveränität", description: "Die europäischen Staats- und Regierungschefs einigten sich auf ein gemeinsames Vorgehen zur Stärkung der digitalen Unabhängigkeit.", source: "SPIEGEL", category: "general" },
+            { title: "Städte setzen auf nachhaltige Mobilität", description: "Immer mehr deutsche Großstädte erweitern ihr Radwegenetz und fördern den öffentlichen Nahverkehr.", source: "ZEIT ONLINE", category: "general" },
+            { title: "Rekordwerte an den europäischen Börsen", description: "Der DAX erreichte heute ein neues Allzeithoch, getrieben durch starke Unternehmensergebnisse.", source: "FAZ", category: "general" },
+            { title: "Forschungsdurchbruch in der Quantencomputing-Entwicklung", description: "Wissenschaftler der TU München melden einen bedeutenden Fortschritt bei der Fehlerkorrektur in Quantencomputern.", source: "Süddeutsche", category: "general" },
+          ],
+          business: [
+            { title: "DAX erreicht neues Allzeithoch", description: "Starke Quartalszahlen treiben den deutschen Leitindex auf Rekordniveau. Besonders Tech-Werte profitieren.", source: "Handelsblatt", category: "business" },
+            { title: "EZB signalisiert Zinspause", description: "Die Europäische Zentralbank deutet an, die Leitzinsen vorerst stabil zu halten.", source: "FAZ", category: "business" },
+            { title: "Automobilbranche beschleunigt Elektro-Offensive", description: "Deutsche Autobauer kündigen neue Elektromodelle für den Massenmarkt an.", source: "Manager Magazin", category: "business" },
+            { title: "Start-up-Szene in Berlin wächst weiter", description: "Die Hauptstadt zieht weiterhin Risikokapital an und festigt ihre Position als europäischer Start-up-Hub.", source: "Gründerszene", category: "business" },
+            { title: "Exportrekord für deutsche Maschinenbauer", description: "Die Auftragslage im Maschinenbau übertrifft die Erwartungen deutlich.", source: "Wirtschaftswoche", category: "business" },
+          ],
+          technology: [
+            { title: "Durchbruch bei der Entwicklung von KI-Assistenten", description: "Neue Sprachmodelle zeigen deutlich verbesserte Fähigkeiten beim logischen Denken und Programmieren.", source: "heise online", category: "technology" },
+            { title: "EU-Verordnung zu KI tritt in Kraft", description: "Neue Regeln für den Einsatz von künstlicher Intelligenz gelten ab sofort in allen Mitgliedsstaaten.", source: "Golem.de", category: "technology" },
+            { title: "Cybersicherheit: Neue Bedrohungen durch KI-generierte Angriffe", description: "Sicherheitsexperten warnen vor zunehmend ausgefeilten Cyberattacken mithilfe von KI.", source: "t3n", category: "technology" },
+            { title: "Open-Source-Projekte gewinnen an Bedeutung", description: "Immer mehr Unternehmen setzen auf quelloffene Software für ihre kritische Infrastruktur.", source: "heise online", category: "technology" },
+            { title: "Neue Generation von Computerchips vorgestellt", description: "Der nächste Sprung in der Halbleitertechnologie verspricht 40% mehr Leistung bei halbem Energieverbrauch.", source: "Chip", category: "technology" },
+          ],
+        };
+
+        articles = (demoArticles[category] || demoArticles.general).map((a, i) => ({
+          id: `demo-news-${category}-${i}`,
+          title: a.title,
+          description: a.description,
+          source: a.source,
+          url: "#",
+          imageUrl: undefined,
+          publishedAt: new Date(nowDate.getTime() - i * 3600000).toISOString(),
+          category: a.category,
+        }));
+      }
+
+      const result = {
+        articles,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      newsCache.set(cacheKey, { data: result, timestamp: now });
+      res.json(result);
+    } catch (error: any) {
+      console.error("[News] Error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch news" });
+    }
+  });
+
   return httpServer;
 }

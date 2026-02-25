@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { ClockSettings } from "@shared/schema";
 
@@ -82,15 +83,16 @@ function AnalogClock({ time, showSeconds }: { time: Date; showSeconds?: boolean 
 
         {showSeconds !== false && (
           <div
-            className="absolute left-1/2 bottom-1/2 w-0.5 bg-red-500 rounded-full origin-bottom"
+            className="absolute left-1/2 bottom-1/2 w-0.5 bg-red-500 rounded-full origin-bottom transition-transform duration-200 ease-out"
             style={{
               height: '40%',
               transform: `translateX(-50%) rotate(${secondDeg}deg)`,
+              filter: 'drop-shadow(0 0 4px rgba(239,68,68,0.5))',
             }}
           />
         )}
 
-        <div className="absolute left-1/2 top-1/2 w-3 h-3 bg-red-500 rounded-full -translate-x-1/2 -translate-y-1/2 shadow-lg" />
+        <div className="absolute left-1/2 top-1/2 w-3 h-3 bg-red-500 rounded-full -translate-x-1/2 -translate-y-1/2 shadow-lg" style={{ boxShadow: '0 0 8px rgba(239,68,68,0.4)' }} />
       </div>
     </div>
   );
