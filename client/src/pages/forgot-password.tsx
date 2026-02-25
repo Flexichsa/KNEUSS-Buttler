@@ -90,21 +90,20 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary/5 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <img src={logoUrl} alt="Logo" className="h-16 w-auto" />
-          </div>
-          <CardTitle className="text-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center mb-8">
+          <img src={logoUrl} alt="Logo" className="h-14 w-auto mb-4" />
+          <h1 className="text-xl font-bold text-foreground">
             {step === "success" ? "Passwort zurückgesetzt" : "Passwort zurücksetzen"}
-          </CardTitle>
-          <CardDescription>
-            {step === "enter-token" && "Geben Sie den Reset-Token ein, den Sie erhalten haben"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {step === "enter-token" && "Geben Sie den Reset-Token ein"}
             {step === "set-password" && "Wählen Sie ein neues Passwort"}
             {step === "success" && "Ihr Passwort wurde erfolgreich geändert"}
-          </CardDescription>
-        </CardHeader>
+          </p>
+        </div>
+      <Card className="shadow-lg border-border/60">
 
         {step === "enter-token" && (
           <form onSubmit={handleVerifyToken}>
@@ -225,6 +224,7 @@ export default function ForgotPasswordPage() {
           </CardContent>
         )}
       </Card>
+      </div>
     </div>
   );
 }
