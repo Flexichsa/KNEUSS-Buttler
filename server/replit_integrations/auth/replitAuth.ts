@@ -10,6 +10,9 @@ import { authStorage } from "./storage";
 
 const getOidcConfig = memoize(
   async () => {
+    if (!process.env.REPL_ID) {
+      return null;
+    }
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
       process.env.REPL_ID!
@@ -23,7 +26,7 @@ export function getSession() {
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true,
     ttl: sessionTtl,
     tableName: "sessions",
   });
@@ -67,6 +70,11 @@ export async function setupAuth(app: Express) {
   app.use(passport.session());
 
   const config = await getOidcConfig();
+
+  if (!config) {
+    console.log("[Auth] Replit OIDC not configured, skipping Replit auth setup");
+    return;
+  }
 
   const verify: VerifyFunction = async (
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
