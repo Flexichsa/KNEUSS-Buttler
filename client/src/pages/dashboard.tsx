@@ -151,9 +151,9 @@ export default function Dashboard() {
   };
 
   const pageTransition = {
-    initial: { opacity: 0, y: 6 },
+    initial: { opacity: 0, y: 4 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
   };
 
   const renderContent = () => {
@@ -237,7 +237,7 @@ export default function Dashboard() {
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-[260px] p-0">
+        <SheetContent side="left" className="w-[280px] p-0">
           <AppSidebar
             activeTab={activeTab}
             onTabChange={handleTabChange}
@@ -276,7 +276,7 @@ export default function Dashboard() {
         <div className="flex-1 overflow-y-auto">
           {activeTab === "dashboard" && <PriorityReminderBanner />}
 
-          <div className="p-3 sm:p-5">
+          <div className="px-4 sm:px-6 py-4">
             <AnimatePresence mode="wait">{renderContent()}</AnimatePresence>
           </div>
         </div>

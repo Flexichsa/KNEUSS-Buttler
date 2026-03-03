@@ -170,6 +170,7 @@ export async function registerRoutes(
         message: "Falls ein Konto mit dieser E-Mail existiert, wurde eine E-Mail versendet."
       });
     } catch (error: any) {
+      console.error("[Password Reset] Error:", error);
       res.status(500).json({ error: "Reset-Anfrage fehlgeschlagen" });
     }
   });

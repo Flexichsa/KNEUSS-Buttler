@@ -15,7 +15,7 @@ export default function Header({
   actions,
 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-[56px] items-center gap-4 border-b border-border/50 bg-background/80 backdrop-blur-xl px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 bg-background shadow-[0_1px_0_0_hsl(var(--border))] px-4 sm:px-6">
       {/* Mobile menu button */}
       {onMenuClick && (
         <Button
@@ -31,11 +31,11 @@ export default function Header({
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-[15px] font-semibold text-foreground truncate leading-tight">
+        <h1 className="text-base font-semibold text-foreground truncate leading-tight tracking-tight">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
+          <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
             {subtitle}
           </p>
         )}

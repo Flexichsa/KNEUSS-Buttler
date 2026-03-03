@@ -44,97 +44,97 @@
 
 /* ─── Light Mode ───────────────────────────────────────────────── */
 :root {
-  /* Primary: Deep indigo-blue — professional, modern */
-  --primary: 235 65% 52%;
-  --primary-foreground: 0 0% 100%;
+  /* Primary: Near-black — clean, professional */
+  --primary: 222 47% 11%;
+  --primary-foreground: 210 40% 98%;
 
-  /* Backgrounds: Warm off-white with subtle blue undertone */
-  --background: 228 25% 97%;
-  --foreground: 230 25% 12%;
+  /* Backgrounds: Neutral off-white */
+  --background: 0 0% 98%;
+  --foreground: 222 47% 11%;
 
-  /* Cards: Pure white, clean surfaces */
+  /* Cards: Pure white */
   --card: 0 0% 100%;
-  --card-foreground: 230 25% 12%;
+  --card-foreground: 222 47% 11%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 230 25% 12%;
+  --popover-foreground: 222 47% 11%;
 
-  /* Secondary: Subtle blue-gray */
-  --secondary: 228 20% 95%;
-  --secondary-foreground: 230 20% 30%;
+  /* Secondary: Neutral gray */
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
 
-  /* Muted: Lighter blue-gray */
-  --muted: 228 18% 93%;
-  --muted-foreground: 228 12% 50%;
+  /* Muted */
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
 
-  /* Accent: Warm violet tint */
-  --accent: 250 25% 95%;
-  --accent-foreground: 250 50% 45%;
+  /* Accent */
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
 
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
 
-  /* Borders: Very subtle, barely visible */
-  --border: 228 18% 90%;
-  --input: 228 18% 88%;
-  --ring: 235 65% 52%;
+  /* Borders: Subtle but visible */
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 222 47% 11%;
 
-  /* Sidebar: Slightly off-white, differentiated surface */
-  --sidebar: 228 25% 98%;
-  --sidebar-foreground: 230 25% 12%;
-  --sidebar-primary: 235 65% 52%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 235 40% 96%;
-  --sidebar-accent-foreground: 235 60% 45%;
-  --sidebar-border: 228 18% 92%;
-  --sidebar-ring: 235 65% 52%;
+  /* Sidebar: White, subtle border separation */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-primary: 222 47% 11%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 210 40% 96%;
+  --sidebar-accent-foreground: 222 47% 11%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 222 47% 11%;
 
   --radius: 0.75rem;
 }
 
 /* ─── Dark Mode ────────────────────────────────────────────────── */
 .dark {
-  /* Deeper, richer dark backgrounds */
-  --background: 230 20% 7%;
-  --foreground: 220 15% 95%;
+  /* Backgrounds: True dark */
+  --background: 240 10% 4%;
+  --foreground: 210 40% 98%;
 
-  /* Cards: Elevated surface */
-  --card: 230 18% 11%;
-  --card-foreground: 220 15% 95%;
+  /* Cards: Slightly elevated */
+  --card: 240 6% 10%;
+  --card-foreground: 210 40% 98%;
 
-  --popover: 230 18% 12%;
-  --popover-foreground: 220 15% 95%;
+  --popover: 240 6% 10%;
+  --popover-foreground: 210 40% 98%;
 
-  /* Primary: Brighter in dark mode for contrast */
-  --primary: 235 75% 65%;
-  --primary-foreground: 0 0% 100%;
+  /* Primary: Inverted — near white */
+  --primary: 210 40% 98%;
+  --primary-foreground: 222 47% 11%;
 
   /* Secondary */
-  --secondary: 230 16% 15%;
-  --secondary-foreground: 220 15% 90%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 210 40% 98%;
 
-  --muted: 230 16% 16%;
-  --muted-foreground: 228 10% 55%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 215 16% 57%;
 
-  --accent: 250 20% 18%;
-  --accent-foreground: 250 50% 75%;
+  --accent: 240 4% 16%;
+  --accent-foreground: 210 40% 98%;
 
   --destructive: 0 62% 50%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 230 16% 17%;
-  --input: 230 16% 17%;
-  --ring: 235 75% 65%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --ring: 210 40% 98%;
 
-  /* Sidebar: Slightly lighter than background */
-  --sidebar: 230 18% 9%;
-  --sidebar-foreground: 220 15% 92%;
-  --sidebar-primary: 235 75% 65%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 230 20% 14%;
-  --sidebar-accent-foreground: 220 15% 90%;
-  --sidebar-border: 230 16% 16%;
-  --sidebar-ring: 235 75% 65%;
+  /* Sidebar: Darker than background */
+  --sidebar: 240 10% 6%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 210 40% 98%;
+  --sidebar-primary-foreground: 222 47% 11%;
+  --sidebar-accent: 240 4% 16%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 240 4% 16%;
+  --sidebar-ring: 210 40% 98%;
 }
 
 /* ─── Base Styles ──────────────────────────────────────────────── */
@@ -148,7 +148,13 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+  h2 {
+    @apply text-xl font-semibold tracking-tight;
+  }
+  h3, h4, h5, h6 {
     @apply tracking-tight font-semibold;
   }
 }
@@ -191,26 +197,26 @@
 /* ─── React Grid Layout ───────────────────────────────────────── */
 .react-grid-item > .react-resizable-handle {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   z-index: 50 !important;
 }
 
 .react-grid-item > .react-resizable-handle::after {
   content: "";
   position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 6px;
-  height: 6px;
-  border-right: 2px solid hsl(var(--muted-foreground) / 0.25);
-  border-bottom: 2px solid hsl(var(--muted-foreground) / 0.25);
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid hsl(var(--muted-foreground) / 0.2);
+  border-bottom: 2px solid hsl(var(--muted-foreground) / 0.2);
   border-radius: 0 0 1px 0;
-  transition: all 0.2s ease;
+  transition: all 150ms ease;
 }
 
 .react-grid-item:hover > .react-resizable-handle::after {
-  border-color: hsl(var(--primary) / 0.5);
+  border-color: hsl(var(--foreground) / 0.3);
 }
 
 .react-grid-item > .react-resizable-handle.react-resizable-handle-se {
@@ -236,12 +242,12 @@
 
 /* ─── Widget Container ─────────────────────────────────────────── */
 .widget-container {
-  border-radius: 1.25rem;
+  border-radius: 0.75rem;
   overflow: visible !important;
 }
 
 .widget-container.icon-widget {
-  border-radius: 1.25rem;
+  border-radius: 0.75rem;
 }
 
 .widget-container[data-size-mode="compact"] .compact-mode {
@@ -265,11 +271,8 @@
 }
 
 /* ─── Widget Entrance Animation ────────────────────────────────── */
-/* NOTE: Only animate opacity here — react-grid-layout controls positioning
-   via inline transform: translate(). Animating transform in CSS overrides
-   those inline styles and breaks drag-and-drop / resize. */
 .widget-container {
-  animation: widgetEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: widgetEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes widgetEnter {
@@ -282,16 +285,16 @@
 }
 
 /* Staggered entrance */
-.widget-container:nth-child(1) { animation-delay: 0.04s; }
-.widget-container:nth-child(2) { animation-delay: 0.08s; }
-.widget-container:nth-child(3) { animation-delay: 0.12s; }
-.widget-container:nth-child(4) { animation-delay: 0.16s; }
-.widget-container:nth-child(5) { animation-delay: 0.20s; }
-.widget-container:nth-child(6) { animation-delay: 0.24s; }
-.widget-container:nth-child(7) { animation-delay: 0.28s; }
-.widget-container:nth-child(8) { animation-delay: 0.32s; }
-.widget-container:nth-child(9) { animation-delay: 0.36s; }
-.widget-container:nth-child(10) { animation-delay: 0.40s; }
+.widget-container:nth-child(1) { animation-delay: 0.03s; }
+.widget-container:nth-child(2) { animation-delay: 0.06s; }
+.widget-container:nth-child(3) { animation-delay: 0.09s; }
+.widget-container:nth-child(4) { animation-delay: 0.12s; }
+.widget-container:nth-child(5) { animation-delay: 0.15s; }
+.widget-container:nth-child(6) { animation-delay: 0.18s; }
+.widget-container:nth-child(7) { animation-delay: 0.21s; }
+.widget-container:nth-child(8) { animation-delay: 0.24s; }
+.widget-container:nth-child(9) { animation-delay: 0.27s; }
+.widget-container:nth-child(10) { animation-delay: 0.30s; }
 
 /* ─── Reduced Motion ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {

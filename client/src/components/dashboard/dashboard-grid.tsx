@@ -363,7 +363,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         onDoubleClick={(e) => handleIconWidgetClick(widgetId, e)}
         className={cn(
           "w-full h-full flex flex-col items-center justify-center cursor-pointer relative",
-          "bg-gradient-to-br text-white rounded-[1.25rem] transition-all duration-200 hover:scale-105 hover:shadow-lg",
+          "bg-gradient-to-br text-white rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg",
           widgetInfo.previewGradient
         )}
         data-testid={`icon-widget-${widgetId}`}
@@ -389,7 +389,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
     const sizeMode = getWidgetSizeMode(widgetId);
     return (
       <div className={cn(
-        "h-full relative z-10 overflow-hidden rounded-[1.25rem]",
+        "h-full relative z-10 overflow-hidden rounded-xl",
         sizeMode === "compact" && "compact-mode"
       )}>
         <WidgetErrorBoundary widgetName={getWidgetType(widgetId, config.widgetInstances)}>
@@ -420,7 +420,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         preventCollision={false}
         isResizable={true}
         isDraggable={true}
-        margin={[14, 14]}
+        margin={[16, 16]}
       >
         {config.enabledWidgets.map((widgetId) => {
           const iconMode = isIconMode(widgetId);
@@ -454,7 +454,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                       initial={{ opacity: 0 }}
                       animate={{ opacity: [0, 0.2, 0] }}
                       transition={{ duration: 0.6 }}
-                      className="absolute inset-0 rounded-[1.25rem] bg-green-500"
+                      className="absolute inset-0 rounded-xl bg-green-500"
                     />
                     <motion.div
                       initial={{ scale: 0 }}
@@ -498,42 +498,44 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 </div>
               ) : (
                 <>
-                  {/* Widget card background — Clean, modern surface */}
-                  <div className="absolute inset-0 rounded-[1.25rem] bg-card border border-border/50 shadow-sm transition-all duration-300 ease-out group-hover:shadow-md group-hover:border-border/70 z-0" />
+                  {/* Widget card background */}
+                  <div className="absolute inset-0 rounded-xl bg-card border border-border shadow-none transition-shadow duration-200 group-hover:shadow-sm z-0" />
 
-                  {/* Widget controls overlay */}
-                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200">
-                    <div className="widget-drag-handle w-6 h-6 cursor-move flex items-center justify-center rounded-lg bg-foreground/5 hover:bg-foreground/10 dark:bg-white/8 dark:hover:bg-white/15 transition-colors">
-                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                  {/* Widget controls overlay — top right */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">
+                    <div className="flex items-center gap-0.5 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-0.5">
+                      <div className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-md hover:bg-accent transition-colors">
+                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      {canExpandWidget(widgetId) && (
+                        <button
+                          onClick={(e) => handleWidgetExpand(widgetId, e)}
+                          className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                          data-testid={`button-expand-widget-${widgetId}`}
+                          title="Vollansicht"
+                        >
+                          <Maximize2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {canHaveSettings(widgetId) && (
+                        <button
+                          onClick={() => setSettingsWidgetId(widgetId)}
+                          className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                          data-testid={`button-settings-widget-${widgetId}`}
+                        >
+                          <Settings2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {onRemoveWidget && (
+                        <button
+                          onClick={() => onRemoveWidget(widgetId)}
+                          className="w-7 h-7 cursor-pointer flex items-center justify-center rounded-md hover:bg-destructive hover:text-destructive-foreground text-muted-foreground transition-colors"
+                          data-testid={`button-remove-widget-${widgetId}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
-                    {canExpandWidget(widgetId) && (
-                      <button
-                        onClick={(e) => handleWidgetExpand(widgetId, e)}
-                        className="w-6 h-6 cursor-pointer flex items-center justify-center rounded-lg bg-foreground/5 hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-all"
-                        data-testid={`button-expand-widget-${widgetId}`}
-                        title="Vollansicht"
-                      >
-                        <Maximize2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    {canHaveSettings(widgetId) && (
-                      <button
-                        onClick={() => setSettingsWidgetId(widgetId)}
-                        className="w-6 h-6 cursor-pointer flex items-center justify-center rounded-lg bg-foreground/5 hover:bg-foreground/10 dark:bg-white/8 dark:hover:bg-white/15 text-muted-foreground hover:text-foreground transition-all"
-                        data-testid={`button-settings-widget-${widgetId}`}
-                      >
-                        <Settings2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    {onRemoveWidget && (
-                      <button
-                        onClick={() => onRemoveWidget(widgetId)}
-                        className="w-6 h-6 cursor-pointer flex items-center justify-center rounded-lg bg-foreground/5 hover:bg-red-500 hover:text-white text-muted-foreground transition-all"
-                        data-testid={`button-remove-widget-${widgetId}`}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
                   </div>
 
                   {renderCompactWidget(widgetId)}

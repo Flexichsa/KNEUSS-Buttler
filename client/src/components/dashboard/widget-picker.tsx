@@ -644,13 +644,13 @@ function WidgetPreviewCard({ widget, onSelect }: { widget: WidgetDefinition; onS
     <button
       onClick={onSelect}
       className={cn(
-        "relative group rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg cursor-pointer text-left w-full",
+        "relative group rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-md cursor-pointer text-left w-full",
         "bg-gradient-to-br", widget.previewGradient
       )}
       data-testid={`widget-preview-${widget.id}`}
     >
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-      <div className="p-3.5 h-[130px] flex flex-col">
+      <div className="p-3.5 h-[120px] flex flex-col">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className="p-1 rounded-lg bg-white/15">
@@ -797,7 +797,7 @@ export function WidgetPicker({ enabledWidgets, onAddWidget }: WidgetPickerProps)
           Widget
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-[15px]">
             {selectedWidget ? `${selectedWidget.name} — Größe wählen` : "Widget hinzufügen"}

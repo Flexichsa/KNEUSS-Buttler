@@ -301,7 +301,7 @@ export function SettingsView() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Microsoft Outlook Integration */}
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-white">
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 bg-[#0078D4] rounded-md flex items-center justify-center text-white">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
@@ -372,7 +372,7 @@ export function SettingsView() {
             </div>
 
             {/* OneDrive Integration */}
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-white">
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 bg-[#0078D4] rounded-md flex items-center justify-center text-white">
                   <HardDrive className="h-5 w-5" />
@@ -398,7 +398,7 @@ export function SettingsView() {
               </div>
               {!onedriveConnected && (
                 <div className="text-xs text-muted-foreground text-right max-w-[200px]">
-                  Aktiviere OneDrive über die Replit Connections
+                  OneDrive wird über die Microsoft-Verbindung aktiviert
                 </div>
               )}
               {onedriveConnected && (
@@ -452,9 +452,9 @@ export function SettingsView() {
                   <div>
                     <p className="font-medium mb-1">Konto wechseln</p>
                     <p>
-                      {oauthConfigured 
+                      {oauthConfigured
                         ? 'Klicke auf "Mit Microsoft anmelden" um dein eigenes Konto zu verbinden.'
-                        : 'Um ein anderes Microsoft-Konto zu verbinden, musst du im Replit-Editor auf "Connections" im linken Panel klicken und dort die Outlook-Verbindung neu konfigurieren.'}
+                        : 'Um ein anderes Microsoft-Konto zu verbinden, muss die OAuth-Konfiguration (MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET) eingerichtet werden.'}
                     </p>
                   </div>
                 </div>

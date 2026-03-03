@@ -73,7 +73,7 @@ export function DashboardTabs({
   };
 
   return (
-    <div className="flex items-center gap-1.5 px-3 sm:px-5 py-2 bg-background border-b border-border/40 overflow-x-auto" data-testid="dashboard-tabs">
+    <div className="flex items-end gap-0 px-4 sm:px-6 bg-background border-b border-border overflow-x-auto" data-testid="dashboard-tabs">
       {tabs.map((tab) => {
         const IconComponent = getIconComponent(tab.icon || "layout");
         const isActive = tab.id === activeTabId;
@@ -83,10 +83,10 @@ export function DashboardTabs({
           <div
             key={tab.id}
             className={cn(
-              "group relative flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all duration-200 cursor-pointer min-w-[90px]",
+              "group relative flex items-center gap-2 px-3 py-2.5 transition-colors duration-150 cursor-pointer min-w-[80px] border-b-2",
               isActive
-                ? "bg-card text-foreground shadow-sm border border-border/50"
-                : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                ? "border-foreground text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
             )}
             onClick={() => !isEditing && onSwitchTab(tab.id)}
             data-testid={`tab-${tab.id}`}
@@ -138,7 +138,7 @@ export function DashboardTabs({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2.5 text-muted-foreground hover:text-foreground text-[12px]"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground text-[12px] mb-0.5"
             data-testid="button-add-tab"
           >
             <Plus className="h-3.5 w-3.5 mr-1" />
@@ -147,7 +147,7 @@ export function DashboardTabs({
         </DialogTrigger>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-[15px]">Neue Dashboard-Ebene</DialogTitle>
+            <DialogTitle className="text-base font-semibold">Neue Dashboard-Ebene</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-3">
             <div>
@@ -157,7 +157,7 @@ export function DashboardTabs({
                 onChange={(e) => setNewTabName(e.target.value)}
                 placeholder="z.B. Arbeit, Privat, Finanzen..."
                 onKeyDown={(e) => e.key === "Enter" && handleCreateTab()}
-                className="h-9"
+                className="h-10 rounded-lg"
                 data-testid="input-new-tab-name"
               />
             </div>
@@ -169,10 +169,10 @@ export function DashboardTabs({
                     key={id}
                     onClick={() => setNewTabIcon(id)}
                     className={cn(
-                      "p-2.5 rounded-lg border-2 transition-all",
+                      "p-2.5 rounded-lg border transition-all duration-150",
                       newTabIcon === id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40"
+                        ? "border-foreground bg-foreground/5"
+                        : "border-border hover:border-foreground/30"
                     )}
                     title={label}
                     data-testid={`icon-option-${id}`}
@@ -182,7 +182,7 @@ export function DashboardTabs({
                 ))}
               </div>
             </div>
-            <Button onClick={handleCreateTab} className="w-full h-9 text-[13px]" data-testid="button-create-tab">
+            <Button onClick={handleCreateTab} className="w-full h-10 text-[13px] bg-foreground text-background hover:bg-foreground/90" data-testid="button-create-tab">
               Ebene erstellen
             </Button>
           </div>

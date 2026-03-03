@@ -63,7 +63,6 @@ export default function ForgotPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [step, setStep] = useState<Step>(tokenFromUrl ? "set-password" : "enter-email");
 
-  // Verify token from URL automatically
   const verifyMutation = useMutation({
     mutationFn: verifyResetToken,
     onSuccess: () => {
@@ -75,7 +74,6 @@ export default function ForgotPasswordPage() {
     },
   });
 
-  // Auto-verify token from URL on mount
   useEffect(() => {
     if (tokenFromUrl) {
       verifyMutation.mutate(tokenFromUrl);
@@ -133,17 +131,22 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Subtle gradient glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-foreground/[0.02] rounded-full blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center mb-8">
-          <img src={logoUrl} alt="Logo" className="h-14 w-auto mb-4" />
-          <h1 className="text-xl font-bold text-foreground">
+          <img src={logoUrl} alt="Logo" className="h-12 w-auto mb-4" />
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">
             {step === "success" ? "Passwort zurückgesetzt" : "Passwort zurücksetzen"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{subtitles[step]}</p>
         </div>
 
-        <Card className="shadow-lg border-border/60">
+        <Card className="shadow-none border-border">
           {step === "enter-email" && (
             <form onSubmit={handleRequestReset}>
               <CardContent className="space-y-4 pt-6">
@@ -156,7 +159,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-11"
+                    className="h-10 rounded-lg"
                     data-testid="input-reset-email"
                   />
                 </div>
@@ -164,7 +167,7 @@ export default function ForgotPasswordPage() {
               <CardFooter className="flex flex-col gap-4">
                 <Button
                   type="submit"
-                  className="w-full h-11"
+                  className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 rounded-lg"
                   disabled={requestMutation.isPending}
                   data-testid="button-request-reset"
                 >
@@ -192,7 +195,7 @@ export default function ForgotPasswordPage() {
           {step === "email-sent" && (
             <CardContent className="space-y-4 pt-6">
               <div className="flex justify-center">
-                <Mail className="h-16 w-16 text-primary" />
+                <Mail className="h-16 w-16 text-muted-foreground" />
               </div>
               <p className="text-center text-sm text-muted-foreground">
                 Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen einen Link zum
@@ -218,11 +221,12 @@ export default function ForgotPasswordPage() {
                   <Input
                     id="newPassword"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Mindestens 6 Zeichen"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                     minLength={6}
+                    className="h-10 rounded-lg"
                     data-testid="input-new-password"
                   />
                 </div>
@@ -231,11 +235,12 @@ export default function ForgotPasswordPage() {
                   <Input
                     id="confirmPassword"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Passwort wiederholen"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     minLength={6}
+                    className="h-10 rounded-lg"
                     data-testid="input-confirm-password"
                   />
                 </div>
@@ -243,7 +248,7 @@ export default function ForgotPasswordPage() {
               <CardFooter className="flex flex-col gap-4">
                 <Button
                   type="submit"
-                  className="w-full h-11"
+                  className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 rounded-lg"
                   disabled={resetMutation.isPending}
                   data-testid="button-reset-password"
                 >
@@ -273,7 +278,7 @@ export default function ForgotPasswordPage() {
                 <CheckCircle className="h-16 w-16 text-green-500" />
               </div>
               <Button
-                className="w-full h-11"
+                className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 rounded-lg"
                 onClick={() => setLocation("/login")}
                 data-testid="button-go-to-login"
               >

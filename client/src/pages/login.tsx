@@ -45,16 +45,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Subtle gradient glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-foreground/[0.02] rounded-full blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo & Branding */}
         <div className="flex flex-col items-center mb-8">
-          <img src={logoUrl} alt="Logo" className="h-14 w-auto mb-4" />
-          <h1 className="text-xl font-bold text-foreground">KNEUSS Digital Assistant</h1>
+          <img src={logoUrl} alt="Logo" className="h-12 w-auto mb-4" />
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">KNEUSS Digital Assistant</h1>
           <p className="text-sm text-muted-foreground mt-1">Melden Sie sich an, um fortzufahren</p>
         </div>
 
-        <Card className="shadow-lg border-border/60">
+        <Card className="shadow-none border-border">
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
@@ -66,7 +71,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="h-11"
+                  className="h-10 rounded-lg"
                   data-testid="input-email"
                 />
               </div>
@@ -90,7 +95,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-11"
+                  className="h-10 rounded-lg"
                   data-testid="input-password"
                 />
               </div>
@@ -98,7 +103,7 @@ export default function LoginPage() {
             <CardFooter className="flex flex-col gap-3 pb-6">
               <Button
                 type="submit"
-                className="w-full h-11"
+                className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 rounded-lg"
                 disabled={loginMutation.isPending}
                 data-testid="button-login"
               >
