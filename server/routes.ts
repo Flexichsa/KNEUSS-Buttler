@@ -16,6 +16,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { sendPasswordResetEmail } from "./email";
 
 const objectStorageService = new ObjectStorageService();
 
@@ -143,25 +144,30 @@ export async function registerRoutes(
     }
   });
 
-  // Password Reset - Request Token (Token is logged server-side for admin to retrieve)
+  // Password Reset - Request Token & send email
   app.post("/api/auth/request-reset", async (req, res) => {
     try {
       const { email } = req.body;
       if (!email) {
         return res.status(400).json({ error: "E-Mail-Adresse ist erforderlich" });
       }
-      
+
       const result = await createPasswordResetToken(email);
-      
-      // Log the token server-side for admin retrieval (not exposed in response)
+
       if (result) {
-        console.log(`[Password Reset] Token generated for ${email}: ${result.token}`);
+        const appUrl = process.env.APP_URL || `${req.protocol}://${req.get("host")}`;
+        try {
+          await sendPasswordResetEmail(email, result.token, appUrl);
+          console.log(`[Password Reset] E-Mail sent to ${email}`);
+        } catch (mailErr) {
+          console.error(`[Password Reset] Failed to send email to ${email}:`, mailErr);
+        }
       }
-      
-      // Always return success to prevent user enumeration - token is NOT exposed
-      res.json({ 
-        success: true, 
-        message: "Falls ein Konto mit dieser E-Mail existiert, wurde ein Reset-Token erstellt. Kontaktieren Sie den Administrator, um den Token zu erhalten."
+
+      // Always return success to prevent user enumeration
+      res.json({
+        success: true,
+        message: "Falls ein Konto mit dieser E-Mail existiert, wurde eine E-Mail versendet."
       });
     } catch (error: any) {
       res.status(500).json({ error: "Reset-Anfrage fehlgeschlagen" });

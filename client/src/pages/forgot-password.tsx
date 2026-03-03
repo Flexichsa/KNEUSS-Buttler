@@ -1,13 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, KeyRound, ArrowLeft, CheckCircle } from "lucide-react";
+import { Loader2, KeyRound, ArrowLeft, CheckCircle, Mail } from "lucide-react";
 import logoUrl from "@assets/logo_1766060914666.png";
+
+async function requestReset(email: string) {
+  const res = await fetch("/api/auth/request-reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Anfrage fehlgeschlagen");
+  }
+  return res.json();
+}
 
 async function verifyResetToken(token: string) {
   const res = await fetch("/api/auth/verify-reset-token", {
@@ -35,22 +48,45 @@ async function resetPassword(data: { token: string; newPassword: string }) {
   return res.json();
 }
 
+type Step = "enter-email" | "email-sent" | "set-password" | "success";
+
 export default function ForgotPasswordPage() {
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
   const tokenFromUrl = params.get("token") || "";
-  
+
   const { toast } = useToast();
-  const [token, setToken] = useState(tokenFromUrl);
+  const [email, setEmail] = useState("");
+  const [token] = useState(tokenFromUrl);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [step, setStep] = useState<"enter-token" | "set-password" | "success">(tokenFromUrl ? "set-password" : "enter-token");
+  const [step, setStep] = useState<Step>(tokenFromUrl ? "set-password" : "enter-email");
 
+  // Verify token from URL automatically
   const verifyMutation = useMutation({
     mutationFn: verifyResetToken,
     onSuccess: () => {
       setStep("set-password");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      setStep("enter-email");
+    },
+  });
+
+  // Auto-verify token from URL on mount
+  useEffect(() => {
+    if (tokenFromUrl) {
+      verifyMutation.mutate(tokenFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const requestMutation = useMutation({
+    mutationFn: requestReset,
+    onSuccess: () => {
+      setStep("email-sent");
     },
     onError: (error: Error) => {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
@@ -68,25 +104,32 @@ export default function ForgotPasswordPage() {
     },
   });
 
-  const handleVerifyToken = (e: React.FormEvent) => {
+  const handleRequestReset = (e: React.FormEvent) => {
     e.preventDefault();
-    verifyMutation.mutate(token);
+    requestMutation.mutate(email);
   };
 
   const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast({ title: "Fehler", description: "Passwörter stimmen nicht überein", variant: "destructive" });
       return;
     }
-    
+
     if (newPassword.length < 6) {
       toast({ title: "Fehler", description: "Passwort muss mindestens 6 Zeichen haben", variant: "destructive" });
       return;
     }
-    
+
     resetMutation.mutate({ token, newPassword });
+  };
+
+  const subtitles: Record<Step, string> = {
+    "enter-email": "Geben Sie Ihre E-Mail-Adresse ein",
+    "email-sent": "Prüfen Sie Ihr Postfach",
+    "set-password": "Wählen Sie ein neues Passwort",
+    "success": "Ihr Passwort wurde erfolgreich geändert",
   };
 
   return (
@@ -97,50 +140,66 @@ export default function ForgotPasswordPage() {
           <h1 className="text-xl font-bold text-foreground">
             {step === "success" ? "Passwort zurückgesetzt" : "Passwort zurücksetzen"}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {step === "enter-token" && "Geben Sie den Reset-Token ein"}
-            {step === "set-password" && "Wählen Sie ein neues Passwort"}
-            {step === "success" && "Ihr Passwort wurde erfolgreich geändert"}
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{subtitles[step]}</p>
         </div>
-      <Card className="shadow-lg border-border/60">
 
-        {step === "enter-token" && (
-          <form onSubmit={handleVerifyToken}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="token">Reset-Token</Label>
-                <Input
-                  id="token"
-                  type="text"
-                  placeholder="Token eingeben..."
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  required
-                  data-testid="input-reset-token"
-                />
+        <Card className="shadow-lg border-border/60">
+          {step === "enter-email" && (
+            <form onSubmit={handleRequestReset}>
+              <CardContent className="space-y-4 pt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-Mail-Adresse</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="ihre@email.de"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                    data-testid="input-reset-email"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4">
+                <Button
+                  type="submit"
+                  className="w-full h-11"
+                  disabled={requestMutation.isPending}
+                  data-testid="button-request-reset"
+                >
+                  {requestMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Mail className="h-4 w-4 mr-2" />
+                  )}
+                  Link anfordern
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setLocation("/login")}
+                  data-testid="link-back-to-login"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Zurück zur Anmeldung
+                </Button>
+              </CardFooter>
+            </form>
+          )}
+
+          {step === "email-sent" && (
+            <CardContent className="space-y-4 pt-6">
+              <div className="flex justify-center">
+                <Mail className="h-16 w-16 text-primary" />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Sie haben keinen Token? Kontaktieren Sie den Administrator, um einen Reset-Token zu erhalten.
+              <p className="text-center text-sm text-muted-foreground">
+                Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen einen Link zum
+                Zurücksetzen Ihres Passworts gesendet. Bitte prüfen Sie auch Ihren Spam-Ordner.
               </p>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={verifyMutation.isPending}
-                data-testid="button-verify-token"
-              >
-                {verifyMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <KeyRound className="h-4 w-4 mr-2" />
-                )}
-                Token überprüfen
-              </Button>
-              <Button 
-                type="button"
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="w-full"
                 onClick={() => setLocation("/login")}
                 data-testid="link-back-to-login"
@@ -148,82 +207,81 @@ export default function ForgotPasswordPage() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Zurück zur Anmeldung
               </Button>
-            </CardFooter>
-          </form>
-        )}
-
-        {step === "set-password" && (
-          <form onSubmit={handleResetPassword}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">Neues Passwort</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  data-testid="input-new-password"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  data-testid="input-confirm-password"
-                />
-              </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={resetMutation.isPending}
-                data-testid="button-reset-password"
-              >
-                {resetMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <KeyRound className="h-4 w-4 mr-2" />
-                )}
-                Passwort zurücksetzen
-              </Button>
-              <Button 
-                type="button"
-                variant="ghost" 
-                className="w-full"
-                onClick={() => setStep("enter-token")}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Anderen Token eingeben
-              </Button>
-            </CardFooter>
-          </form>
-        )}
+          )}
 
-        {step === "success" && (
-          <CardContent className="space-y-4">
-            <div className="flex justify-center">
-              <CheckCircle className="h-16 w-16 text-green-500" />
-            </div>
-            <Button 
-              className="w-full"
-              onClick={() => setLocation("/login")}
-              data-testid="button-go-to-login"
-            >
-              Zur Anmeldung
-            </Button>
-          </CardContent>
-        )}
-      </Card>
+          {step === "set-password" && (
+            <form onSubmit={handleResetPassword}>
+              <CardContent className="space-y-4 pt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Neues Passwort</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    data-testid="input-new-password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    data-testid="input-confirm-password"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4">
+                <Button
+                  type="submit"
+                  className="w-full h-11"
+                  disabled={resetMutation.isPending}
+                  data-testid="button-reset-password"
+                >
+                  {resetMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <KeyRound className="h-4 w-4 mr-2" />
+                  )}
+                  Passwort zurücksetzen
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setLocation("/login")}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Zurück zur Anmeldung
+                </Button>
+              </CardFooter>
+            </form>
+          )}
+
+          {step === "success" && (
+            <CardContent className="space-y-4 pt-6">
+              <div className="flex justify-center">
+                <CheckCircle className="h-16 w-16 text-green-500" />
+              </div>
+              <Button
+                className="w-full h-11"
+                onClick={() => setLocation("/login")}
+                data-testid="button-go-to-login"
+              >
+                Zur Anmeldung
+              </Button>
+            </CardContent>
+          )}
+        </Card>
       </div>
     </div>
   );

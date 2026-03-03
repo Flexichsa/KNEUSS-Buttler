@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogIn, UserPlus } from "lucide-react";
+import { Loader2, LogIn } from "lucide-react";
 import logoUrl from "@assets/logo_1766060914666.png";
 
 async function loginWithPassword(data: { email: string; password: string }) {
@@ -108,26 +108,6 @@ export default function LoginPage() {
                   <LogIn className="h-4 w-4 mr-2" />
                 )}
                 Anmelden
-              </Button>
-
-              <div className="relative w-full my-1">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">oder</span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-11"
-                onClick={() => window.location.href = "/api/login"}
-                data-testid="button-replit-login"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Mit Replit anmelden
               </Button>
 
               <p className="text-center text-sm text-muted-foreground mt-2">
