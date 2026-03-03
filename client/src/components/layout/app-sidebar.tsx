@@ -53,7 +53,7 @@ export function AppSidebar({ activeTab, onTabChange, collapsed, onCollapsedChang
           "w-full flex items-center gap-2.5 rounded-lg transition-colors duration-150 group/item relative",
           collapsed ? "h-9 justify-center" : "h-9 px-2.5",
           isActive
-            ? "text-foreground font-medium"
+            ? "text-sidebar-accent-foreground font-medium"
             : "text-muted-foreground hover:text-foreground"
         )}
         onClick={() => onTabChange(item.id)}
@@ -63,16 +63,17 @@ export function AppSidebar({ activeTab, onTabChange, collapsed, onCollapsedChang
         {isActive && (
           <motion.div
             layoutId="sidebar-active-indicator"
-            className="absolute inset-0 rounded-lg bg-accent"
+            className="absolute inset-0 rounded-lg bg-sidebar-accent"
             transition={{ type: "spring", stiffness: 350, damping: 30 }}
           />
         )}
 
-        {/* Active left bar */}
+        {/* Active left bar — accent color */}
         {isActive && (
           <motion.div
             layoutId="sidebar-active-bar"
-            className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-foreground rounded-r-full"
+            className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full"
+            style={{ background: `hsl(var(--accent-hue) 60% 55%)` }}
             transition={{ type: "spring", stiffness: 350, damping: 30 }}
           />
         )}
@@ -115,7 +116,7 @@ export function AppSidebar({ activeTab, onTabChange, collapsed, onCollapsedChang
       animate={{ width: collapsed ? 52 : 260 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={cn(
-        "hidden lg:flex flex-col h-screen bg-sidebar/80 backdrop-blur-xl border-r border-sidebar-border flex-shrink-0 z-40",
+        "hidden lg:flex flex-col h-screen bg-sidebar/80 backdrop-blur-xl sidebar-gradient-border flex-shrink-0 z-40",
         className
       )}
     >
@@ -198,8 +199,11 @@ export function AppSidebar({ activeTab, onTabChange, collapsed, onCollapsedChang
               className="overflow-hidden"
             >
               <div className="flex items-center gap-2.5 px-2 py-2 mb-1.5">
-                <div className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-medium text-foreground">{initials}</span>
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: `linear-gradient(135deg, hsl(var(--accent-hue) 60% 55%), hsl(calc(var(--accent-hue) + 30) 50% 60%))` }}
+                >
+                  <span className="text-xs font-medium text-white">{initials}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] font-medium text-foreground truncate leading-tight">{firstName}</p>

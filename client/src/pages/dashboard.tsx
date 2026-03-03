@@ -251,10 +251,11 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Ambient Background Glows */}
+        {/* Animated Mesh Gradient Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-primary/[0.03] rounded-full blur-3xl" />
-          <div className="absolute bottom-[10%] right-[15%] w-[400px] h-[400px] bg-primary/[0.02] rounded-full blur-3xl" />
+          <div className="mesh-blob mesh-blob-1" style={{ top: '5%', left: '15%' }} />
+          <div className="mesh-blob mesh-blob-2" style={{ bottom: '10%', right: '10%' }} />
+          <div className="mesh-blob mesh-blob-3" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
         </div>
 
         {/* Top Bar */}
@@ -280,7 +281,7 @@ export default function Dashboard() {
         )}
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto relative">
+        <div className="flex-1 overflow-y-auto relative scroll-shadow">
           {activeTab === "dashboard" && <PriorityReminderBanner />}
 
           <div className="px-4 sm:px-6 py-4">

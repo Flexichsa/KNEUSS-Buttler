@@ -32,8 +32,13 @@ const NewsWidget = lazy(() => import("@/components/widgets/news-widget").then(m 
 
 function WidgetFallback() {
   return (
-    <div className="flex items-center justify-center h-full w-full">
-      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
+    <div className="flex flex-col items-center justify-center h-full w-full gap-3 p-4">
+      <div className="w-full space-y-3">
+        <div className="widget-skeleton h-4 w-3/4 rounded" />
+        <div className="widget-skeleton h-3 w-1/2 rounded" />
+        <div className="widget-skeleton h-20 w-full rounded-lg" />
+        <div className="widget-skeleton h-3 w-2/3 rounded" />
+      </div>
     </div>
   );
 }
@@ -41,7 +46,7 @@ function WidgetFallback() {
 import { AVAILABLE_WIDGETS } from "./widget-picker";
 import { getWidgetType } from "./dashboard-config";
 import type { DashboardConfig, WidgetLayout, WeatherSettings, CryptoSettings, ClockSettings, SingleCoinSettings, CalendarSettings, WeblinkSettings, WidgetSizeMode } from "@shared/schema";
-import { X, GripVertical, Settings2, Maximize2, Check } from "lucide-react";
+import { X, GripVertical, Settings2, Maximize2, Check, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -61,6 +66,11 @@ interface DashboardGridProps {
 
 const COLS = 12;
 const ROW_HEIGHT = 70;
+
+// Widgets that have their own background (gradient, image, etc.)
+const SELF_STYLED_WIDGETS = new Set([
+  "weather", "btc", "clock", "singlecoin", "gainerslosers",
+]);
 
 export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemoveWidget, recentlySavedWidgetId }: DashboardGridProps) {
   const [containerWidth, setContainerWidth] = useState(1200);
@@ -403,6 +413,22 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   const GridLayoutComponent = GridLayout as any;
 
+  if (config.enabledWidgets.length === 0) {
+    return (
+      <div ref={containerRef} className="w-full flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="empty-dashboard-pulse inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--accent-hue)_60%_55%)] to-[hsl(calc(var(--accent-hue)+30)_50%_60%)]">
+            <LayoutDashboard className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">Dashboard ist leer</p>
+            <p className="text-xs text-muted-foreground mt-1">Widgets hinzufügen um loszulegen</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="w-full">
       <GridLayoutComponent
@@ -420,7 +446,7 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
         preventCollision={false}
         isResizable={true}
         isDraggable={true}
-        margin={[16, 16]}
+        margin={[20, 20]}
       >
         {config.enabledWidgets.map((widgetId) => {
           const iconMode = isIconMode(widgetId);
@@ -498,12 +524,15 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 </div>
               ) : (
                 <>
-                  {/* Widget card background — hover lift effect on visual layer only */}
-                  <div className="absolute inset-0 rounded-xl bg-card border border-border shadow-none transition-all duration-300 group-hover:shadow-lg group-hover:border-primary/20 group-hover:-translate-y-0.5 z-0" />
+                  {/* Widget card background — Premium design */}
+                  <div className={cn(
+                    "absolute inset-0 widget-card-bg z-0",
+                    SELF_STYLED_WIDGETS.has(getWidgetType(widgetId, config.widgetInstances)) && "self-styled"
+                  )} />
 
                   {/* Widget controls overlay — top right */}
                   <div className="absolute top-2 right-2 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">
-                    <div className="flex items-center gap-0.5 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-0.5">
+                    <div className="flex items-center gap-0.5 widget-controls-overlay p-0.5">
                       <div className="widget-drag-handle w-7 h-7 cursor-move flex items-center justify-center rounded-md hover:bg-accent transition-colors">
                         <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
                       </div>

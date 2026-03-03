@@ -74,7 +74,7 @@ export function DashboardTabs({
   };
 
   return (
-    <div className="flex items-end gap-0 px-4 sm:px-6 bg-background border-b border-border overflow-x-auto" data-testid="dashboard-tabs">
+    <div className="flex items-end gap-0 px-4 sm:px-6 bg-background/70 backdrop-blur-xl border-b border-border/50 overflow-x-auto" data-testid="dashboard-tabs">
       {tabs.map((tab) => {
         const IconComponent = getIconComponent(tab.icon || "layout");
         const isActive = tab.id === activeTabId;
@@ -86,7 +86,7 @@ export function DashboardTabs({
             className={cn(
               "group relative flex items-center gap-2 px-3 py-2.5 transition-colors duration-150 cursor-pointer min-w-[80px]",
               isActive
-                ? "text-foreground"
+                ? "text-accent-foreground"
                 : "text-muted-foreground hover:text-foreground"
             )}
             onClick={() => !isEditing && onSwitchTab(tab.id)}
@@ -116,7 +116,7 @@ export function DashboardTabs({
             {isActive && (
               <motion.div
                 layoutId="dashboard-tab-indicator"
-                className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground"
+                className="absolute bottom-0 left-0 right-0 h-[2px] tab-accent-underline"
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Sun, Moon } from "lucide-react";
+import { Menu, Sun, Moon, Bell } from "lucide-react";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,7 +20,7 @@ export default function Header({
   const isDark = resolvedTheme === "dark";
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-background/70 backdrop-blur-xl border-b border-border/50 px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 bg-background/70 backdrop-blur-xl header-gradient-border px-4 sm:px-6">
       {/* Mobile menu button */}
       {onMenuClick && (
         <Button
@@ -59,6 +59,15 @@ export default function Header({
       {/* Right actions */}
       <div className="flex items-center gap-2">
         {actions}
+
+        {/* Notification Bell */}
+        <button
+          className="relative h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          aria-label="Benachrichtigungen"
+        >
+          <Bell className="h-4 w-4" />
+          <span className="notification-dot" />
+        </button>
 
         {/* Animated Dark Mode Toggle */}
         <motion.button
