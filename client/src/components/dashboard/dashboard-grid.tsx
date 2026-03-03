@@ -67,9 +67,11 @@ interface DashboardGridProps {
 const COLS = 12;
 const ROW_HEIGHT = 70;
 
-// Widgets that have their own background (gradient, image, etc.)
+// Widgets that have their own gradient/dark background — keep their styling
 const SELF_STYLED_WIDGETS = new Set([
-  "weather", "btc", "clock", "singlecoin", "gainerslosers",
+  "weather", "btc", "clock", "singlecoin", "calculator",
+  "calendar", "datetime", "mail", "news", "pomodoro",
+  "sports", "statusreport", "assistant",
 ]);
 
 export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemoveWidget, recentlySavedWidgetId }: DashboardGridProps) {
@@ -397,12 +399,15 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
 
   const renderCompactWidget = (widgetId: string) => {
     const sizeMode = getWidgetSizeMode(widgetId);
+    const widgetType = getWidgetType(widgetId, config.widgetInstances);
+    const isSelfStyled = SELF_STYLED_WIDGETS.has(widgetType);
     return (
       <div className={cn(
-        "h-full relative z-10 overflow-hidden rounded-xl",
-        sizeMode === "compact" && "compact-mode"
+        "h-full relative z-10 overflow-hidden rounded-2xl",
+        sizeMode === "compact" && "compact-mode",
+        !isSelfStyled && "widget-theme-layer"
       )}>
-        <WidgetErrorBoundary widgetName={getWidgetType(widgetId, config.widgetInstances)}>
+        <WidgetErrorBoundary widgetName={widgetType}>
           <Suspense fallback={<WidgetFallback />}>
             {renderWidget(widgetId)}
           </Suspense>

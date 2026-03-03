@@ -381,6 +381,14 @@
   border-color: transparent;
 }
 
+/* ─── Widget Theme Layer: Strip inner widget card styles ──────── */
+/* Non-self-styled widgets: remove bg-white, borders, shadows so card-bg shows */
+.widget-theme-layer > :first-child {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* ─── Dark Mode: Glassmorphism Cards ──────────────────────────── */
 .dark .widget-card-bg {
   background: linear-gradient(
