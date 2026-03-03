@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, KeyRound, ArrowLeft, CheckCircle, Mail } from "lucide-react";
+import { motion } from "framer-motion";
 import logoUrl from "@assets/logo_1766060914666.png";
 
 async function requestReset(email: string) {
@@ -132,14 +133,51 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-      {/* Subtle gradient glow */}
+      {/* Floating Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-foreground/[0.02] rounded-full blur-3xl" />
+        <motion.div
+          animate={{
+            x: [0, 80, -40, 0],
+            y: [0, -60, 40, 0],
+            scale: [1, 1.2, 0.9, 1],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[15%] left-[20%] w-[400px] h-[400px] bg-primary/[0.04] rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            x: [0, -60, 50, 0],
+            y: [0, 40, -50, 0],
+            scale: [1, 0.85, 1.15, 1],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-[10%] right-[15%] w-[350px] h-[350px] bg-primary/[0.03] rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            x: [0, 50, -30, 0],
+            y: [0, -40, 30, 0],
+          }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[50%] right-[30%] w-[250px] h-[250px] bg-primary/[0.02] rounded-full blur-3xl"
+        />
       </div>
 
-      <div className="w-full max-w-md relative z-10">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, filter: "blur(8px)" }}
+        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-md relative z-10"
+      >
         <div className="flex flex-col items-center mb-8">
-          <img src={logoUrl} alt="Logo" className="h-12 w-auto mb-4" />
+          <motion.img
+            src={logoUrl}
+            alt="Logo"
+            className="h-12 w-auto mb-4"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+          />
           <h1 className="text-xl font-semibold text-foreground tracking-tight">
             {step === "success" ? "Passwort zurückgesetzt" : "Passwort zurücksetzen"}
           </h1>
@@ -287,7 +325,7 @@ export default function ForgotPasswordPage() {
             </CardContent>
           )}
         </Card>
-      </div>
+      </motion.div>
     </div>
   );
 }

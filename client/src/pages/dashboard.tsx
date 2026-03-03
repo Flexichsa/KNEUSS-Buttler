@@ -151,9 +151,10 @@ export default function Dashboard() {
   };
 
   const pageTransition = {
-    initial: { opacity: 0, y: 4 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
+    initial: { opacity: 0, y: 20, scale: 0.98, filter: "blur(8px)" },
+    animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+    exit: { opacity: 0, y: -10, scale: 0.99, filter: "blur(4px)" },
+    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
   };
 
   const renderContent = () => {
@@ -249,7 +250,13 @@ export default function Dashboard() {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* Ambient Background Glows */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-primary/[0.03] rounded-full blur-3xl" />
+          <div className="absolute bottom-[10%] right-[15%] w-[400px] h-[400px] bg-primary/[0.02] rounded-full blur-3xl" />
+        </div>
+
         {/* Top Bar */}
         <Header
           title={getPageTitle()}
@@ -273,7 +280,7 @@ export default function Dashboard() {
         )}
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto relative">
           {activeTab === "dashboard" && <PriorityReminderBanner />}
 
           <div className="px-4 sm:px-6 py-4">

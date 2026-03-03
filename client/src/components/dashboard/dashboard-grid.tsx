@@ -498,8 +498,8 @@ export function DashboardGrid({ config, onLayoutChange, onSettingsChange, onRemo
                 </div>
               ) : (
                 <>
-                  {/* Widget card background */}
-                  <div className="absolute inset-0 rounded-xl bg-card border border-border shadow-none transition-shadow duration-200 group-hover:shadow-sm z-0" />
+                  {/* Widget card background — hover lift effect on visual layer only */}
+                  <div className="absolute inset-0 rounded-xl bg-card border border-border shadow-none transition-all duration-300 group-hover:shadow-lg group-hover:border-primary/20 group-hover:-translate-y-0.5 z-0" />
 
                   {/* Widget controls overlay — top right */}
                   <div className="absolute top-2 right-2 flex items-center gap-1 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">

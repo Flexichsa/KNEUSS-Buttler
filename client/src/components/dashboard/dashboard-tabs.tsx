@@ -10,6 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import type { DashboardTab } from "@shared/schema";
 
 interface DashboardTabsProps {
@@ -83,10 +84,10 @@ export function DashboardTabs({
           <div
             key={tab.id}
             className={cn(
-              "group relative flex items-center gap-2 px-3 py-2.5 transition-colors duration-150 cursor-pointer min-w-[80px] border-b-2",
+              "group relative flex items-center gap-2 px-3 py-2.5 transition-colors duration-150 cursor-pointer min-w-[80px]",
               isActive
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             )}
             onClick={() => !isEditing && onSwitchTab(tab.id)}
             data-testid={`tab-${tab.id}`}
@@ -109,6 +110,15 @@ export function DashboardTabs({
               </div>
             ) : (
               <span className="text-[12px] font-medium truncate max-w-[80px]">{tab.name}</span>
+            )}
+
+            {/* Animated underline indicator */}
+            {isActive && (
+              <motion.div
+                layoutId="dashboard-tab-indicator"
+                className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
             )}
 
             {!isEditing && isActive && tabs.length > 1 && (

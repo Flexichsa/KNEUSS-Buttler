@@ -272,29 +272,51 @@
 
 /* ─── Widget Entrance Animation ────────────────────────────────── */
 .widget-container {
-  animation: widgetEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: widgetEnter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes widgetEnter {
   from {
     opacity: 0;
+    transform: translateY(20px) scale(0.92);
+    filter: blur(6px);
   }
   to {
     opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
-/* Staggered entrance */
-.widget-container:nth-child(1) { animation-delay: 0.03s; }
-.widget-container:nth-child(2) { animation-delay: 0.06s; }
-.widget-container:nth-child(3) { animation-delay: 0.09s; }
-.widget-container:nth-child(4) { animation-delay: 0.12s; }
-.widget-container:nth-child(5) { animation-delay: 0.15s; }
-.widget-container:nth-child(6) { animation-delay: 0.18s; }
-.widget-container:nth-child(7) { animation-delay: 0.21s; }
-.widget-container:nth-child(8) { animation-delay: 0.24s; }
-.widget-container:nth-child(9) { animation-delay: 0.27s; }
-.widget-container:nth-child(10) { animation-delay: 0.30s; }
+/* Staggered entrance — 0.05s steps */
+.widget-container:nth-child(1) { animation-delay: 0.05s; }
+.widget-container:nth-child(2) { animation-delay: 0.10s; }
+.widget-container:nth-child(3) { animation-delay: 0.15s; }
+.widget-container:nth-child(4) { animation-delay: 0.20s; }
+.widget-container:nth-child(5) { animation-delay: 0.25s; }
+.widget-container:nth-child(6) { animation-delay: 0.30s; }
+.widget-container:nth-child(7) { animation-delay: 0.35s; }
+.widget-container:nth-child(8) { animation-delay: 0.40s; }
+.widget-container:nth-child(9) { animation-delay: 0.45s; }
+.widget-container:nth-child(10) { animation-delay: 0.50s; }
+
+/* ─── Dark Mode Scrollbar ─────────────────────────────────────── */
+.dark .overflow-y-auto::-webkit-scrollbar-thumb,
+.dark .overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.dark .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Animated Focus Ring ──────────────────────────────────────── */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+  border-radius: var(--radius-md);
+  transition: box-shadow 0.15s ease;
+}
 
 /* ─── Reduced Motion ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
